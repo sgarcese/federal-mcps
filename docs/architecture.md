@@ -194,6 +194,18 @@ Deferred to later releases, deliberately: Census server, CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
 
+## Repository settings
+
+Applied with `gh api` after the first CI-carrying merge and recorded here so they can be
+re-applied to a fork or a new instance repo:
+
+- `main` is protected: pull requests required, the `ci` status check required and
+  strict (branch up to date), no force pushes, no deletions, conversation resolution
+  required. Administrators are not exempt.
+- Dependabot: weekly, Mondays, npm and GitHub Actions, grouped (dev tooling, runtime,
+  actions), labeled `infra`.
+- The `live-smoke` workflow is scheduled weekly and never a required check.
+
 ## Decision log
 
 Questions 1–4, 6 and 8 were ruled on 2026-09-08 and are encoded in ADR-001 (shape, Census strategy, independence), ADR-002 (language, deployment, auth, testing, license) and ADR-003 (geography). Question 5 (milestone split) was ruled: six milestones as listed. Question 7 (Census) is encoded in ADR-001 but no Census code lands in Release 1.
