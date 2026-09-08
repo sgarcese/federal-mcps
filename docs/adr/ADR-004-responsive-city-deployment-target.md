@@ -43,9 +43,8 @@ cannot list IAM or CloudFormation resources.
    cancel-in-progress.
 5. **Custom domain.** One hostname per server, following the sibling deployments'
    `<service>.responsive.city` pattern: `bls-mcp.responsive.city` in Release 1, with
-   the MCP endpoint at `/mcp`. Later servers get their own hostnames
-   (`census-mcp.responsive.city`, `places-mcp.responsive.city`); the composite, when it
-   ships, gets `mcp.responsive.city`. Each server stack creates its own ACM certificate
+   the MCP endpoint at `/mcp`. Later servers get their own hostnames on the same
+   pattern, named when they ship. Each server stack creates its own ACM certificate
    in `us-east-1` and Route 53 alias in the existing zone from the fleet record's
    `domain` field, so a server can be added or removed without touching another's DNS.
 6. **Secrets.** `BLS_API_KEY` lives in Secrets Manager under `federal-mcps/dev/bls`;
