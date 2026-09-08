@@ -77,7 +77,9 @@ AWS_PROFILE=rc-deploy aws iam get-role \
   --query 'Role.Arn' --output text
 ```
 
-Confirm this equals the `deployRoleArn` field of the instance's record in
+`rc-deploy` is denied most IAM reads, so this call may fail with access denied;
+in that case use the `DeployRoleArn` output CDK printed in step 4 instead.
+Confirm the ARN equals the `deployRoleArn` field of the instance's record in
 `instances.json`. If it doesn't, something is wrong with the account/instance
 mapping — stop and investigate before merging any workflow that assumes this
 role.
