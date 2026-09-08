@@ -28,6 +28,13 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   account, fleet record, GitHub OIDC role bootstrapped once with `rc-deploy`, one API
   domain with a path per server.
 
+## Runbooks
+
+- [runbooks/bootstrap-instance.md](runbooks/bootstrap-instance.md) — the
+  one-time, human-run steps that deploy `FederalMcpsCiCd` and create an
+  instance's agency secrets (ADR-004 §3, the sole exception to CI-only
+  deploys).
+
 ## Stories
 
 `stories/` — backlog source of truth. Empty until Phase 0 issues are cut from rulings.
