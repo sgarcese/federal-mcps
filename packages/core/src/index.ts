@@ -26,3 +26,4 @@ export const FAMILY_VERBS = [
 export type FamilyVerb = (typeof FAMILY_VERBS)[number];
 
 export { CACHE_MISS, type CacheInfo, CacheInfoSchema } from "./cache.js";
+export * from "./envelope/index.js";
