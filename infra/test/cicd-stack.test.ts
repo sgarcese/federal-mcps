@@ -96,7 +96,9 @@ describe("FederalMcpsCiCd", () => {
     expect(values).toHaveLength(1);
     const statements = values[0]?.Properties.PolicyDocument.Statement ?? [];
     const actions = statements
-      .flatMap((statement) => (Array.isArray(statement.Action) ? statement.Action : [statement.Action]))
+      .flatMap((statement) =>
+        Array.isArray(statement.Action) ? statement.Action : [statement.Action],
+      )
       .sort();
     expect(actions).toEqual(
       [
