@@ -121,9 +121,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 
 Pre-PR gate suite, run each visibly (same order as the `ci` job):
 `npm ci` · `npm run lint` · `npm run format:check` · `npm run typecheck` · `npm test` ·
-`npm run test:contract` · `npm run build`.
-`npm run format` fixes formatting. `cd infra && npx aws-cdk@2 synth` joins the list when
-`infra/` lands (#9, #11); `npm run geography:build` when M2 lands.
+`npm run test:contract` · `npm run build` · `npm run synth`.
+`npm run format` fixes formatting. `npm run geography:build` joins the list when M2 lands.
+One-time bootstrap per instance: `docs/runbooks/bootstrap-instance.md`.
 The required status check on `main` is the job named `ci`.
 
 ## Agent delegation (adopt if running parallel subagent builds)
