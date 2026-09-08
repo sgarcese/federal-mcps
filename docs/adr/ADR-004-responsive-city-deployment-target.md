@@ -41,10 +41,13 @@ cannot list IAM or CloudFormation resources.
    post-deploy check that POSTs `initialize` and `tools/list` to the live URL and fails
    the job if `bls_describe_source` is absent. Concurrency group `deploy-dev`, no
    cancel-in-progress.
-5. **Custom domain.** One API domain for the family, `mcp.responsive.city`, with each
-   server mounted at a path (`/bls/mcp` in Release 1; `/census/mcp`, `/places/mcp`
-   later, and the composite at `/mcp`). ACM certificate in `us-east-1`, Route 53 alias
-   in the existing zone, both created by CDK from the fleet record's `domain` field.
+5. **Custom domain.** One hostname per server, following the sibling deployments'
+   `<service>.responsive.city` pattern: `bls-mcp.responsive.city` in Release 1, with
+   the MCP endpoint at `/mcp`. Later servers get their own hostnames
+   (`census-mcp.responsive.city`, `places-mcp.responsive.city`); the composite, when it
+   ships, gets `mcp.responsive.city`. Each server stack creates its own ACM certificate
+   in `us-east-1` and Route 53 alias in the existing zone from the fleet record's
+   `domain` field, so a server can be added or removed without touching another's DNS.
 6. **Secrets.** `BLS_API_KEY` lives in Secrets Manager under `federal-mcps/dev/bls`;
    the Lambda role may read exactly that ARN. The secret value is created by a person
    with `rc-deploy`, not by CDK, so it never passes through a template.
@@ -62,6 +65,6 @@ cannot list IAM or CloudFormation resources.
 
 - **Long-lived IAM user keys in GitHub secrets.** Rejected for the usual reasons; the
   account already has the OIDC provider.
-- **A separate hostname per server** (`bls.mcp.responsive.city`). Rejected in favor of
-  one domain with paths so the composite server can later live at the root and the
-  certificate and DNS are created once.
+- **One domain with a path per server** (`mcp.responsive.city/bls/mcp`). Rejected by
+  the owner in favor of the established one-hostname-per-service pattern; independent
+  hostnames also keep each server's certificate and DNS independent of the others.
