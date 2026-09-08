@@ -18,7 +18,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 - **Incremental commits** at red/green/refactor boundaries — don't squash a story into
   one commit. (They also make recovery free when a session or agent dies mid-work.)
 - **No deploys from the CLI.** Deploys are CI-only, triggered by merge to `main`.
-  Local verification stops at tests, lint, and synth/build.
+  Local verification stops at tests, lint, and synth/build. The single exception is
+  the one-time `FederalMcpsCiCd` bootstrap per instance with `AWS_PROFILE=rc-deploy`
+  (ADR-004), which creates the OIDC role CI then uses.
 - **Docs describe what is.** A doc that has drifted is worse than none, because it is
   trusted: change the doc that owns a behaviour in the same PR that changes the
   behaviour. Superseded documents move to `docs/archive/` with a banner and a pointer —
@@ -110,7 +112,10 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   (`server-bls`, `server-census`, `server-cdc-places`, …).
 - `packages/server-composite/` — one endpoint that mounts several agency servers with
   prefixed tool names and a single shared `resolve_place`.
-- `infra/` — CDK app: one Lambda and route per server, shared secrets, usage plans.
+- `infra/` — CDK app: one Lambda and route per server, shared secrets, usage plans,
+  and the `FederalMcpsCiCd` trust stack.
+- `instances.json` — the fleet record (ADR-004); the only place an AWS account or
+  region is named.
 
 ## Commands
 

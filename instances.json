@@ -1,0 +1,28 @@
+{
+  "$comment": [
+    "The fleet record (ADR-004): one entry per deployed instance of federal-mcps.",
+    "Nothing else in the repository names an AWS account or region. Consumers:",
+    "infra/ (CDK reads the instance selected by FEDERAL_MCPS_INSTANCE, default dev)",
+    "and .github/workflows/deploy.yml (role, region, concurrency).",
+    "Adding a stage or a dedicated deployment is adding a record here and running",
+    "the one-time CI/CD bootstrap in that account with a human deployer profile."
+  ],
+  "instances": [
+    {
+      "name": "dev",
+      "description": "federal-mcps dev in the Responsive City account",
+      "account": "564762345093",
+      "region": "us-east-1",
+      "environmentTag": "dev",
+      "deployRoleArn": "arn:aws:iam::564762345093:role/federal-mcps-github-deploy",
+      "domain": {
+        "blsDomainName": "bls-mcp.responsive.city",
+        "hostedZoneId": "Z02890412WHZ405FIOT0Y",
+        "hostedZoneName": "responsive.city"
+      },
+      "secrets": {
+        "bls": "federal-mcps/dev/bls"
+      }
+    }
+  ]
+}
