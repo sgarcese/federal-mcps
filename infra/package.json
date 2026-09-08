@@ -1,0 +1,23 @@
+{
+  "name": "infra",
+  "version": "0.0.0",
+  "private": true,
+  "description": "CDK app for federal-mcps: FederalMcpsCiCd GitHub OIDC deploy role and the instance-record loader (ADR-004).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "synth": "cdk synth"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.268.0",
+    "constructs": "10.8.1"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1140.0",
+    "tsx": "4.23.13"
+  }
+}
