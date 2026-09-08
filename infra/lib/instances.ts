@@ -65,7 +65,14 @@ function assertInstanceRecord(value: unknown, index: number): asserts value is I
   const record = value as Record<string, unknown>;
   const context = `entry ${index}`;
 
-  for (const key of ["name", "description", "account", "region", "environmentTag", "deployRoleArn"]) {
+  for (const key of [
+    "name",
+    "description",
+    "account",
+    "region",
+    "environmentTag",
+    "deployRoleArn",
+  ]) {
     requireString(record, key, context);
   }
 
@@ -90,7 +97,9 @@ export function loadInstances(path: string = DEFAULT_INSTANCES_PATH): InstanceRe
     throw new Error(`instances.json at ${path} is missing an "instances" array`);
   }
   const instances = (parsed as InstancesFile).instances;
-  instances.forEach((instance, index) => assertInstanceRecord(instance, index));
+  instances.forEach((instance, index) => {
+    assertInstanceRecord(instance, index);
+  });
   return instances;
 }
 
@@ -100,7 +109,7 @@ export function loadInstances(path: string = DEFAULT_INSTANCES_PATH): InstanceRe
  * when `name` does not match any record.
  */
 export function selectInstance(
-  name: string = process.env.FEDERAL_MCPS_INSTANCE ?? "dev",
+  name: string = process.env["FEDERAL_MCPS_INSTANCE"] ?? "dev",
   path?: string,
 ): InstanceRecord {
   const instances = loadInstances(path);

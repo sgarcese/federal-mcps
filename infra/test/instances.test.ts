@@ -16,16 +16,16 @@ describe("selectInstance", () => {
   });
 
   it("selects the instance named by FEDERAL_MCPS_INSTANCE when no explicit name is given", () => {
-    const previous = process.env.FEDERAL_MCPS_INSTANCE;
-    process.env.FEDERAL_MCPS_INSTANCE = "dev";
+    const previous = process.env["FEDERAL_MCPS_INSTANCE"];
+    process.env["FEDERAL_MCPS_INSTANCE"] = "dev";
     try {
       const instance = selectInstance();
       expect(instance.name).toBe("dev");
     } finally {
       if (previous === undefined) {
-        delete process.env.FEDERAL_MCPS_INSTANCE;
+        delete process.env["FEDERAL_MCPS_INSTANCE"];
       } else {
-        process.env.FEDERAL_MCPS_INSTANCE = previous;
+        process.env["FEDERAL_MCPS_INSTANCE"] = previous;
       }
     }
   });
