@@ -200,8 +200,8 @@ Per ADR-004: `instances.json` is the fleet record; Release 1 has one instance, `
 the Responsive City account (`564762345093`, `us-east-1`). GitHub Actions assumes
 `federal-mcps-github-deploy` through the account's OIDC provider on push to `main`;
 that role and the trust are created by the `FederalMcpsCiCd` stack, deployed once by a
-person with `AWS_PROFILE=rc-deploy`. Servers are served from `mcp.responsive.city`
-under a path per server (`/bls/mcp`). Every deploy is verified per merge SHA by a
+person with `AWS_PROFILE=rc-deploy`. Each server has its own hostname following the account's
+`<service>.responsive.city` pattern: `bls-mcp.responsive.city/mcp` in Release 1. Every deploy is verified per merge SHA by a
 post-deploy `initialize` + `tools/list` against the live URL.
 
 ## Repository settings
