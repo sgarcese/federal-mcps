@@ -24,6 +24,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   Apache-2.0.
 - [ADR-003](adr/ADR-003-shared-geography-catalog.md) — build-time SQLite geography
   catalog and a single resolver with ambiguity-stops semantics.
+- [ADR-004](adr/ADR-004-responsive-city-deployment-target.md) — Responsive City
+  account, fleet record, GitHub OIDC role bootstrapped once with `rc-deploy`, one API
+  domain with a path per server.
 
 ## Stories
 

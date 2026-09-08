@@ -20,7 +20,8 @@ accepted the recommended defaults on 2026-09-08.
 3. **Hosting.** One AWS Lambda per server behind an HTTP API, defined in CDK
    (TypeScript), deployed only from CI on merge to `main` via an OIDC role. The same
    build must also run as a plain container and as a local process, so hosting stays
-   portable (Cloudflare Workers is the named alternative).
+   portable (Cloudflare Workers is the named alternative). The target account, trust
+   mechanics, domain and bootstrap are in ADR-004.
 4. **Auth.** None for end users; the data is public. Agency API keys live in AWS Secrets
    Manager in deployed environments and in `.env` locally. Optional per-client usage
    plans at the API layer. Organizations needing caller identity or audit front the
