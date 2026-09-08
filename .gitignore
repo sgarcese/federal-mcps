@@ -1,0 +1,69 @@
+# --- secrets & local config ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+.claude/settings.local.json
+
+# --- Node / TypeScript ---
+node_modules/
+dist/
+build/
+out/
+*.tsbuildinfo
+.turbo/
+coverage/
+.nyc_output/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# --- Python (if any server or script ends up in Python) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- AWS CDK ---
+cdk.out/
+cdk.context.json
+.cdk.staging/
+
+# --- Geography catalog build artifacts ---
+# Raw downloads (TIGER, gazetteer, LABSTAT code tables, OMB delineations) are fetched
+# by scripts and are large; the generated SQLite catalog is a release artifact, not source.
+packages/geography-build/downloads/
+packages/geography-build/work/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# --- Test fixtures that are recorded, not authored, are kept; scratch outputs are not ---
+**/fixtures/.tmp/
+**/__snapshots__/*.tmp
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# --- MCP / runtime scratch ---
+.mcp.local.json
+*.log
+tmp/
