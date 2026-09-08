@@ -13,7 +13,8 @@
     "node": ">=22"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "infra"
   ],
   "scripts": {
     "lint": "biome lint .",
@@ -23,6 +24,7 @@
     "test": "vitest run --project unit",
     "test:contract": "vitest run --passWithNoTests --project contract",
     "build": "tsc -b tsconfig.json",
+    "synth": "npm run synth -w infra",
     "clean": "rimraf packages/*/dist"
   },
   "devDependencies": {
