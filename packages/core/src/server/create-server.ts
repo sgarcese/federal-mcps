@@ -1,4 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import type { ServerNotification, ServerRequest } from "@modelcontextprotocol/sdk/types.js";
 import type { CallToolResult, ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
 import {
@@ -109,7 +111,10 @@ function registerDefinitionTool(
       outputSchema: EnvelopeSchema,
       annotations: { ...FAMILY_TOOL_ANNOTATIONS },
     },
-    async (args: unknown, extra): Promise<CallToolResult> => {
+    async (
+      args: unknown,
+      extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
+    ): Promise<CallToolResult> => {
       try {
         const result = await tool.handler(args, {
           now,
