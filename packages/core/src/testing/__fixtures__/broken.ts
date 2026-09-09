@@ -103,7 +103,7 @@ export const slowHandler: ServerDefinition = withTools([
     input: anyInput,
     handler: async (input, context) => {
       await new Promise((resolve) => setTimeout(resolve, 25));
-      return getRaw.handler(input, context);
+      return getRaw.handler(anyInput.parse(input), context);
     },
   }),
 ]);
