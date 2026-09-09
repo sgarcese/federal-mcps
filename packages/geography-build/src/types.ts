@@ -37,6 +37,13 @@ export interface ContainmentRow {
   childGeoid: string;
   parentGeoid: string;
   share: number;
+  /**
+   * How the two relate: "nests" = a containment-hierarchy edge (share = fraction of the
+   * child inside the parent; 1.0 for strict nesting, an allocation for a place spanning
+   * counties); "overlaps" = an areal overlap between non-nesting layers (share = fraction
+   * of the anchor/parent covered by the child), e.g. a ZCTA's tracts. Defaults to "nests".
+   */
+  relation?: "nests" | "overlaps";
 }
 
 /** An agency-specific code for an entity: BLS LAUS/CES/OEWS/CPI area codes, etc. */

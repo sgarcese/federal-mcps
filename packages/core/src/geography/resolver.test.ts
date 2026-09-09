@@ -101,6 +101,14 @@ describe("containment, overlap, lineage", () => {
     expect(share).toBeCloseTo(0.6, 5);
   });
 
+  it("keeps get_containment to the hierarchy — a tract's parents exclude an overlapping ZCTA (#57)", () => {
+    const parents = getContainment(catalog, "08031000101");
+    expect(parents.map((p) => p.geoid)).not.toContain("80202");
+    expect(parents.every((p) => p.relation === "nests")).toBe(true);
+    // The ZCTA relationship is areal overlap, surfaced only via getOverlap.
+    expect(getOverlap(catalog, "80202").map((t) => t.geoid)).toContain("08031000101");
+  });
+
   it("returns a tract's 2020 successor", () => {
     const lineage = getLineage(catalog, "08031000101");
     expect(lineage).toHaveLength(1);
