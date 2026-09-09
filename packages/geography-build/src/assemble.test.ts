@@ -35,8 +35,18 @@ describe("assemble", () => {
   });
 
   it("derives strict geoid nesting (county→state, place→state) only for present parents", () => {
-    expect(rows.containment).toContainEqual({ childGeoid: "08031", parentGeoid: "08", share: 1 });
-    expect(rows.containment).toContainEqual({ childGeoid: "0820000", parentGeoid: "08", share: 1 });
+    expect(rows.containment).toContainEqual({
+      childGeoid: "08031",
+      parentGeoid: "08",
+      share: 1,
+      relation: "nests",
+    });
+    expect(rows.containment).toContainEqual({
+      childGeoid: "0820000",
+      parentGeoid: "08",
+      share: 1,
+      relation: "nests",
+    });
     // No place→county here (that is weighted containment, #55).
     expect(
       rows.containment.some((c) => c.childGeoid === "0820000" && c.parentGeoid === "08031"),

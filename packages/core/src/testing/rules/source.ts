@@ -67,13 +67,13 @@ export const resolvePlaceRule: ContractRule = {
   run: ({ definition }) => {
     const violations: Violation[] = [];
     for (const tool of definition.tools) {
-      if (familyVerbOf(tool.name) === "resolve_place") {
+      if (familyVerbOf(tool.name) === "resolve_place" && tool.fromCore !== true) {
         violations.push({
           rule: "no-own-resolve-place",
           tool: tool.name,
           message:
             "only core resolves places (ADR-003 §8): no server ships its own name lookup or FIPS table. " +
-            "resolve_place comes from core's geography tools (M2); until then a server declares no resolve_place tool at all",
+            "a resolve_place tool must come from core.geographyTools() (its `fromCore` flag), not be hand-declared",
         });
       }
     }

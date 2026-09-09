@@ -87,6 +87,17 @@ export function createServer(
 
   registerDescribeSource(server, definition, now);
 
+  for (const resource of definition.resources ?? []) {
+    server.registerResource(
+      resource.name,
+      resource.uri,
+      { description: resource.description, mimeType: resource.mimeType },
+      async (uri) => ({
+        contents: [{ uri: uri.href, mimeType: resource.mimeType, text: resource.read() }],
+      }),
+    );
+  }
+
   return server;
 }
 

@@ -85,6 +85,8 @@ export interface GeographyEdge {
   kind: PlaceKind;
   /** Allocation share in [0,1]; 1.0 for strict nesting. */
   share: number;
+  /** "nests" = containment hierarchy; "overlaps" = areal overlap (ADR-008 §2, #57). */
+  relation: "nests" | "overlaps";
 }
 
 /** A tract's succession across vintages (2010 → 2020). */

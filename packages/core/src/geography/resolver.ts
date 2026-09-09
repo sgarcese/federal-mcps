@@ -142,14 +142,14 @@ export function resolvePlace(
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
 }
 
-/** A place's parents with allocation shares (place → county → CBSA → state). */
+/** A place's containment-hierarchy parents with shares (place → county → CBSA → state). */
 export function getContainment(catalog: GeographyCatalog, geoid: string): GeographyEdge[] {
-  return catalog.parentsOf(geoid).map(({ entity, share }) => edge(entity, share));
+  return catalog.parentsOf(geoid).map(({ entity, share }) => edge(entity, share, "nests"));
 }
 
-/** The children of an area with allocation shares — e.g. a ZCTA's overlapping tracts. */
+/** A place's areal overlaps with allocation shares — e.g. a ZCTA's overlapping tracts. */
 export function getOverlap(catalog: GeographyCatalog, geoid: string): GeographyEdge[] {
-  return catalog.childrenOf(geoid).map(({ entity, share }) => edge(entity, share));
+  return catalog.overlapsOf(geoid).map(({ entity, share }) => edge(entity, share, "overlaps"));
 }
 
 /** A tract's successors across vintages (2010 → 2020). */
@@ -218,12 +218,13 @@ function availabilityFor(
   }));
 }
 
-function edge(e: EntityRecord, share: number): GeographyEdge {
+function edge(e: EntityRecord, share: number, relation: "nests" | "overlaps"): GeographyEdge {
   return {
     geoid: e.geoid,
     name: e.name,
     kind: { sumlevel: e.sumlevel, label: labelForSumlevel(e.sumlevel) },
     share,
+    relation,
   };
 }
 

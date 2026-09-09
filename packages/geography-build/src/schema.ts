@@ -34,9 +34,11 @@ const STATEMENTS = [
      child_geoid   TEXT NOT NULL,
      parent_geoid  TEXT NOT NULL,
      share         REAL NOT NULL,
+     relation      TEXT NOT NULL DEFAULT 'nests',
      PRIMARY KEY (child_geoid, parent_geoid)
    ) WITHOUT ROWID`,
-  `CREATE INDEX containment_parent ON containment (parent_geoid)`,
+  `CREATE INDEX containment_parent ON containment (parent_geoid, relation)`,
+  `CREATE INDEX containment_child_rel ON containment (child_geoid, relation)`,
 
   `CREATE TABLE agency_code (
      geoid         TEXT NOT NULL,
