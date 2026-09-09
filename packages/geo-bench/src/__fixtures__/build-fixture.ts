@@ -9,12 +9,13 @@ import {
   type EntityRow,
 } from "@federal-mcps/geography-build";
 import BetterSqlite3 from "better-sqlite3";
+import { ucgidOf } from "@federal-mcps/core";
 
 /**
- * A tiny geography catalog file for the server-geo suite: Denver at three levels (a real
- * ambiguity), a below-threshold town, a ZCTA overlapping two tracts, one tract with a 2020
- * successor, and LAUS publish levels — enough to exercise every geo tool end to end. Mirrors
- * core's resolver fixture; kept local so the server package's tests own their own data.
+ * A tiny geography catalog for the geo-bench suite: Denver at three levels (a genuine
+ * ambiguity), a below-threshold town, a CDP, a Connecticut county that was recoded, a
+ * ZCTA overlapping two tracts, and one tract with a 2020 successor. Entities are keyed by
+ * UCGID (#73); the helpers below author by (geoid, level) and derive the UCGID.
  */
 export function buildFixtureCatalog(): string {
   const entities: EntityRow[] = [
@@ -23,29 +24,41 @@ export function buildFixtureCatalog(): string {
     ent("0820000", "160", "Denver city", { stateFips: "08", lsad: "25", aland: 396_000_000 }),
     ent("19740", "310", "Denver-Aurora-Centennial, CO", { lsad: "M1" }),
     ent("0899999", "160", "Smallburg town", { stateFips: "08", lsad: "43", aland: 5_000_000 }),
+    ent("0888888", "160", "Bazville CDP", { stateFips: "08", lsad: "57", aland: 2_000_000 }),
+    ent("09001", "050", "Fairfield County", { stateFips: "09", lsad: "06", aland: 1_618_000_000 }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
   ];
+  // In this fixture every referenced geoid is a distinct entity, so a geoid → ucgid map is
+  // unambiguous (the collision #73 addresses only appears at national scale).
+  const uc = (geoid: string): string => {
+    const e = entities.find((x) => x.geoid === geoid);
+    if (!e) throw new Error(`fixture: no entity for geoid ${geoid}`);
+    return e.ucgid;
+  };
 
   const aliases = [
-    { geoid: "08031", alias: "Denver", source: "lsad-stripped" },
-    { geoid: "0820000", alias: "Denver", source: "lsad-stripped" },
-    { geoid: "19740", alias: "Denver", source: "hand" },
-    { geoid: "0899999", alias: "Smallburg", source: "lsad-stripped" },
+    { ucgid: uc("08031"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: uc("0820000"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: uc("19740"), alias: "Denver", source: "hand" }, // the metro is a strong match too
+    { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
+    { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
+    { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [
-    { childGeoid: "08031", parentGeoid: "08", share: 1 },
-    { childGeoid: "0820000", parentGeoid: "08", share: 1 },
-    { childGeoid: "08031000101", parentGeoid: "80202", share: 0.6, relation: "overlaps" },
-    { childGeoid: "08031000102", parentGeoid: "80202", share: 0.4, relation: "overlaps" },
+    { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
+    { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
   ];
 
   const agencyCodes: AgencyCodeRow[] = [
-    code("08031", "LAUS", "LAUCN0803100000000"),
-    code("0820000", "LAUS", "LAUCT0820000000000"),
-    code("19740", "LAUS", "LAUMT0819740000000"),
+    code(uc("08031"), "LAUS", "LAUCN0803100000000"),
+    code(uc("0820000"), "LAUS", "LAUCT0820000000000"), // the city is above threshold
+    code(uc("19740"), "LAUS", "LAUMT0819740000000"),
+    // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
   ];
 
   const rows: CatalogRows = {
@@ -63,11 +76,18 @@ export function buildFixtureCatalog(): string {
         constraintNote: "incorporated place, population >= 25000",
       },
     ],
-    countyChange: [],
+    countyChange: [
+      {
+        oldUcgid: ucgidOf("050", "09001"),
+        newUcgid: ucgidOf("050", "09110"),
+        effective: "2022-06-01",
+        kind: "recode",
+      },
+    ],
     lineage: [
       {
-        fromGeoid: "08031000101",
-        toGeoid: "08031000201",
+        fromUcgid: ucgidOf("140", "08031000101"),
+        toUcgid: ucgidOf("140", "08031000201"),
         fromVintage: 2010,
         toVintage: 2020,
         share: 1,
@@ -75,7 +95,7 @@ export function buildFixtureCatalog(): string {
     ],
   };
 
-  const dir = mkdtempSync(join(tmpdir(), "geo-server-fixture-"));
+  const dir = mkdtempSync(join(tmpdir(), "geo-fixture-"));
   const path = join(dir, "geo.sqlite");
   const db = new BetterSqlite3(path);
   buildCatalog(db, rows, { vintage: "test" });
@@ -85,6 +105,7 @@ export function buildFixtureCatalog(): string {
 
 function ent(geoid: string, sumlevel: string, name: string, extra: Partial<EntityRow>): EntityRow {
   return {
+    ucgid: ucgidOf(sumlevel, geoid),
     geoid,
     sumlevel,
     name,
@@ -99,6 +120,6 @@ function ent(geoid: string, sumlevel: string, name: string, extra: Partial<Entit
   };
 }
 
-function code(geoid: string, program: string, value: string): AgencyCodeRow {
-  return { geoid, agency: "bls", program, code: value, codeVintage: 2023, note: null };
+function code(ucgid: string, program: string, value: string): AgencyCodeRow {
+  return { ucgid, agency: "bls", program, code: value, codeVintage: 2023, note: null };
 }

@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { assemble } from "./assemble.js";
 
@@ -28,7 +29,7 @@ describe("assemble", () => {
   it("collects entities and aliases across gazetteer files", () => {
     expect(rows.entities.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
     expect(rows.aliases).toContainEqual({
-      geoid: "08031",
+      ucgid: ucgidOf("050", "08031"),
       alias: "Denver",
       source: "lsad-stripped",
     });
@@ -36,27 +37,32 @@ describe("assemble", () => {
 
   it("derives strict geoid nesting (county→state, place→state) only for present parents", () => {
     expect(rows.containment).toContainEqual({
-      childGeoid: "08031",
-      parentGeoid: "08",
+      childUcgid: ucgidOf("050", "08031"),
+      parentUcgid: ucgidOf("040", "08"),
       share: 1,
       relation: "nests",
     });
     expect(rows.containment).toContainEqual({
-      childGeoid: "0820000",
-      parentGeoid: "08",
+      childUcgid: ucgidOf("160", "0820000"),
+      parentUcgid: ucgidOf("040", "08"),
       share: 1,
       relation: "nests",
     });
     // No place→county here (that is weighted containment, #55).
     expect(
-      rows.containment.some((c) => c.childGeoid === "0820000" && c.parentGeoid === "08031"),
+      rows.containment.some(
+        (c) =>
+          c.childUcgid === ucgidOf("160", "0820000") && c.parentUcgid === ucgidOf("050", "08031"),
+      ),
     ).toBe(false);
   });
 
   it("loads BLS agency codes and the static publishes_at / county_change tables", () => {
-    expect(rows.agencyCodes.map((a) => a.geoid).sort()).toEqual(["08", "08031"]);
+    expect(rows.agencyCodes.map((a) => a.ucgid).sort()).toEqual(
+      [ucgidOf("040", "08"), ucgidOf("050", "08031")].sort(),
+    );
     expect(rows.publishesAt.some((p) => p.program === "LAUS" && p.sumlevel === "160")).toBe(true);
-    expect(rows.countyChange.some((c) => c.oldGeoid === "09001")).toBe(true);
+    expect(rows.countyChange.some((c) => c.oldUcgid === ucgidOf("050", "09001"))).toBe(true);
   });
 
   it("has no lineage or weighted overlap when no #55 sources are supplied", () => {
@@ -91,32 +97,38 @@ describe("assemble: weighted overlap and lineage (#55)", () => {
   });
 
   it("loads area-weighted ZCTA-tract containment from the relationship file", () => {
-    const forZcta = rows.containment.filter((c) => c.parentGeoid === "19104");
-    const distinctTracts = new Set(forZcta.map((c) => c.childGeoid));
+    const forZcta = rows.containment.filter((c) => c.parentUcgid === ucgidOf("860", "19104"));
+    const distinctTracts = new Set(forZcta.map((c) => c.childUcgid));
     expect(distinctTracts.size).toBe(2);
   });
 
   it("Geocorr's population-weighted share wins over the relationship file for the same edge", () => {
     const row = rows.containment.find(
-      (c) => c.childGeoid === "42101036900" && c.parentGeoid === "19104",
+      (c) =>
+        c.childUcgid === ucgidOf("140", "42101036900") && c.parentUcgid === ucgidOf("860", "19104"),
     );
     expect(row?.share).toBe(0.55); // not the relationship file's 0.5
   });
 
   it("a place crossing counties gets Geocorr shares summing to < 1 per county", () => {
     const fulton = rows.containment.find(
-      (c) => c.childGeoid === "1304000" && c.parentGeoid === "13121",
+      (c) =>
+        c.childUcgid === ucgidOf("160", "1304000") && c.parentUcgid === ucgidOf("050", "13121"),
     );
     const dekalb = rows.containment.find(
-      (c) => c.childGeoid === "1304000" && c.parentGeoid === "13089",
+      (c) =>
+        c.childUcgid === ucgidOf("160", "1304000") && c.parentUcgid === ucgidOf("050", "13089"),
     );
     expect(fulton?.share).toBe(0.93);
     expect(dekalb?.share).toBe(0.07);
   });
 
   it("a split 2010 tract maps to its 2020 successors", () => {
-    const successors = rows.lineage.filter((l) => l.fromGeoid === "42101036800");
-    expect(successors.map((l) => l.toGeoid).sort()).toEqual(["42101036801", "42101036802"]);
+    const successors = rows.lineage.filter((l) => l.fromUcgid === ucgidOf("140", "42101036800"));
+    expect(successors.map((l) => l.toUcgid).sort()).toEqual([
+      ucgidOf("140", "42101036801"),
+      ucgidOf("140", "42101036802"),
+    ]);
     expect(successors.every((l) => l.fromVintage === 2010 && l.toVintage === 2020)).toBe(true);
     expect(successors.reduce((sum, l) => sum + l.share, 0)).toBeCloseTo(1, 6);
   });

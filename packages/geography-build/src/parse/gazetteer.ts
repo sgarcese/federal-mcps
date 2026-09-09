@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import type { AliasRow, EntityRow } from "../types.js";
 
 /**
@@ -49,6 +50,7 @@ export function parseGazetteer(
     const str = (i: number): string | null => (i < 0 ? null : (f[i]?.trim() ?? null) || null);
 
     entities.push({
+      ucgid: ucgidOf(sumlevel, geoid),
       geoid,
       sumlevel,
       name,
@@ -65,7 +67,7 @@ export function parseGazetteer(
     // so fuzzy resolution matches the bare name a user types.
     const bare = stripLsad(name);
     if (bare && bare !== name) {
-      aliases.push({ geoid, alias: bare, source: "lsad-stripped" });
+      aliases.push({ ucgid: ucgidOf(sumlevel, geoid), alias: bare, source: "lsad-stripped" });
     }
   }
 

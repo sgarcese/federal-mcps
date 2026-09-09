@@ -16,34 +16,34 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
   createSchema(db);
 
   const insertEntity = db.prepare(
-    `INSERT INTO entity (geoid, sumlevel, name, lsad, funcstat, state_fips, gnis, lat, lon, aland)
-     VALUES (@geoid, @sumlevel, @name, @lsad, @funcstat, @stateFips, @gnis, @lat, @lon, @aland)`,
+    `INSERT INTO entity (ucgid, geoid, sumlevel, name, lsad, funcstat, state_fips, gnis, lat, lon, aland)
+     VALUES (@ucgid, @geoid, @sumlevel, @name, @lsad, @funcstat, @stateFips, @gnis, @lat, @lon, @aland)`,
   );
   const insertAlias = db.prepare(
-    "INSERT INTO alias (geoid, alias, source) VALUES (@geoid, @alias, @source)",
+    "INSERT INTO alias (ucgid, alias, source) VALUES (@ucgid, @alias, @source)",
   );
   const insertContainment = db.prepare(
-    `INSERT OR IGNORE INTO containment (child_geoid, parent_geoid, share, relation)
-     VALUES (@childGeoid, @parentGeoid, @share, @relation)`,
+    `INSERT OR IGNORE INTO containment (child_ucgid, parent_ucgid, share, relation)
+     VALUES (@childUcgid, @parentUcgid, @share, @relation)`,
   );
   const insertAgencyCode = db.prepare(
-    `INSERT INTO agency_code (geoid, agency, program, code, code_vintage, note)
-     VALUES (@geoid, @agency, @program, @code, @codeVintage, @note)`,
+    `INSERT INTO agency_code (ucgid, agency, program, code, code_vintage, note)
+     VALUES (@ucgid, @agency, @program, @code, @codeVintage, @note)`,
   );
   const insertPublishesAt = db.prepare(
     `INSERT OR REPLACE INTO publishes_at (agency, program, sumlevel, constraint_note)
      VALUES (@agency, @program, @sumlevel, @constraintNote)`,
   );
   const insertCountyChange = db.prepare(
-    `INSERT INTO county_change (old_geoid, new_geoid, effective, kind)
-     VALUES (@oldGeoid, @newGeoid, @effective, @kind)`,
+    `INSERT INTO county_change (old_ucgid, new_ucgid, effective, kind)
+     VALUES (@oldUcgid, @newUcgid, @effective, @kind)`,
   );
   const insertLineage = db.prepare(
-    `INSERT INTO lineage (from_geoid, to_geoid, from_vintage, to_vintage, share)
-     VALUES (@fromGeoid, @toGeoid, @fromVintage, @toVintage, @share)`,
+    `INSERT INTO lineage (from_ucgid, to_ucgid, from_vintage, to_vintage, share)
+     VALUES (@fromUcgid, @toUcgid, @fromVintage, @toVintage, @share)`,
   );
-  // One FTS row per name/alias, tagged with its entity's geoid (its own rowid auto-assigned).
-  const insertFts = db.prepare("INSERT INTO name_fts (text, geoid) VALUES (?, ?)");
+  // One FTS row per name/alias, tagged with its entity ucgid (its own rowid auto-assigned).
+  const insertFts = db.prepare("INSERT INTO name_fts (text, ucgid) VALUES (?, ?)");
 
   const run = db.transaction(() => {
     for (const e of rows.entities) insertEntity.run(e);
@@ -55,9 +55,9 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
     for (const c of rows.countyChange) insertCountyChange.run(c);
     for (const l of rows.lineage) insertLineage.run(l);
 
-    // Index every entity name and every alias, keyed by geoid.
-    for (const e of rows.entities) insertFts.run(e.name, e.geoid);
-    for (const a of rows.aliases) insertFts.run(a.alias, a.geoid);
+    // Index every entity name and every alias, keyed by ucgid.
+    for (const e of rows.entities) insertFts.run(e.name, e.ucgid);
+    for (const a of rows.aliases) insertFts.run(a.alias, a.ucgid);
 
     db.prepare("INSERT INTO catalog_meta (key, value) VALUES ('vintage', ?)").run(options.vintage);
     db.prepare("INSERT INTO catalog_meta (key, value) VALUES ('built_at', ?)").run(

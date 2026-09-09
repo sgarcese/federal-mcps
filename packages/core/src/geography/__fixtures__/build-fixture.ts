@@ -1,19 +1,21 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import BetterSqlite3 from "better-sqlite3";
-import { buildCatalog } from "@federal-mcps/geography-build";
-import type {
-  AgencyCodeRow,
-  CatalogRows,
-  ContainmentRow,
-  EntityRow,
+import {
+  type AgencyCodeRow,
+  buildCatalog,
+  type CatalogRows,
+  type ContainmentRow,
+  type EntityRow,
 } from "@federal-mcps/geography-build";
+import BetterSqlite3 from "better-sqlite3";
+import { ucgidOf } from "../identifiers.js";
 
 /**
  * Builds a tiny catalog file for resolver tests: Denver at three levels (a genuine
  * ambiguity), a below-threshold town, a CDP, a Connecticut county that was recoded, a
- * ZCTA overlapping two tracts, and one tract with a 2020 successor.
+ * ZCTA overlapping two tracts, and one tract with a 2020 successor. Entities are keyed by
+ * UCGID (#73); the helpers below author by (geoid, level) and derive the UCGID.
  */
 export function buildFixtureCatalog(): string {
   const entities: EntityRow[] = [
@@ -28,27 +30,34 @@ export function buildFixtureCatalog(): string {
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
   ];
+  // In this fixture every referenced geoid is a distinct entity, so a geoid → ucgid map is
+  // unambiguous (the collision #73 addresses only appears at national scale).
+  const uc = (geoid: string): string => {
+    const e = entities.find((x) => x.geoid === geoid);
+    if (!e) throw new Error(`fixture: no entity for geoid ${geoid}`);
+    return e.ucgid;
+  };
 
   const aliases = [
-    { geoid: "08031", alias: "Denver", source: "lsad-stripped" },
-    { geoid: "0820000", alias: "Denver", source: "lsad-stripped" },
-    { geoid: "19740", alias: "Denver", source: "hand" }, // makes the metro a strong match too
-    { geoid: "0899999", alias: "Smallburg", source: "lsad-stripped" },
-    { geoid: "0888888", alias: "Bazville", source: "lsad-stripped" },
-    { geoid: "09001", alias: "Fairfield", source: "lsad-stripped" },
+    { ucgid: uc("08031"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: uc("0820000"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: uc("19740"), alias: "Denver", source: "hand" }, // the metro is a strong match too
+    { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
+    { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
+    { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [
-    { childGeoid: "08031", parentGeoid: "08", share: 1 },
-    { childGeoid: "0820000", parentGeoid: "08", share: 1 },
-    { childGeoid: "08031000101", parentGeoid: "80202", share: 0.6, relation: "overlaps" },
-    { childGeoid: "08031000102", parentGeoid: "80202", share: 0.4, relation: "overlaps" },
+    { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
+    { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
   ];
 
   const agencyCodes: AgencyCodeRow[] = [
-    code("08031", "LAUS", "LAUCN0803100000000"),
-    code("0820000", "LAUS", "LAUCT0820000000000"), // the city is above threshold
-    code("19740", "LAUS", "LAUMT0819740000000"),
+    code(uc("08031"), "LAUS", "LAUCN0803100000000"),
+    code(uc("0820000"), "LAUS", "LAUCT0820000000000"), // the city is above threshold
+    code(uc("19740"), "LAUS", "LAUMT0819740000000"),
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
   ];
 
@@ -68,12 +77,17 @@ export function buildFixtureCatalog(): string {
       },
     ],
     countyChange: [
-      { oldGeoid: "09001", newGeoid: "09110", effective: "2022-06-01", kind: "recode" },
+      {
+        oldUcgid: ucgidOf("050", "09001"),
+        newUcgid: ucgidOf("050", "09110"),
+        effective: "2022-06-01",
+        kind: "recode",
+      },
     ],
     lineage: [
       {
-        fromGeoid: "08031000101",
-        toGeoid: "08031000201",
+        fromUcgid: ucgidOf("140", "08031000101"),
+        toUcgid: ucgidOf("140", "08031000201"),
         fromVintage: 2010,
         toVintage: 2020,
         share: 1,
@@ -91,6 +105,7 @@ export function buildFixtureCatalog(): string {
 
 function ent(geoid: string, sumlevel: string, name: string, extra: Partial<EntityRow>): EntityRow {
   return {
+    ucgid: ucgidOf(sumlevel, geoid),
     geoid,
     sumlevel,
     name,
@@ -105,6 +120,6 @@ function ent(geoid: string, sumlevel: string, name: string, extra: Partial<Entit
   };
 }
 
-function code(geoid: string, program: string, value: string): AgencyCodeRow {
-  return { geoid, agency: "bls", program, code: value, codeVintage: 2023, note: null };
+function code(ucgid: string, program: string, value: string): AgencyCodeRow {
+  return { ucgid, agency: "bls", program, code: value, codeVintage: 2023, note: null };
 }

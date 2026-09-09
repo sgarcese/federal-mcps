@@ -43,11 +43,11 @@ describe("createSchema", () => {
   it("indexes names for trigram fuzzy search", () => {
     db = new BetterSqlite3(":memory:");
     createSchema(db);
-    db.prepare("INSERT INTO name_fts (text, geoid) VALUES ('Denver County', '08031')").run();
+    db.prepare("INSERT INTO name_fts (text, ucgid) VALUES ('Denver County', '08031')").run();
     // trigram tokenizer matches substrings of length >= 3, case-insensitively.
-    const hit = db.prepare("SELECT geoid FROM name_fts WHERE text MATCH ?").get("denver") as
-      | { geoid: string }
+    const hit = db.prepare("SELECT ucgid FROM name_fts WHERE text MATCH ?").get("denver") as
+      | { ucgid: string }
       | undefined;
-    expect(hit?.geoid).toBe("08031");
+    expect(hit?.ucgid).toBe("08031");
   });
 });

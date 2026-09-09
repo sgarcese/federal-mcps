@@ -10,7 +10,9 @@ export function ucgidOf(sumlevel: string, geoid: string): string {
   return `${sumlevel}0000US${geoid}`;
 }
 
-/** Data Commons DCID for a place: counties/states/... are `geoId/<geoid>`; CBSAs are `geoId/C<geoid>`. */
+/** Data Commons DCID: CBSAs/metro divisions use `geoId/C…`, ZCTAs `zip/…`, everything else `geoId/…`. */
 export function dcidOf(sumlevel: string, geoid: string): string {
-  return sumlevel === "310" ? `geoId/C${geoid}` : `geoId/${geoid}`;
+  if (sumlevel === "310" || sumlevel === "314") return `geoId/C${geoid}`;
+  if (sumlevel === "860") return `zip/${geoid}`;
+  return `geoId/${geoid}`;
 }

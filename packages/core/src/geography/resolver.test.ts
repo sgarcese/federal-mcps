@@ -2,6 +2,7 @@ import { rmSync } from "node:fs";
 import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GeographyCatalog } from "./catalog.js";
+import { ucgidOf } from "./identifiers.js";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import {
   getAvailability,
@@ -95,28 +96,30 @@ describe("resolvePlace", () => {
 
 describe("containment, overlap, lineage", () => {
   it("returns a place's parents with shares", () => {
-    const parents = getContainment(catalog, "0820000");
+    const parents = getContainment(catalog, ucgidOf("160", "0820000"));
     expect(parents.map((p) => p.geoid)).toContain("08");
     expect(parents.every((p) => p.share === 1)).toBe(true);
   });
 
   it("returns a ZCTA's overlapping tracts with allocation shares", () => {
-    const tracts = getOverlap(catalog, "80202");
+    const tracts = getOverlap(catalog, ucgidOf("860", "80202"));
     expect(tracts.map((t) => t.geoid).sort()).toEqual(["08031000101", "08031000102"]);
     const share = tracts.find((t) => t.geoid === "08031000101")?.share;
     expect(share).toBeCloseTo(0.6, 5);
   });
 
   it("keeps get_containment to the hierarchy — a tract's parents exclude an overlapping ZCTA (#57)", () => {
-    const parents = getContainment(catalog, "08031000101");
+    const parents = getContainment(catalog, ucgidOf("140", "08031000101"));
     expect(parents.map((p) => p.geoid)).not.toContain("80202");
     expect(parents.every((p) => p.relation === "nests")).toBe(true);
     // The ZCTA relationship is areal overlap, surfaced only via getOverlap.
-    expect(getOverlap(catalog, "80202").map((t) => t.geoid)).toContain("08031000101");
+    expect(getOverlap(catalog, ucgidOf("860", "80202")).map((t) => t.geoid)).toContain(
+      "08031000101",
+    );
   });
 
   it("returns a tract's 2020 successor", () => {
-    const lineage = getLineage(catalog, "08031000101");
+    const lineage = getLineage(catalog, ucgidOf("140", "08031000101"));
     expect(lineage).toHaveLength(1);
     expect(lineage[0]).toMatchObject({
       toGeoid: "08031000201",
@@ -126,20 +129,20 @@ describe("containment, overlap, lineage", () => {
   });
 
   it("lists which programs publish for a place's level, with hasCode per program", () => {
-    const availability = getAvailability(catalog, "08031"); // Denver County, has a LAUS code
+    const availability = getAvailability(catalog, ucgidOf("050", "08031")); // Denver County, has a LAUS code
     expect(availability.length).toBeGreaterThan(0);
     const laus = availability.find((a) => a.agency === "bls" && a.program === "LAUS");
     expect(laus).toMatchObject({ sumlevel: "050", hasCode: true });
   });
 
   it("marks hasCode false when the level publishes but this place has no code", () => {
-    const availability = getAvailability(catalog, "0899999"); // Smallburg: below threshold, no LAUS code
+    const availability = getAvailability(catalog, ucgidOf("160", "0899999")); // Smallburg: below threshold, no LAUS code
     const laus = availability.find((a) => a.agency === "bls" && a.program === "LAUS");
     expect(laus).toMatchObject({ sumlevel: "160", hasCode: false });
   });
 
   it("returns empty availability for an unknown geoid, without error", () => {
-    expect(getAvailability(catalog, "99999999")).toEqual([]);
+    expect(getAvailability(catalog, ucgidOf("050", "99999999"))).toEqual([]);
   });
 });
 

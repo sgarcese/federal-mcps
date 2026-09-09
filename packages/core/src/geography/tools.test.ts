@@ -122,7 +122,7 @@ describe("geographyTools", () => {
     const client = await connect(geoServer());
     const res = await client.callTool({
       name: "geo_list_availability",
-      arguments: { geoid: "08031" },
+      arguments: { ucgid: "0500000US08031" },
     });
     const env = res.structuredContent as {
       data: { availability: { agency: string; program: string; hasCode: boolean }[] };

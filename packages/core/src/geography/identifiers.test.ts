@@ -10,8 +10,10 @@ describe("ucgidOf", () => {
 });
 
 describe("dcidOf", () => {
-  it("prefixes a CBSA's DCID with C, others plain", () => {
+  it("prefixes a CBSA/metro-division with C, ZCTAs with zip/, others plain", () => {
     expect(dcidOf("050", "08031")).toBe("geoId/08031");
     expect(dcidOf("310", "19740")).toBe("geoId/C19740");
+    expect(dcidOf("314", "31084")).toBe("geoId/C31084");
+    expect(dcidOf("860", "80202")).toBe("zip/80202");
   });
 });

@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
 import { parseCesArea, parseCpiArea, parseLausArea, parseOewsArea } from "./parse/bls-area.js";
 import { parseGazetteer } from "./parse/gazetteer.js";
@@ -115,8 +116,8 @@ function mergeWeighted(
   geocorr: readonly ContainmentRow[],
 ): ContainmentRow[] {
   const byKey = new Map<string, ContainmentRow>();
-  for (const row of relationship) byKey.set(`${row.childGeoid} ${row.parentGeoid}`, row);
-  for (const row of geocorr) byKey.set(`${row.childGeoid} ${row.parentGeoid}`, row); // Geocorr wins
+  for (const row of relationship) byKey.set(`${row.childUcgid} ${row.parentUcgid}`, row);
+  for (const row of geocorr) byKey.set(`${row.childUcgid} ${row.parentUcgid}`, row); // Geocorr wins
   return [...byKey.values()];
 }
 
@@ -133,22 +134,22 @@ function withRelation(
 }
 
 function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
-  const present = new Set(entities.map((e) => e.geoid));
+  const present = new Set(entities.map((e) => e.ucgid));
   const out: ContainmentRow[] = [];
-  const add = (child: string, parent: string): void => {
-    if (present.has(parent))
-      out.push({ childGeoid: child, parentGeoid: parent, share: 1, relation: "nests" });
+  const add = (childUcgid: string, parentUcgid: string): void => {
+    if (present.has(parentUcgid))
+      out.push({ childUcgid, parentUcgid, share: 1, relation: "nests" });
   };
   for (const e of entities) {
     switch (e.sumlevel) {
       case "050": // county → state
-        add(e.geoid, e.geoid.slice(0, 2));
+        add(e.ucgid, ucgidOf("040", e.geoid.slice(0, 2)));
         break;
       case "140": // tract → county
-        add(e.geoid, e.geoid.slice(0, 5));
+        add(e.ucgid, ucgidOf("050", e.geoid.slice(0, 5)));
         break;
       case "160": // place → state (place↔county is weighted, #55)
-        add(e.geoid, e.geoid.slice(0, 2));
+        add(e.ucgid, ucgidOf("040", e.geoid.slice(0, 2)));
         break;
       default:
         break;
