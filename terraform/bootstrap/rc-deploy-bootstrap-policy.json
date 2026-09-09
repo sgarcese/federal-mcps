@@ -59,7 +59,7 @@
         "iam:PutRolePolicy",
         "iam:DeleteRolePolicy"
       ],
-      "Resource": "arn:aws:iam::*:role/federal-mcps-*"
+      "Resource": "arn:aws:iam::*:role/federal-mcps-github-deploy"
     },
     {
       "Sid": "CreateAgencySecret",
