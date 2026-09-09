@@ -46,14 +46,53 @@ npm run geo-bench -w @federal-mcps/geo-bench -- report graded.json
 
 ## Result log
 
-> Pending a live run. The harness, grading and report are in place and unit-tested; running
-> the live arms needs an API key and the built `@rc/geo-catalog`, and bills tokens, so it is
-> a deliberate manual job (like a deploy). Record each run below: the model, the catalog
-> vintage, the per-category table, and the relational lift.
+### 2026-09-09 — Haiku, `weighted_overlap` (scoped)
 
-| Date | Model | Catalog vintage | Overall lift | Relational lift | Verdict |
-|---|---|---|---|---|---|
-| _tbd_ | claude-haiku-4-5 | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
+A first run on the `weighted_overlap` category (the six file-grounded items A01–A06), with
+**claude-haiku-4-5** as both arms' model. The `with_tools` arm was given the output of
+`geo_get_overlap` for each ZCTA — exactly what the tool returns from a catalog loaded with
+the real 2010 Census ZCTA-to-Tract Relationship File (validated against the benchmark's own
+ground truths; see [`gate-runs/`](gate-runs/README.md)). The closed-book arm got the bare
+question.
+
+| Item | Type | Closed-book | With `geo_get_overlap` | Truth |
+|---|---|---|---|---|
+| A01 | exact_number | refused | 17 | 17 |
+| A02 | exact_number | refused | 9 | 9 |
+| A03 | exact_number | refused | 69.86% | 69.86% |
+| A04 | exact_set | refused | 25025000802 @ 33.76% | 25025000802, 33.76% |
+| A05 | rubric | refused | No — Suffolk + Middlesex | No — two counties |
+| A06 | exact_number | refused | 237 | 237 |
+| **weighted_overlap** | | **0.00** | **1.00** | **lift +1.00** |
+
+Closed-book, Haiku declined to answer any of the six (an honest refusal rather than
+fabrication, on this run); with the tool output it answered every one exactly. This is the
+category the resolver most directly targets, and the lift is total.
+
+**Scope and honesty of this run.** (1) It covers `weighted_overlap` only — the cleanest
+tool-win category — not the full 55-item benchmark. (2) The tool output was injected into
+the model's prompt, because the geography MCP is not registered for Claude Code subagents;
+this is a faithful stand-in (the model saw exactly what `geo_get_overlap` returns), not an
+autonomous MCP tool call. (3) The catalog holding this data is not yet built into
+`geography-build` — the outputs were computed directly from the validated Census file. A
+full, autonomous run (all relational categories, the model calling the MCP itself, over a
+built catalog) is the follow-up below.
+
+| Date | Model | Scope | Without | With | Lift | Verdict |
+|---|---|---|---|---|---|---|
+| 2026-09-09 | claude-haiku-4-5 | weighted_overlap (A01–A06) | 0.00 | 1.00 | +1.00 | tools lift the relational category |
+| _tbd_ | _small model_ | all relational categories, autonomous MCP | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
+
+### Follow-up to a full autonomous run
+
+Two things unblock the complete gate, both tracked as geography-build/eval work:
+1. **Catalog coverage** — load the real ZCTA↔tract overlaps (and 2010→2020 tract lineage,
+   and the Connecticut planning-region succession for the temporal items) into
+   `geography-build`, at least for the benchmark metros. Today the build ships a 12-row
+   Geocorr sample, so the tool arm can only be run by injecting file-derived output as above.
+2. **A model host with the MCP** — either the geo stdio server registered with an MCP host
+   (Claude Code, OpenCode) so the model calls the tools itself, or an Ollama adapter in the
+   harness. Once (1) lands, `npm run geo-bench -- run/grade/report` runs it end to end.
 
 ### Catalog-coverage note
 
