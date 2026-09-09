@@ -23,8 +23,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
     "INSERT INTO alias (geoid, alias, source) VALUES (@geoid, @alias, @source)",
   );
   const insertContainment = db.prepare(
-    `INSERT OR IGNORE INTO containment (child_geoid, parent_geoid, share)
-     VALUES (@childGeoid, @parentGeoid, @share)`,
+    `INSERT OR IGNORE INTO containment (child_geoid, parent_geoid, share, relation)
+     VALUES (@childGeoid, @parentGeoid, @share, @relation)`,
   );
   const insertAgencyCode = db.prepare(
     `INSERT INTO agency_code (geoid, agency, program, code, code_vintage, note)
@@ -48,7 +48,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
   const run = db.transaction(() => {
     for (const e of rows.entities) insertEntity.run(e);
     for (const a of rows.aliases) insertAlias.run(a);
-    for (const c of rows.containment) insertContainment.run(c);
+    for (const c of rows.containment)
+      insertContainment.run({ ...c, relation: c.relation ?? "nests" });
     for (const a of rows.agencyCodes) insertAgencyCode.run(a);
     for (const p of rows.publishesAt) insertPublishesAt.run(p);
     for (const c of rows.countyChange) insertCountyChange.run(c);

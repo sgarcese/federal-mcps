@@ -94,23 +94,27 @@ export class GeographyCatalog {
     ).map((r) => r.alias);
   }
 
-  /** Parents of a place (containment where the place is the child), with their entity rows. */
+  /**
+   * A place's containment-hierarchy parents (relation "nests"): county → state, place →
+   * county/state, with allocation shares. Excludes areal-overlap edges (#57), so a tract's
+   * parents do not include an overlapping ZCTA.
+   */
   parentsOf(geoid: string): { entity: EntityRecord; share: number }[] {
     const rows = this.db
       .prepare(
         `SELECT c.parent_geoid AS geoid, c.share AS share FROM containment c
-         WHERE c.child_geoid = ? ORDER BY c.share DESC`,
+         WHERE c.child_geoid = ? AND c.relation = 'nests' ORDER BY c.share DESC`,
       )
       .all(geoid) as { geoid: string; share: number }[];
     return this.attachEntities(rows);
   }
 
-  /** Children of an area (containment where it is the parent) — e.g. a ZCTA's tracts. */
-  childrenOf(geoid: string): { entity: EntityRecord; share: number }[] {
+  /** Areal overlaps of an area (relation "overlaps") — e.g. a ZCTA's overlapping tracts. */
+  overlapsOf(geoid: string): { entity: EntityRecord; share: number }[] {
     const rows = this.db
       .prepare(
         `SELECT c.child_geoid AS geoid, c.share AS share FROM containment c
-         WHERE c.parent_geoid = ? ORDER BY c.share DESC`,
+         WHERE c.parent_geoid = ? AND c.relation = 'overlaps' ORDER BY c.share DESC`,
       )
       .all(geoid) as { geoid: string; share: number }[];
     return this.attachEntities(rows);

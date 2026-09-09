@@ -41,8 +41,8 @@ export function buildFixtureCatalog(): string {
   const containment: ContainmentRow[] = [
     { childGeoid: "08031", parentGeoid: "08", share: 1 },
     { childGeoid: "0820000", parentGeoid: "08", share: 1 },
-    { childGeoid: "08031000101", parentGeoid: "80202", share: 0.6 },
-    { childGeoid: "08031000102", parentGeoid: "80202", share: 0.4 },
+    { childGeoid: "08031000101", parentGeoid: "80202", share: 0.6, relation: "overlaps" },
+    { childGeoid: "08031000102", parentGeoid: "80202", share: 0.4, relation: "overlaps" },
   ];
 
   const agencyCodes: AgencyCodeRow[] = [

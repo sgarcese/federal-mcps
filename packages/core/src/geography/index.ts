@@ -7,3 +7,5 @@ export { GeographyCatalog, type EntityRecord } from "./catalog.js";
 export { deriveFlags, type EntityFacts } from "./flags.js";
 export { getContainment, getLineage, getOverlap, resolvePlace } from "./resolver.js";
 export * from "./types.js";
+export { geographyTools, type GeographyToolsOptions, type GeographyToolName } from "./tools.js";
+export { GEOGRAPHY_GUIDE, GEOGRAPHY_GUIDE_URI, geographyGuideResource } from "./guide.js";
