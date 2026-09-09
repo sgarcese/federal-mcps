@@ -29,6 +29,11 @@ If the admin profile is SSO-backed, `aws sso login --profile <admin-profile>` fi
 This is the only administrator action the project needs; everything after it is
 `rc-deploy` once and CI thereafter.
 
+The IAM statement is pinned to the single role name `federal-mcps-github-deploy`, not a
+prefix, so the grant cannot be used to mint other roles. It still lets its holder change
+that role's inline policy, which is why step 6 removes the grant once the bootstrap is
+done; re-attach it only for a future re-bootstrap.
+
 ## 1. Confirm identity
 
 ```sh
@@ -83,6 +88,16 @@ gh variable set FEDERAL_MCPS_DEPLOY_ENABLED --body true
 
 `deploy.yml` skips its job until this repository variable is `true`, so merges before
 the bootstrap do not produce failed deploy runs.
+
+## 6. Remove the bootstrap grant (administrator)
+
+The grant from step 0 is a temporary elevation. Once steps 2–5 succeed, the same
+administrator removes it; CI deploys use the OIDC role, not `rc-deploy`.
+
+```sh
+aws iam delete-role-policy --role-name rc-deploy \
+  --policy-name federal-mcps-bootstrap --profile <admin-profile>
+```
 
 ## Done
 
