@@ -36,12 +36,16 @@ export function cacheKey(
   method: string,
   url: string,
   headers: Record<string, string> = {},
+  body?: string,
 ): string {
   const sortedHeaders = Object.keys(headers)
     .sort()
     .map((name) => `${name.toLowerCase()}:${headers[name] ?? ""}`)
     .join("\n");
+  // The request body distinguishes POST queries that share a URL (e.g. two BLS timeseries
+  // requests with different series lists). Absent for GET, so GET keys are unchanged.
+  const bodyPart = body === undefined ? "" : `\n${body}`;
   return createHash("sha256")
-    .update(`${method.toUpperCase()}\n${url}\n${sortedHeaders}`)
+    .update(`${method.toUpperCase()}\n${url}\n${sortedHeaders}${bodyPart}`)
     .digest("hex");
 }

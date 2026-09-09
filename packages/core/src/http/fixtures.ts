@@ -36,8 +36,11 @@ export function resolveFixtureMode(override?: FixtureMode): FixtureMode {
   return "off";
 }
 
-export function fixturePath(dir: string, source: string, url: string): string {
-  const hash = createHash("sha256").update(url).digest("hex");
+export function fixturePath(dir: string, source: string, url: string, body?: string): string {
+  // Fold the request body into the hash so POST queries that share a URL map to distinct
+  // fixtures. Absent for GET, so GET fixture paths are unchanged.
+  const material = body === undefined ? url : `${url}\n${body}`;
+  const hash = createHash("sha256").update(material).digest("hex");
   return join(dir, source, `${hash}.json`);
 }
 
@@ -47,8 +50,9 @@ export async function writeFixture(
   url: string,
   response: FixtureResponse,
   now: () => Date = () => new Date(),
+  body?: string,
 ): Promise<void> {
-  const path = fixturePath(dir, source, url);
+  const path = fixturePath(dir, source, url, body);
   await mkdir(dirname(path), { recursive: true });
   const record: FixtureRecord = {
     url,
@@ -64,8 +68,9 @@ export async function readFixture(
   dir: string,
   source: string,
   url: string,
+  body?: string,
 ): Promise<FixtureResponse> {
-  const path = fixturePath(dir, source, url);
+  const path = fixturePath(dir, source, url, body);
   let raw: string;
   try {
     raw = await readFile(path, "utf8");

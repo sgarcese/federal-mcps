@@ -1,0 +1,111 @@
+import type { HttpClient, RequestOptions } from "@federal-mcps/core";
+import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
+
+/**
+ * Fetch LAUS observations from the BLS Public Data API v2 through the core HTTP client
+ * (retry/backoff, timeout, budget counter, two-tier cache, fixtures — #5). No direct
+ * `fetch` (CLAUDE.md). The registration key (ADR-006) rides in the POST body and is sent
+ * only in production; fixtures are recorded unregistered, so no key ever enters a committed
+ * fixture and the cache/fixture identity is keyless.
+ */
+export const LAUS_ENDPOINT = BLS_TIMESERIES_ENDPOINT;
+
+/** BLS API limits: 50 series/query with a key (unregistered is lower). */
+const MAX_SERIES_PER_REQUEST = 50;
+
+export interface LausFetchOptions {
+  startYear?: number;
+  endYear?: number;
+  /** BLS registration key. Omitted → unregistered limits; used only in production, never in fixtures. */
+  apiKey?: string;
+  /** Cache TTL (seconds) for a batch response; omit to skip caching. */
+  freshTtlSeconds?: number;
+}
+
+/** One observation for a series: a period's value with its footnote codes. */
+export interface LausObservation {
+  year: string;
+  /** Period code, e.g. "M06" (June) or "M13" (annual average). */
+  period: string;
+  periodName: string;
+  /** Parsed numeric value, or null when suppressed/blank. */
+  value: number | null;
+  footnotes: { code: string; text: string }[];
+}
+
+export interface LausSeriesResult {
+  seriesId: string;
+  observations: LausObservation[];
+}
+
+/** The raw BLS v2 response shape, trimmed to what we read. */
+interface BlsApiResponse {
+  status: string;
+  message?: string[];
+  Results?: {
+    series?: {
+      seriesID: string;
+      data?: {
+        year: string;
+        period: string;
+        periodName: string;
+        value: string;
+        footnotes?: { code?: string; text?: string }[];
+      }[];
+    }[];
+  };
+}
+
+function chunk<T>(items: readonly T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+function parseSeries(res: BlsApiResponse): LausSeriesResult[] {
+  if (res.status !== "REQUEST_SUCCEEDED") {
+    const detail = res.message?.join("; ") || res.status;
+    throw new Error(`BLS API did not succeed: ${detail}`);
+  }
+  return (res.Results?.series ?? []).map((s) => ({
+    seriesId: s.seriesID,
+    observations: (s.data ?? []).map((d) => ({
+      year: d.year,
+      period: d.period,
+      periodName: d.periodName,
+      value: d.value === "" || d.value === "-" ? null : Number.parseFloat(d.value),
+      footnotes: (d.footnotes ?? [])
+        .filter((f) => f.code)
+        .map((f) => ({ code: f.code as string, text: f.text ?? "" })),
+    })),
+  }));
+}
+
+/**
+ * Fetch observations for one or more LAUS series ids, batching into ≤50-series requests.
+ * Returns one result per series id (in request order across batches).
+ */
+export async function fetchLausObservations(
+  client: HttpClient,
+  seriesIds: readonly string[],
+  options: LausFetchOptions = {},
+): Promise<LausSeriesResult[]> {
+  const results: LausSeriesResult[] = [];
+  for (const batch of chunk(seriesIds, MAX_SERIES_PER_REQUEST)) {
+    // The body is keyless unless a production key is supplied, so its cache/fixture identity
+    // is stable and secret-free.
+    const body = {
+      seriesid: batch,
+      ...(options.startYear === undefined ? {} : { startyear: String(options.startYear) }),
+      ...(options.endYear === undefined ? {} : { endyear: String(options.endYear) }),
+      ...(options.apiKey ? { registrationkey: options.apiKey } : {}),
+    };
+
+    const reqOptions: RequestOptions =
+      options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
+
+    const { value } = await client.postJson<BlsApiResponse>(LAUS_ENDPOINT, body, reqOptions);
+    results.push(...parseSeries(value));
+  }
+  return results;
+}
