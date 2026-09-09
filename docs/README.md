@@ -6,6 +6,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 
 - [architecture.md](architecture.md) — the family design: shared core, one server per
   agency, composite endpoint, deployment, roadmap, open decision questions.
+- [install.md](install.md) — connecting to the BLS server: Claude Code and Claude
+  Desktop stdio configs, and the remote HTTP endpoint once it is deployed.
 
 ## Spikes (completed analyses)
 
