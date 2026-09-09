@@ -1,10 +1,8 @@
 # Root module for the `dev` instance (ADR-005 §1). One directory per fleet-record
 # instance; every value comes from instances.json through locals.tf.
 #
-# First apply (bootstrap runbook, a person with AWS_PROFILE=rc-deploy):
-#   terraform init
-#   terraform apply -target=module.github_oidc_deploy_role
-# Every later apply is CI (deploy.yml, #10) assuming that role.
+# Deployed locally under AWS_PROFILE=rc-deploy (ADR-007) via scripts/deploy.sh.
+# CI validates this root; it never applies it.
 
 terraform {
   required_version = ">= 1.10"
@@ -35,17 +33,6 @@ provider "aws" {
       managed_by  = "terraform/instances/${local.instance.name}"
     }
   }
-}
-
-module "github_oidc_deploy_role" {
-  source = "../../modules/github-oidc-deploy-role"
-
-  account_id       = local.instance.account
-  region           = local.instance.region
-  role_name        = local.deploy_role_name
-  state_bucket     = local.state_bucket
-  state_key_prefix = "rc/federal-mcps/"
-  hosted_zone_id   = local.instance.domain.hostedZoneId
 }
 
 # ADR-006 §3: the agency key is a sensitive variable, supplied as TF_VAR_bls_api_key
