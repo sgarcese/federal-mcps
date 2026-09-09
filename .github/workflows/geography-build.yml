@@ -1,0 +1,40 @@
+name: Geography build
+
+# Reproducibility check for the catalog (issue #54): rebuild from the live source URLs
+# on a schedule and on demand, asserting row-count sanity. Never a merge gate — it hits
+# the network and BLS/Census hosts, like live-smoke.
+on:
+  schedule:
+    - cron: "23 7 * * 1" # Mondays 07:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geography-build:
+    name: geography-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build the catalog from live sources
+        run: npm run geography:build
+      - name: Row-count sanity
+        run: |
+          f=$(ls packages/geography-build/dist/geo-catalog@*.sqlite | head -1)
+          node -e '
+            import BetterSqlite3 from "better-sqlite3";
+            const db = new BetterSqlite3(process.argv[1], { readonly: true });
+            const n = (t) => db.prepare(`SELECT count(*) c FROM ${t}`).get().c;
+            const entities = n("entity"), codes = n("agency_code");
+            console.log("entities", entities, "agency_codes", codes);
+            if (entities < 30000) { console.error("::error::too few entities: " + entities); process.exit(1); }
+            if (codes < 1000) { console.error("::error::too few agency codes: " + codes); process.exit(1); }
+          ' "$f"
