@@ -11,8 +11,14 @@ variable "bls_api_key" {
 }
 
 variable "lambda_zip_path" {
-  description = "Path to the esbuild bundle zip (packages/server-bls/dist/lambda.zip in the instance root; a committed placeholder in this module's own tests)."
+  description = "Path to the esbuild bundle zip, catalog baked in (packages/server-bls/dist/lambda.zip in the instance root; a committed placeholder in this module's own tests)."
   type        = string
+}
+
+variable "catalog_path" {
+  description = "Where the bundled geography catalog lands inside the deployment package; set on the Lambda as GEO_CATALOG_PATH (#59, ADR-008 §7). Not a secret."
+  type        = string
+  default     = "/var/task/geo-catalog.sqlite"
 }
 
 variable "domain_name" {

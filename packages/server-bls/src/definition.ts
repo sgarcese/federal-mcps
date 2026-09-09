@@ -1,4 +1,4 @@
-import type { ServerDefinition } from "@federal-mcps/core";
+import { type GeographyCatalog, geographyTools, type ServerDefinition } from "@federal-mcps/core";
 import { describeSource } from "./describe-source.js";
 import { BLS_SERVER_VERSION } from "./version.js";
 
@@ -39,8 +39,13 @@ asks about local prices or inflation and their place is not one of those ~23 are
 so plainly and offer the nearest published geography (region, division, or U.S. city
 average) instead of fabricating a local figure.
 
-This server (M1, this release) exposes only \`bls_describe_source\`, which reports what
-this server covers today and what is planned: Local Area Unemployment Statistics (LAUS,
+This server exposes \`bls_resolve_place\`, which turns a place name into candidates
+carrying every identifier (GEOID, UCGID, Data Commons DCID), the place's parents, which
+BLS programs publish at its level, its BLS area codes, and structured flags — including
+\`below_threshold\` when a place is under the LAUS 25,000 cutoff, with its county as the
+fallback. Resolve the place first, then read a number. It also exposes
+\`bls_describe_source\`, which reports what this server covers today and what is planned:
+Local Area Unemployment Statistics (LAUS,
 unemployment), Current Employment Statistics State & Area (CES S&A, payroll
 employment), the Quarterly Census of Employment and Wages (QCEW, employment and wages by
 industry), Occupational Employment and Wage Statistics (OEWS, wages by occupation), the
@@ -59,16 +64,20 @@ never writes or modifies anything.
 `.trim();
 
 /**
- * The BLS server's declarative definition (issue #8, on the shell from #6).
- * `tools: []` in M1: nothing but the auto-registered `bls_describe_source`
- * ships until M3 adds the first data tools (docs/architecture.md, "Release
- * 1: BLS only").
+ * The BLS server's definition (issue #8, on the shell from #6; #59 adds place
+ * resolution). Its one tool today is `bls_resolve_place`, mounted from the shared
+ * resolver (`geographyTools`, ADR-003 §8, ADR-008) over the bundled catalog — the BLS
+ * server ships no place lookup of its own, so the contract's no-own-resolve rule stays
+ * green (the tool is `fromCore`). Data-fetching tools arrive from M3
+ * (docs/architecture.md, "Release 1: BLS only").
  */
-export const definition: ServerDefinition = {
-  name: "federal-mcps-bls",
-  version: BLS_SERVER_VERSION,
-  agency: "bls",
-  instructions: BLS_INSTRUCTIONS,
-  tools: [],
-  describeSource,
-};
+export function buildBlsDefinition(catalog: GeographyCatalog): ServerDefinition {
+  return {
+    name: "federal-mcps-bls",
+    version: BLS_SERVER_VERSION,
+    agency: "bls",
+    instructions: BLS_INSTRUCTIONS,
+    tools: geographyTools({ agency: "bls", catalog: () => catalog, include: ["resolve_place"] }),
+    describeSource,
+  };
+}

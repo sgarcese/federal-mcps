@@ -1,14 +1,29 @@
+import { rmSync } from "node:fs";
+import { dirname } from "node:path";
+import { GeographyCatalog } from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { describe, expect, it } from "vitest";
-import { createBlsServer, definition, describeSource } from "./index.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+import { createBlsServer, describeSource, setCatalogForTest } from "./index.js";
+
+let path: string;
+let catalog: GeographyCatalog;
+beforeAll(() => {
+  path = buildFixtureCatalog();
+  catalog = new GeographyCatalog(path);
+  setCatalogForTest(catalog); // so createBlsServer needs no bundled file
+});
+afterAll(() => {
+  catalog.close();
+  rmSync(dirname(path), { recursive: true, force: true });
+});
 
 describe("@federal-mcps/server-bls entry point", () => {
-  it("re-exports the definition and describeSource", () => {
-    expect(definition.agency).toBe("bls");
+  it("re-exports describeSource", () => {
     expect(describeSource().agency).toBe("bls");
   });
 
-  it("createBlsServer builds the shell's server from the BLS definition", () => {
+  it("createBlsServer builds the shell's server over the bundled catalog", () => {
     const server: McpServer = createBlsServer();
     expect(server).toBeDefined();
   });

@@ -1,9 +1,9 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
-import { GeographyCatalog } from "@federal-mcps/core";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
-import { openBundledCatalog, setCatalogForTest } from "./catalog.js";
+import { openBundledCatalog, setCatalogForTest } from "./bundled-catalog.js";
+import { GeographyCatalog } from "./catalog.js";
 
 let path: string;
 let catalog: GeographyCatalog;
@@ -36,7 +36,7 @@ describe("openBundledCatalog", () => {
     first.close();
   });
 
-  it("setCatalogForTest injects a catalog so the server needs no bundled file", () => {
+  it("setCatalogForTest injects a catalog so a server needs no bundled file", () => {
     setCatalogForTest(catalog);
     expect(openBundledCatalog()).toBe(catalog);
   });
