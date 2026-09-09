@@ -47,6 +47,9 @@ describe("BLS ServerDefinition", () => {
     expect(text).toContain("25,000");
     expect(text).toContain("provenance");
     expect(text).toContain("bls_resolve_place");
+    // LAUS data tools shipped in M3: the instructions must say so, not call them "planned".
+    expect(text).toContain("bls_get_indicator");
+    expect(text).not.toContain('listed as "planned" right now');
   });
 
   it("keeps instructions to a model-sized paragraph or two", () => {

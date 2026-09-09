@@ -8,8 +8,9 @@ import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
  * name `bls.gov` hosts, because it only describes the source — it never
  * fetches from it.
  *
- * Coverage and cadence come from `docs/architecture.md` ("Server one: BLS");
- * every program is `planned` in M1 (issue #8) — none has a working tool yet.
+ * Coverage and cadence come from `docs/architecture.md` ("Server one: BLS").
+ * LAUS is `available` as of M3 (unemployment by place via `bls_get_indicator`,
+ * ADR-009); the other five programs are still `planned`.
  * The threshold, CPI-coverage and QCEW-format caveats come from
  * `docs/spikes/geography-catalog.md` ("Gotchas the build must handle").
  */
@@ -28,7 +29,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     granularity:
       "state, metro (CBSA), county, city (incorporated places with population 25,000 or more)",
     cadence: "monthly",
-    status: "planned",
+    status: "available",
   },
   {
     code: "SM",
@@ -70,10 +71,12 @@ const PROGRAMS: readonly ProgramDescription[] = [
 ];
 
 const CAVEATS: readonly string[] = [
-  "Place resolution is available now (bls_resolve_place): it maps a name to candidates with " +
-    "identifiers, BLS area codes, which programs publish at the place's level, and structured flags " +
-    "(e.g. below_threshold with the county fallback). Data-fetching tools for the programs below are " +
-    "still planned.",
+  "Unemployment data is available now for LAUS: bls_get_indicator returns the unemployment rate, " +
+    "unemployment, employment or labor force for a resolved place (bls_list_indicators lists the " +
+    "measures; bls_get_raw returns the unprocessed BLS response). Place resolution (bls_resolve_place) " +
+    "maps a name to candidates with identifiers, BLS area codes, which programs publish at the place's " +
+    "level, and structured flags (e.g. below_threshold with the county fallback). Data-fetching tools " +
+    "for the other programs below (CES, QCEW, OEWS, CPI, JOLTS) are still planned.",
   "LAUS publishes a city-level series only for incorporated places with population 25,000 or more " +
     "(about 1,700 places), plus New England towns via county-subdivision codes; smaller places have no " +
     "city series and must fall back to their county.",
