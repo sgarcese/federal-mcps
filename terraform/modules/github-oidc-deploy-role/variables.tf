@@ -11,7 +11,7 @@ variable "region" {
 variable "role_name" {
   description = "Name of the deploy role. Must match the instance record's deployRoleArn."
   type        = string
-  default     = "rc-federal-mcps-github-deploy"
+  default     = "rc-federal-mcps-github-deploy-role"
 }
 
 variable "github_owner" {
