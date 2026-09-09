@@ -14,8 +14,13 @@ import {
 } from "@federal-mcps/core";
 import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
-import { fetchLausObservations, type LausObservation } from "./laus-fetch.js";
-import { buildLausSeriesId, LAUS_MEASURES } from "./laus.js";
+import { fetchLausObservations, fetchLausRaw, type LausObservation } from "./laus-fetch.js";
+import {
+  buildLausSeriesId,
+  isLausSeriesId,
+  LAUS_MEASURE_DESCRIPTIONS,
+  LAUS_MEASURES,
+} from "./laus.js";
 
 export interface BlsIndicatorToolsOptions {
   /** How the handler gets a read-only catalog (cached upstream). */
@@ -225,6 +230,118 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         },
       ],
       handler,
+    },
+    {
+      name: "bls_list_indicators",
+      description:
+        "List the LAUS indicators (unemployment rate, unemployment, employment, labor force); given a place, also report whether LAUS publishes at that place's level or falls back to its county.",
+      input: z.object({
+        place: z
+          .string()
+          .optional()
+          .describe("A place name to report availability for (optional)."),
+        kind: z
+          .string()
+          .optional()
+          .describe("Restrict the place to a kind: 'county', 'city', 'metro', 'state'."),
+        state: z.string().optional().describe("Restrict to a state: 2-letter USPS code or FIPS."),
+      }),
+      examples: [
+        { title: "LAUS indicators for Denver County", input: { place: "Denver", kind: "county" } },
+      ],
+      handler: async (args): Promise<ToolHandlerResult> => {
+        const listInput = z.object({
+          place: z.string().optional(),
+          kind: z.string().optional(),
+          state: z.string().optional(),
+        });
+        const q = listInput.parse(args);
+        const indicators = LAUS_MEASURES.map((indicator) => ({
+          indicator,
+          description: LAUS_MEASURE_DESCRIPTIONS[indicator],
+        }));
+        const baseSource = { ...SOURCE, ids: [], citation: "" };
+        if (!q.place) return { data: { indicators }, source: baseSource };
+
+        const resolved = resolvePlace(options.catalog(), q.place, {
+          ...(q.kind === undefined ? {} : { kind: q.kind }),
+          ...(q.state === undefined ? {} : { state: q.state }),
+        });
+        if (resolved.status === "ambiguous") {
+          return {
+            data: { indicators, status: "ambiguous", candidates: resolved.candidates },
+            source: baseSource,
+            limitations: [resolved.explanation],
+          };
+        }
+        const top = resolved.candidates[0];
+        if (!top)
+          return { data: { indicators, status: "not_found", query: q.place }, source: baseSource };
+        const hasOwnCode = lausCodeOf(top) !== undefined;
+        const county = hasOwnCode ? undefined : countyFallback(options.catalog(), top);
+        return {
+          data: {
+            indicators,
+            publishedAtLevel: hasOwnCode,
+            ...(county ? { fallback: { level: "county", name: county.name } } : {}),
+          },
+          source: baseSource,
+          place: placeRef({
+            geoid: top.geoid,
+            sumlevel: top.kind.sumlevel,
+            label: top.kind.label,
+            name: top.name,
+          }),
+          ...(county
+            ? {
+                limitations: [
+                  `${top.name} has no LAUS series; values fall back to ${county.name}.`,
+                ],
+              }
+            : {}),
+        };
+      },
+    },
+    {
+      name: "bls_get_raw",
+      description:
+        "Return the unprocessed BLS API response for one or more LAUS series ids — the escape hatch for exact series (build ids via resolve_place + the indicator, or list them from a prior result).",
+      input: z.object({
+        ids: z.array(z.string()).min(1).describe("LAUS series ids, e.g. ['LAUCN080310000000003']."),
+        startYear: z.number().int().optional().describe("First year (optional)."),
+        endYear: z.number().int().optional().describe("Last year (optional)."),
+      }),
+      examples: [{ title: "raw Denver County rate", input: { ids: ["LAUCN080310000000003"] } }],
+      handler: async (args): Promise<ToolHandlerResult> => {
+        const rawInput = z.object({
+          ids: z.array(z.string()).min(1),
+          startYear: z.number().int().optional(),
+          endYear: z.number().int().optional(),
+        });
+        const q = rawInput.parse(args);
+        const bad = q.ids.filter((id) => !isLausSeriesId(id));
+        if (bad.length > 0) {
+          throw new Error(
+            `not LAUS series ids: ${bad.join(", ")}. Build them from resolve_place + the indicator.`,
+          );
+        }
+        const responses = await fetchLausRaw(options.httpClient(), q.ids, {
+          ...(q.startYear === undefined ? {} : { startYear: q.startYear }),
+          ...(q.endYear === undefined ? {} : { endYear: q.endYear }),
+          ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
+        });
+        return {
+          data: { ids: q.ids, responses },
+          source: {
+            ...SOURCE,
+            ids: q.ids,
+            citation: buildCitation(
+              { agency: "bls", program: "LAUS", ids: q.ids, url: SOURCE.url },
+              now(),
+            ),
+          },
+        };
+      },
     },
   ];
 }

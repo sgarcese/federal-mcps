@@ -27,7 +27,12 @@ describe("BLS ServerDefinition", () => {
 
   it("mounts bls_resolve_place from the shared resolver (fromCore, no own lookup)", () => {
     const tools = buildBlsDefinition({ catalog, httpClient: stubHttpClient() }).tools;
-    expect(tools.map((t) => t.name)).toEqual(["bls_resolve_place", "bls_get_indicator"]);
+    expect(tools.map((t) => t.name)).toEqual([
+      "bls_resolve_place",
+      "bls_get_indicator",
+      "bls_list_indicators",
+      "bls_get_raw",
+    ]);
     expect(tools[0]?.fromCore).toBe(true);
   });
 
