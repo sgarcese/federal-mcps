@@ -1,0 +1,32 @@
+{
+  "name": "@federal-mcps/server-geo",
+  "version": "0.0.0",
+  "description": "Hosted MCP server for U.S. geography: resolve places, containment, overlap, lineage, availability.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "federal-mcps-geo": "./bin/federal-mcps-geo.mjs"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev:http": "tsx src/http-dev.ts"
+  },
+  "dependencies": {
+    "@federal-mcps/core": "0.0.0",
+    "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "devDependencies": {
+    "@federal-mcps/geography-build": "0.0.0",
+    "@types/better-sqlite3": "9.6.0",
+    "better-sqlite3": "13.0.3"
+  }
+}
