@@ -75,9 +75,13 @@ jobs:
       - name: Terraform fmt
         run: terraform fmt -check -recursive terraform/
 
+      - name: Placeholder Lambda zip for terraform validate
+        run: |
+          python3 -c "import zipfile,os; os.makedirs('packages/server-bls/dist',exist_ok=True); zipfile.ZipFile('packages/server-bls/dist/lambda.zip','w').close()"
+
       - name: Terraform validate
         run: |
-          for root in terraform/bootstrap terraform/modules/github-oidc-deploy-role terraform/instances/dev; do
+          for root in terraform/bootstrap terraform/modules/github-oidc-deploy-role terraform/modules/bls-server terraform/instances/dev; do
             echo "== $root"
             terraform -chdir="$root" init -backend=false -input=false >/dev/null
             terraform -chdir="$root" validate
@@ -85,7 +89,7 @@ jobs:
 
       - name: Terraform test
         run: |
-          for root in terraform/modules/github-oidc-deploy-role terraform/instances/dev; do
+          for root in terraform/modules/github-oidc-deploy-role terraform/modules/bls-server terraform/instances/dev; do
             echo "== $root"
             terraform -chdir="$root" test
           done
