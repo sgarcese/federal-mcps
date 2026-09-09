@@ -1,4 +1,5 @@
 import type { EntityRecord, GeographyCatalog } from "./catalog.js";
+import { dcidOf } from "./identifiers.js";
 import { deriveFlags } from "./flags.js";
 import {
   type Availability,
@@ -143,25 +144,25 @@ export function resolvePlace(
 }
 
 /** A place's containment-hierarchy parents with shares (place → county → CBSA → state). */
-export function getContainment(catalog: GeographyCatalog, geoid: string): GeographyEdge[] {
-  return catalog.parentsOf(geoid).map(({ entity, share }) => edge(entity, share, "nests"));
+export function getContainment(catalog: GeographyCatalog, ucgid: string): GeographyEdge[] {
+  return catalog.parentsOf(ucgid).map(({ entity, share }) => edge(entity, share, "nests"));
 }
 
 /** A place's areal overlaps with allocation shares — e.g. a ZCTA's overlapping tracts. */
-export function getOverlap(catalog: GeographyCatalog, geoid: string): GeographyEdge[] {
-  return catalog.overlapsOf(geoid).map(({ entity, share }) => edge(entity, share, "overlaps"));
+export function getOverlap(catalog: GeographyCatalog, ucgid: string): GeographyEdge[] {
+  return catalog.overlapsOf(ucgid).map(({ entity, share }) => edge(entity, share, "overlaps"));
 }
 
 /** A tract's successors across vintages (2010 → 2020). */
-export function getLineage(catalog: GeographyCatalog, geoid: string): LineageEdge[] {
-  return catalog.lineageFrom(geoid);
+export function getLineage(catalog: GeographyCatalog, ucgid: string): LineageEdge[] {
+  return catalog.lineageFrom(ucgid);
 }
 
 /** Which programs publish for a place's level, and whether this place has each code. */
-export function getAvailability(catalog: GeographyCatalog, geoid: string): Availability[] {
-  const e = catalog.getEntity(geoid);
+export function getAvailability(catalog: GeographyCatalog, ucgid: string): Availability[] {
+  const e = catalog.getEntity(ucgid);
   if (!e) return [];
-  return availabilityFor(catalog, e.sumlevel, catalog.agencyCodesOf(e.geoid));
+  return availabilityFor(catalog, e.sumlevel, catalog.agencyCodesOf(e.ucgid));
 }
 
 // --- internals ---------------------------------------------------------------
@@ -173,7 +174,7 @@ interface Scored {
 }
 
 function scoreCandidate(catalog: GeographyCatalog, e: EntityRecord, normQuery: string): Scored {
-  const aliases = catalog.aliasesOf(e.geoid);
+  const aliases = catalog.aliasesOf(e.ucgid);
   const names = [e.name, ...aliases].map(normalizeName);
   const isExact = names.includes(normQuery);
   const isPrefix = names.some((n) => n.startsWith(normQuery));
@@ -186,21 +187,21 @@ function scoreCandidate(catalog: GeographyCatalog, e: EntityRecord, normQuery: s
   // Prefer real places over CDPs and consolidated-city balances when otherwise equal.
   if (e.lsad === "57" || /\(balance\)/i.test(e.name)) score -= 5;
 
-  const agencyCodes = catalog.agencyCodesOf(e.geoid);
+  const agencyCodes = catalog.agencyCodesOf(e.ucgid);
   const { flags, caveat } = deriveFlags(
     { geoid: e.geoid, sumlevel: e.sumlevel, name: e.name, lsad: e.lsad },
     agencyCodes,
-    catalog.hasCountyChange(e.geoid),
+    catalog.hasCountyChange(e.ucgid),
   );
 
   const candidate: PlaceCandidate = {
     geoid: e.geoid,
-    ucgid: `${e.sumlevel}0000US${e.geoid}`,
-    dcid: deriveDcid(e.geoid, e.sumlevel),
+    ucgid: e.ucgid,
+    dcid: dcidOf(e.sumlevel, e.geoid),
     name: e.name,
     kind: { sumlevel: e.sumlevel, label: labelForSumlevel(e.sumlevel) },
     stateFips: e.state_fips,
-    parents: catalog.parentsOf(e.geoid).map(({ entity }) => parent(entity)),
+    parents: catalog.parentsOf(e.ucgid).map(({ entity }) => parent(entity)),
     agencyCodes,
     availableAt: availabilityFor(catalog, e.sumlevel, agencyCodes),
     flags,
@@ -241,13 +242,6 @@ function parent(e: EntityRecord): PlaceParent {
     name: e.name,
     kind: { sumlevel: e.sumlevel, label: labelForSumlevel(e.sumlevel) },
   };
-}
-
-/** Data Commons DCID: CBSAs use `geoId/C…`, ZCTAs `zip/…`, everything else `geoId/…`. */
-function deriveDcid(geoid: string, sumlevel: string): string {
-  if (sumlevel === "310" || sumlevel === "314") return `geoId/C${geoid}`;
-  if (sumlevel === "860") return `zip/${geoid}`;
-  return `geoId/${geoid}`;
 }
 
 const LSAD_SUFFIX =

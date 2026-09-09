@@ -4,6 +4,7 @@ import { join } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildCatalog, catalogMeta, openCatalog } from "./catalog.js";
+import { ucgidOf } from "@federal-mcps/core";
 import type { CatalogRows } from "./types.js";
 
 function emptyRows(): CatalogRows {
@@ -22,6 +23,7 @@ const denver: CatalogRows = {
   ...emptyRows(),
   entities: [
     {
+      ucgid: ucgidOf("050", "08031"),
       geoid: "08031",
       sumlevel: "050",
       name: "Denver County",
@@ -34,6 +36,7 @@ const denver: CatalogRows = {
       aland: 396_915_495,
     },
     {
+      ucgid: ucgidOf("160", "0820000"),
       geoid: "0820000",
       sumlevel: "160",
       name: "Denver city",
@@ -46,6 +49,7 @@ const denver: CatalogRows = {
       aland: null,
     },
     {
+      ucgid: ucgidOf("310", "19740"),
       geoid: "19740",
       sumlevel: "310",
       name: "Denver-Aurora-Centennial, CO",
@@ -59,12 +63,12 @@ const denver: CatalogRows = {
     },
   ],
   aliases: [
-    { geoid: "08031", alias: "Denver", source: "lsad-stripped" },
-    { geoid: "0820000", alias: "Denver", source: "lsad-stripped" },
+    { ucgid: ucgidOf("050", "08031"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: ucgidOf("160", "0820000"), alias: "Denver", source: "lsad-stripped" },
   ],
   agencyCodes: [
     {
-      geoid: "19740",
+      ucgid: ucgidOf("310", "19740"),
       agency: "bls",
       program: "LAUS",
       code: "MT0819740000000",
@@ -94,12 +98,12 @@ describe("buildCatalog", () => {
     const db = new BetterSqlite3(":memory:");
     buildCatalog(db, denver, { vintage: "2025" });
     const rows = db
-      .prepare("SELECT geoid FROM name_fts WHERE text MATCH ? GROUP BY geoid")
-      .all("denver") as { geoid: string }[];
-    const geoids = new Set(rows.map((r) => r.geoid));
-    expect(geoids.has("08031")).toBe(true);
-    expect(geoids.has("0820000")).toBe(true);
-    expect(geoids.has("19740")).toBe(true); // matched on its own name
+      .prepare("SELECT ucgid FROM name_fts WHERE text MATCH ? GROUP BY ucgid")
+      .all("denver") as { ucgid: string }[];
+    const ucgids = new Set(rows.map((r) => r.ucgid));
+    expect(ucgids.has(ucgidOf("050", "08031"))).toBe(true);
+    expect(ucgids.has(ucgidOf("160", "0820000"))).toBe(true);
+    expect(ucgids.has(ucgidOf("310", "19740"))).toBe(true); // matched on its own name
     db.close();
   });
 
@@ -113,8 +117,59 @@ describe("buildCatalog", () => {
     const db = openCatalog(path);
     expect(catalogMeta(db, "vintage")).toBe("2025");
     expect(() =>
-      db.prepare("INSERT INTO entity (geoid, sumlevel, name) VALUES ('x','040','X')").run(),
+      db
+        .prepare(
+          "INSERT INTO entity (ucgid, geoid, sumlevel, name) VALUES ('0400000USx','x','040','X')",
+        )
+        .run(),
     ).toThrow();
+    db.close();
+  });
+
+  it("keeps a county and a ZCTA that share a GEOID distinct, keyed by UCGID (#73)", () => {
+    const db = new BetterSqlite3(":memory:");
+    const collide: CatalogRows = {
+      ...emptyRows(),
+      entities: [
+        {
+          ucgid: ucgidOf("050", "06075"),
+          geoid: "06075",
+          sumlevel: "050",
+          name: "San Francisco County",
+          lsad: "06",
+          funcstat: "F",
+          stateFips: "06",
+          gnis: null,
+          lat: null,
+          lon: null,
+          aland: null,
+        },
+        {
+          ucgid: ucgidOf("860", "06075"),
+          geoid: "06075",
+          sumlevel: "860",
+          name: "06075",
+          lsad: null,
+          funcstat: null,
+          stateFips: null,
+          gnis: null,
+          lat: null,
+          lon: null,
+          aland: null,
+        },
+      ],
+    };
+    // Before #73 this threw "UNIQUE constraint failed: entity.geoid".
+    buildCatalog(db, collide, { vintage: "2025" });
+    expect((db.prepare("SELECT count(*) c FROM entity").get() as { c: number }).c).toBe(2);
+    const county = db
+      .prepare("SELECT sumlevel FROM entity WHERE ucgid = ?")
+      .get(ucgidOf("050", "06075")) as { sumlevel: string };
+    const zcta = db
+      .prepare("SELECT sumlevel FROM entity WHERE ucgid = ?")
+      .get(ucgidOf("860", "06075")) as { sumlevel: string };
+    expect(county.sumlevel).toBe("050");
+    expect(zcta.sumlevel).toBe("860");
     db.close();
   });
 });

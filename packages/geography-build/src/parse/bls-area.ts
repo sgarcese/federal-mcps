@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import type { AgencyCodeRow } from "../types.js";
 import { CPI_AREA_TO_CBSA } from "../data/static.js";
 
@@ -49,7 +50,7 @@ export function parseLausArea(text: string): AgencyCodeRow[] {
     const decoded = decodeLausAreaCode(areaCode);
     if (!decoded) return null;
     return {
-      geoid: decoded.geoid,
+      ucgid: ucgidOf(decoded.sumlevel, decoded.geoid),
       agency: "bls",
       program: "LAUS",
       code: areaCode,
@@ -67,7 +68,14 @@ export function parseCesArea(text: string): AgencyCodeRow[] {
   return parseBlsAreaFile(text, (areaCode) => {
     const code = areaCode.trim();
     if (!/^\d{5}$/.test(code) || code === "00000") return null;
-    return { geoid: code, agency: "bls", program: "SM", code, codeVintage: 2023, note: null };
+    return {
+      ucgid: ucgidOf("310", code),
+      agency: "bls",
+      program: "SM",
+      code,
+      codeVintage: 2023,
+      note: null,
+    };
   });
 }
 
@@ -82,7 +90,7 @@ export function parseOewsArea(text: string): AgencyCodeRow[] {
     const cbsa = code.replace(/^0+/, "");
     if (cbsa.length !== 5) return null; // nonmetro / balance areas — not a CBSA GEOID
     return {
-      geoid: cbsa,
+      ucgid: ucgidOf("310", cbsa),
       agency: "bls",
       program: "OEWS",
       code,
@@ -102,7 +110,7 @@ export function parseCpiArea(text: string): AgencyCodeRow[] {
     const cbsa = CPI_AREA_TO_CBSA[code];
     if (!cbsa) return null;
     return {
-      geoid: cbsa,
+      ucgid: ucgidOf("310", cbsa),
       agency: "bls",
       program: "CPI",
       code,

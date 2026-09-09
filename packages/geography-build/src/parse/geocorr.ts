@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import type { ContainmentRow } from "../types.js";
 
 /**
@@ -14,7 +15,26 @@ import type { ContainmentRow } from "../types.js";
  * so this parser just reads those columns straight through — no per-pair direction
  * decision needed here, only which `geoPair` to filter to.
  */
+/**
+ * Summary levels for the `child_geoid`/`parent_geoid` columns of each Geocorr `geo_pair`.
+ * The pair *name* does not reliably order child-then-parent: Geocorr's export follows the
+ * anchor convention (parent = the crosswalk's anchor), and `zcta_tract` anchors on the ZCTA
+ * (parent), so its columns are the reverse of `place_county`/`cousub_cbsa`. Hence an explicit
+ * per-pair map, keyed to the actual columns, not the name (#73).
+ */
+const PAIR_LEVELS: Record<string, { child: string; parent: string }> = {
+  place_county: { child: "160", parent: "050" }, // child = place, parent = county
+  cousub_cbsa: { child: "060", parent: "310" }, // child = county subdivision, parent = CBSA
+  zcta_tract: { child: "140", parent: "860" }, // child = tract, parent = ZCTA (the anchor)
+};
+
 export function parseGeocorr(text: string, geoPair: string): ContainmentRow[] {
+  const levels = PAIR_LEVELS[geoPair];
+  // An unrecognized geo_pair matches no rows we can key by UCGID; return nothing, as the
+  // old filter-only behavior did (assemble only ever passes the known pairs).
+  if (!levels) return [];
+  const childLevel = levels.child;
+  const parentLevel = levels.parent;
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const header = lines.shift();
   if (!header) return [];
@@ -37,7 +57,11 @@ export function parseGeocorr(text: string, geoPair: string): ContainmentRow[] {
     const parent = f[iParent]?.trim();
     const share = Number(f[iAfact]?.trim());
     if (!child || !parent || !Number.isFinite(share)) continue;
-    out.push({ childGeoid: child, parentGeoid: parent, share });
+    out.push({
+      childUcgid: ucgidOf(childLevel, child),
+      parentUcgid: ucgidOf(parentLevel, parent),
+      share,
+    });
   }
   return out;
 }

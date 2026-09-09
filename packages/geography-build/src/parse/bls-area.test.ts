@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import {
   decodeLausAreaCode,
@@ -37,9 +38,11 @@ const LA_AREA = [
 describe("parseLausArea", () => {
   it("maps mappable areas to agency codes and skips the rest", () => {
     const rows = parseLausArea(LA_AREA);
-    expect(rows.map((r) => r.geoid).sort()).toEqual(["08", "08031", "19740"]);
+    expect(rows.map((r) => r.ucgid).sort()).toEqual(
+      [ucgidOf("040", "08"), ucgidOf("050", "08031"), ucgidOf("310", "19740")].sort(),
+    );
     expect(rows.every((r) => r.agency === "bls" && r.program === "LAUS")).toBe(true);
-    const metro = rows.find((r) => r.geoid === "19740");
+    const metro = rows.find((r) => r.ucgid === ucgidOf("310", "19740"));
     expect(metro?.code).toBe("MT0819740000000");
   });
 });
@@ -47,18 +50,18 @@ describe("parseLausArea", () => {
 describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
   it("CES maps a CBSA area code and skips statewide 00000", () => {
     const sm = ["area_code\tarea_name", "19740\tDenver", "00000\tStatewide"].join("\n");
-    expect(parseCesArea(sm).map((r) => r.geoid)).toEqual(["19740"]);
+    expect(parseCesArea(sm).map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
   });
 
   it("OEWS maps a 7-digit zero-padded CBSA", () => {
     const oe = ["area_code\tarea_name", "0019740\tDenver", "0100001\tNW nonmetro"].join("\n");
-    expect(parseOewsArea(oe).map((r) => r.geoid)).toEqual(["19740"]);
+    expect(parseOewsArea(oe).map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
   });
 
   it("CPI maps a bespoke area code through the hand table", () => {
     const cu = ["area_code\tarea_name", "S48B\tDenver", "0000\tUS city average"].join("\n");
     const rows = parseCpiArea(cu);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ geoid: "19740", program: "CPI" });
+    expect(rows[0]).toMatchObject({ ucgid: ucgidOf("310", "19740"), program: "CPI" });
   });
 });

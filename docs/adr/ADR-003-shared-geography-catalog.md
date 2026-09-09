@@ -53,3 +53,10 @@ recommendations on its six decision questions on 2026-09-08.
 - Denver-style same-name city/county pairs, consolidated-city "balance" places, CDPs,
   the LAUS 25,000 threshold, NECTA retirement and the Connecticut planning regions are
   handled in data and resolver tests, not in prompts.
+
+> **Amendment (2026-09-09, #73):** the catalog keys entities by **UCGID**, not GEOID. A
+> GEOID is not unique across summary levels — county, CBSA and ZCTA GEOIDs are all 5 digits
+> and collide (1,506 county↔ZCTA, 336 CBSA↔ZCTA). The UCGID (`<sumlevel>0000US<geoid>`) is
+> unique across levels and is already every envelope's cross-agency id; `geoid` and
+> `sumlevel` remain columns. Edges and the name index reference UCGIDs. See
+> `docs/spikes/entity-key-collision.md`.
