@@ -25,7 +25,9 @@ describe("deploy.yml", () => {
   it("uses the literal concurrency group from deployConcurrencyGroup(selectInstance())", () => {
     const group = deployConcurrencyGroup(selectInstance());
     expect(workflow).toContain(`group: ${group}`);
-    expect(workflow).toMatch(/concurrency:\s*\n\s*group:\s*deploy-dev\s*\n\s*cancel-in-progress:\s*false/);
+    expect(workflow).toMatch(
+      /concurrency:\s*\n\s*group:\s*deploy-dev\s*\n\s*cancel-in-progress:\s*false/,
+    );
   });
 
   it("names the job deploy, runs on ubuntu-latest with a 30 minute timeout", () => {
@@ -100,7 +102,9 @@ describe("deploy.yml", () => {
     expect(workflow).toContain("terraform -chdir=terraform/instances/dev init -input=false");
     expect(workflow).toContain("BACKEND_FLAGS");
     // The flags must come from env + shell expansion, not a ${{ }} inline in run:
-    expect(workflow).not.toMatch(/init -input=false \$\{\{ steps\.instance\.outputs\.backend_flags \}\}/);
+    expect(workflow).not.toMatch(
+      /init -input=false \$\{\{ steps\.instance\.outputs\.backend_flags \}\}/,
+    );
   });
 
   it("runs terraform plan with -out=tfplan", () => {
@@ -112,12 +116,16 @@ describe("deploy.yml", () => {
 
   it("runs terraform apply against the saved plan", () => {
     expect(workflow).toMatch(/Terraform apply/);
-    expect(workflow).toContain("terraform -chdir=terraform/instances/dev apply -input=false tfplan");
+    expect(workflow).toContain(
+      "terraform -chdir=terraform/instances/dev apply -input=false tfplan",
+    );
   });
 
   it("verifies the deployed server via custom_domain_url, MCP initialize and tools/list, checking for bls_describe_source", () => {
     expect(workflow).toMatch(/Verify the deployed server/);
-    expect(workflow).toContain("terraform -chdir=terraform/instances/dev output -raw custom_domain_url");
+    expect(workflow).toContain(
+      "terraform -chdir=terraform/instances/dev output -raw custom_domain_url",
+    );
     expect(workflow).toMatch(/::error::/);
     expect(workflow).toContain("initialize");
     expect(workflow).toContain("2025-06-18");
@@ -147,9 +155,7 @@ describe("deploy.yml", () => {
   it("has a top-of-file comment block explaining the fleet record, bootstrap prerequisite, docs-only skip and verification", () => {
     const firstJobIdx = workflow.indexOf("\njobs:");
     const header = workflow.slice(0, firstJobIdx);
-    const commentLines = header
-      .split("\n")
-      .filter((line) => line.trim().startsWith("#"));
+    const commentLines = header.split("\n").filter((line) => line.trim().startsWith("#"));
     expect(commentLines.length).toBeGreaterThan(3);
     expect(header).toMatch(/fleet record/i);
     expect(header).toMatch(/bootstrap/i);

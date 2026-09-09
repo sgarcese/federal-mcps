@@ -198,12 +198,24 @@ multi-vintage geography.
 ## Deployment
 
 Per ADR-004: `instances.json` is the fleet record; Release 1 has one instance, `dev`, in
-the Responsive City account (`123456789012`, `us-east-1`). GitHub Actions assumes
-`federal-mcps-github-deploy` through the account's OIDC provider on push to `main` and
-runs `terraform apply` in `terraform/instances/dev`. The state bucket and that role are
-created once by a person with `AWS_PROFILE=rc-deploy` (runbook), per ADR-005. Each server has its own hostname following the account's
-`<service>.responsive.city` pattern: `bls-mcp.responsive.city/mcp` in Release 1. Every deploy is verified per merge SHA by a
-post-deploy `initialize` + `tools/list` against the live URL.
+the Responsive City account (`123456789012`, `us-east-1`). Each server has its own
+hostname following the account's `<service>.responsive.city` pattern:
+`bls-mcp.responsive.city/mcp` in Release 1.
+
+`.github/workflows/deploy.yml` (#10) runs on every push to `main`, skipping docs-only
+changes via a path filter. It resolves the current instance through
+`scripts/instance.mjs` (the same loader used by the tests, so no account, region, role
+ARN or hostname is ever hardcoded in the workflow), builds and bundles the BLS server,
+assumes the fleet record's deploy role via GitHub OIDC
+(`aws-actions/configure-aws-credentials`, no stored keys), and runs
+`terraform init` / `plan -out` / `apply` in `terraform/instances/dev`. A final step
+reads `custom_domain_url` from the Terraform outputs and verifies the live deploy by
+calling `initialize` then `tools/list` on the deployed MCP endpoint, failing the job
+unless `bls_describe_source` is present, per CLAUDE.md's per-merge-SHA deploy-verification
+rule. The Terraform state bucket and the OIDC deploy role are created once by a person
+with `AWS_PROFILE=rc-deploy` (`docs/runbooks/bootstrap-instance.md`, per ADR-005);
+until that bootstrap runs for an instance, its deploys fail at the credentials or
+Terraform-init step. The first green run's URL for `dev` is recorded on #10.
 
 ## Repository settings
 

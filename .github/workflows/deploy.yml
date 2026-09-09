@@ -1,0 +1,137 @@
+# Deploy federal-mcps on merge to main (ADR-004 §4, ADR-005 §4).
+#
+# - The fleet record (instances.json) is the only place an AWS account, region,
+#   role ARN or hostname is named. This workflow never hardcodes any of them; it
+#   resolves the current instance through scripts/instance.mjs (the single
+#   validator, shared with the tests) and reads everything else from that
+#   resolved record.
+# - The one-time bootstrap runbook (docs/runbooks/bootstrap-instance.md) must
+#   already have been run by a person with AWS_PROFILE=rc-deploy for the
+#   target instance: it creates the Terraform state bucket and the OIDC deploy
+#   role this workflow assumes. Without that, the "Terraform init" and
+#   "Configure AWS credentials" steps below fail.
+# - Docs-only merges are skipped by the path filter below, since they change
+#   nothing this workflow deploys.
+# - The last step verifies the merge actually deployed: it reads the live
+#   custom domain URL from Terraform outputs and calls the deployed MCP
+#   endpoint (initialize, then tools/list), failing the job unless
+#   bls_describe_source is present in the tool list. Its output line
+#   ("deployed <sha> to <url>") is what CLAUDE.md's per-SHA deploy-verification
+#   rule checks against.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**"
+      - "!docs/**"
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  FEDERAL_MCPS_INSTANCE: dev
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Resolve the instance
+        id: instance
+        env:
+          FEDERAL_MCPS_INSTANCE: ${{ env.FEDERAL_MCPS_INSTANCE }}
+        run: |
+          node --input-type=module -e '
+            import { selectInstance, stateBucket, backendConfigFlags } from "./scripts/instance.mjs";
+            import { appendFileSync } from "node:fs";
+
+            const instance = selectInstance();
+            const lines = [
+              `account=${instance.account}`,
+              `region=${instance.region}`,
+              `deploy_role_arn=${instance.deployRoleArn}`,
+              `bls_domain=${instance.domain.blsDomainName}`,
+              `state_bucket=${stateBucket(instance)}`,
+              `backend_flags=${backendConfigFlags(instance).join(" ")}`,
+            ];
+            appendFileSync(process.env.GITHUB_OUTPUT, lines.join("\n") + "\n");
+          '
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle the BLS server Lambda
+        run: npm run bundle -w packages/server-bls
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.15.5"
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ steps.instance.outputs.deploy_role_arn }}
+          aws-region: ${{ steps.instance.outputs.region }}
+          role-session-name: federal-mcps-deploy-${{ github.run_id }}
+
+      - name: Terraform init
+        env:
+          BACKEND_FLAGS: ${{ steps.instance.outputs.backend_flags }}
+        run: terraform -chdir=terraform/instances/dev init -input=false $BACKEND_FLAGS
+
+      - name: Terraform plan
+        run: terraform -chdir=terraform/instances/dev plan -input=false -out=tfplan
+
+      - name: Terraform apply
+        run: terraform -chdir=terraform/instances/dev apply -input=false tfplan
+
+      - name: Verify the deployed server
+        run: |
+          url=$(terraform -chdir=terraform/instances/dev output -raw custom_domain_url)
+          if [ -z "$url" ]; then
+            echo "::error::terraform output custom_domain_url is empty; cannot verify the deploy"
+            exit 1
+          fi
+
+          init_body='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"deploy-verify","version":"0"}}}'
+          curl --fail-with-body --retry 5 --retry-delay 10 --retry-all-errors \
+            -sS -X POST "$url" \
+            -H "content-type: application/json" \
+            -H "accept: application/json, text/event-stream" \
+            -d "$init_body" > /dev/null
+
+          tools_body='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+          response=$(curl --fail-with-body --retry 5 --retry-delay 10 --retry-all-errors \
+            -sS -X POST "$url" \
+            -H "content-type: application/json" \
+            -H "accept: application/json, text/event-stream" \
+            -d "$tools_body")
+
+          if ! echo "$response" | grep -q bls_describe_source; then
+            echo "::error::bls_describe_source not found in tools/list response from $url"
+            exit 1
+          fi
+
+          echo "deployed $GITHUB_SHA to $url"
