@@ -21,6 +21,21 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          # gitleaks scans the whole history so a key that was committed and
+          # later removed still fails the gate.
+          fetch-depth: 0
+
+      # Secret scan first: nothing else should run if a credential is in the tree.
+      - name: gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          set -euo pipefail
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+          gitleaks git --no-banner --redact --exit-code 1 --config .gitleaks.toml .
 
       - uses: actions/setup-node@v5
         with:
