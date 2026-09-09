@@ -1,7 +1,24 @@
 import { COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
 import { parseCesArea, parseCpiArea, parseLausArea, parseOewsArea } from "./parse/bls-area.js";
 import { parseGazetteer } from "./parse/gazetteer.js";
-import type { AgencyCodeRow, AliasRow, CatalogRows, ContainmentRow, EntityRow } from "./types.js";
+import { parseGeocorr } from "./parse/geocorr.js";
+import {
+  parseCdCounty,
+  parseCdPlace,
+  parsePlaceCounty,
+  parseTractLineage,
+  parseZctaCounty,
+  parseZctaPlace,
+  parseZctaTract,
+} from "./parse/relationship.js";
+import type {
+  AgencyCodeRow,
+  AliasRow,
+  CatalogRows,
+  ContainmentRow,
+  EntityRow,
+  LineageRow,
+} from "./types.js";
 
 /** The source files a catalog build reads, as already-decoded text. */
 export interface Sources {
@@ -12,15 +29,29 @@ export interface Sources {
   cesArea?: string;
   oewsArea?: string;
   cpiArea?: string;
+  /** Census 2020 relationship files (ADR-008 §2, #55). */
+  zctaTract?: string;
+  zctaCounty?: string;
+  zctaPlace?: string;
+  cdCounty?: string;
+  cdPlace?: string;
+  /** Place↔county weighted containment, when a source carries the tab20 shape (#55). */
+  placeCounty?: string;
+  /** `tab20_tract20_tract10_natl.txt`, 2010→2020 tract succession (#55). */
+  tractLineage?: string;
+  /** The vendored Geocorr export (#55); population-weighted, wins over relationship shares. */
+  geocorr?: string;
 }
 
 /**
  * Turns source file contents into the rows a catalog build inserts. Pure and testable —
  * the CLI does the downloading, this does the parsing and the derivations.
  *
- * Containment here is only the STRICT geoid-nesting we can derive (county in state, tract
- * in county, place in state). Weighted overlap (place↔county, ZCTA↔tract) and tract
- * lineage need the Census relationship files and Geocorr; they are loaded by #55.
+ * Containment combines three layers: STRICT geoid-nesting (county in state, tract in
+ * county, place in state — share always 1.0), area-weighted overlap from the Census 2020
+ * relationship files, and population-weighted overlap from the vendored Geocorr export.
+ * Where both a relationship file and Geocorr cover the same `(child, parent)` edge,
+ * Geocorr's population-weighted share wins (#55; see `parse/geocorr.ts`).
  */
 export function assemble(sources: Sources): CatalogRows {
   const entities: EntityRow[] = [];
@@ -39,15 +70,47 @@ export function assemble(sources: Sources): CatalogRows {
   if (sources.oewsArea) agencyCodes.push(...parseOewsArea(sources.oewsArea));
   if (sources.cpiArea) agencyCodes.push(...parseCpiArea(sources.cpiArea));
 
+  const weighted: ContainmentRow[] = [];
+  if (sources.zctaTract) weighted.push(...parseZctaTract(sources.zctaTract));
+  if (sources.zctaCounty) weighted.push(...parseZctaCounty(sources.zctaCounty));
+  if (sources.zctaPlace) weighted.push(...parseZctaPlace(sources.zctaPlace));
+  if (sources.cdCounty) weighted.push(...parseCdCounty(sources.cdCounty));
+  if (sources.cdPlace) weighted.push(...parseCdPlace(sources.cdPlace));
+  if (sources.placeCounty) weighted.push(...parsePlaceCounty(sources.placeCounty));
+
+  const geocorr: ContainmentRow[] = [];
+  if (sources.geocorr) {
+    for (const pair of ["place_county", "cousub_cbsa", "zcta_tract"]) {
+      geocorr.push(...parseGeocorr(sources.geocorr, pair));
+    }
+  }
+
+  const lineage: LineageRow[] = sources.tractLineage ? parseTractLineage(sources.tractLineage) : [];
+
   return {
     entities,
     aliases,
-    containment: deriveStrictContainment(entities),
+    containment: [...deriveStrictContainment(entities), ...mergeWeighted(weighted, geocorr)],
     agencyCodes,
     publishesAt: [...PUBLISHES_AT],
     countyChange: [...COUNTY_CHANGES],
-    lineage: [], // #55
+    lineage,
   };
+}
+
+/**
+ * Combines area-weighted (relationship-file) and population-weighted (Geocorr) containment
+ * for the same `(child, parent)` edge, letting Geocorr win — it is population-weighted and
+ * declared authoritative (#55, `data/geocorr/README.md`).
+ */
+function mergeWeighted(
+  relationship: readonly ContainmentRow[],
+  geocorr: readonly ContainmentRow[],
+): ContainmentRow[] {
+  const byKey = new Map<string, ContainmentRow>();
+  for (const row of relationship) byKey.set(`${row.childGeoid} ${row.parentGeoid}`, row);
+  for (const row of geocorr) byKey.set(`${row.childGeoid} ${row.parentGeoid}`, row); // Geocorr wins
+  return [...byKey.values()];
 }
 
 /**

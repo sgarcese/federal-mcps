@@ -47,6 +47,67 @@ describe("assemble", () => {
     expect(rows.agencyCodes.map((a) => a.geoid).sort()).toEqual(["08", "08031"]);
     expect(rows.publishesAt.some((p) => p.program === "LAUS" && p.sumlevel === "160")).toBe(true);
     expect(rows.countyChange.some((c) => c.oldGeoid === "09001")).toBe(true);
-    expect(rows.lineage).toEqual([]); // #55
+  });
+
+  it("has no lineage or weighted overlap when no #55 sources are supplied", () => {
+    expect(rows.lineage).toEqual([]);
+  });
+});
+
+const ZCTA_TRACT = [
+  "GEOID_ZCTA5_20|AREALAND_ZCTA5_20|GEOID_TRACT_20|AREALAND_PART",
+  "19104|1000000|42101036900|500000",
+  "19104|1000000|42101038800|500000",
+].join("\n");
+const TRACT_LINEAGE = [
+  "GEOID_TRACT_10|AREALAND_TRACT_10|GEOID_TRACT_20|AREALAND_PART",
+  "42101036800|4000000|42101036801|2500000",
+  "42101036800|4000000|42101036802|1500000",
+].join("\n");
+const GEOCORR = [
+  "geo_pair,child_geoid,child_name,parent_geoid,parent_name,afact,pop20",
+  // Overrides the 0.5 relationship-file share above with a population-weighted 0.55.
+  'zcta_tract,42101036900,"Census Tract 369",19104,"ZCTA5 19104",0.550,9840',
+  'place_county,1304000,"Atlanta city, GA",13121,"Fulton County, GA",0.930,392230',
+  'place_county,1304000,"Atlanta city, GA",13089,"DeKalb County, GA",0.070,29520',
+].join("\n");
+
+describe("assemble: weighted overlap and lineage (#55)", () => {
+  const rows = assemble({
+    gazetteers: {},
+    zctaTract: ZCTA_TRACT,
+    tractLineage: TRACT_LINEAGE,
+    geocorr: GEOCORR,
+  });
+
+  it("loads area-weighted ZCTA-tract containment from the relationship file", () => {
+    const forZcta = rows.containment.filter((c) => c.parentGeoid === "19104");
+    const distinctTracts = new Set(forZcta.map((c) => c.childGeoid));
+    expect(distinctTracts.size).toBe(2);
+  });
+
+  it("Geocorr's population-weighted share wins over the relationship file for the same edge", () => {
+    const row = rows.containment.find(
+      (c) => c.childGeoid === "42101036900" && c.parentGeoid === "19104",
+    );
+    expect(row?.share).toBe(0.55); // not the relationship file's 0.5
+  });
+
+  it("a place crossing counties gets Geocorr shares summing to < 1 per county", () => {
+    const fulton = rows.containment.find(
+      (c) => c.childGeoid === "1304000" && c.parentGeoid === "13121",
+    );
+    const dekalb = rows.containment.find(
+      (c) => c.childGeoid === "1304000" && c.parentGeoid === "13089",
+    );
+    expect(fulton?.share).toBe(0.93);
+    expect(dekalb?.share).toBe(0.07);
+  });
+
+  it("a split 2010 tract maps to its 2020 successors", () => {
+    const successors = rows.lineage.filter((l) => l.fromGeoid === "42101036800");
+    expect(successors.map((l) => l.toGeoid).sort()).toEqual(["42101036801", "42101036802"]);
+    expect(successors.every((l) => l.fromVintage === 2010 && l.toVintage === 2020)).toBe(true);
+    expect(successors.reduce((sum, l) => sum + l.share, 0)).toBeCloseTo(1, 6);
   });
 });
