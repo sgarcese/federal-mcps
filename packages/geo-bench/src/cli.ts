@@ -10,6 +10,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { type Answer, connectGeoClient, runWithoutTools, runWithTools } from "./arms.js";
+import { buildBenchCatalog } from "./bench-catalog.js";
 import { loadBenchmark } from "./benchmark.js";
 import { makeBatches } from "./batches.js";
 import { gradeAnswers } from "./grade.js";
@@ -29,7 +30,8 @@ interface GradedFile {
 
 function usage(): never {
   process.stderr.write(
-    "usage: geo-bench <batches|run|grade|report> ...\n" +
+    "usage: geo-bench <batches|build-catalog|run|grade|report> ...\n" +
+      "  build-catalog <out.sqlite>    build the 2010 gate catalog for the with-tools arm\n" +
       "  batches [size] [seed]         print reproducible batches\n" +
       "  run <out.json> [--limit N]    run both arms live (ANTHROPIC_API_KEY, GEO_CATALOG_PATH)\n" +
       "  grade <out.json> <graded.json>  grade both arms with the LLM judge (ANTHROPIC_API_KEY)\n" +
@@ -48,6 +50,16 @@ async function main(): Promise<void> {
     makeBatches(items, size, seed).forEach((b, i) => {
       process.stdout.write(`batch ${i + 1}: ${b.map((x) => x.id).join(" ")}\n`);
     });
+    return;
+  }
+
+  if (cmd === "build-catalog") {
+    const out = rest[0];
+    if (!out) usage();
+    buildBenchCatalog(out);
+    process.stdout.write(
+      `wrote ${out}\nrun the with-tools arm against it: GEO_CATALOG_PATH=${out} geo-bench run out.json\n`,
+    );
     return;
   }
 
