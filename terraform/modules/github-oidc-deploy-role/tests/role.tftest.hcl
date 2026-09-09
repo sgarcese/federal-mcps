@@ -1,13 +1,6 @@
 # terraform test — runs offline with a mocked aws provider (ADR-005 §2).
 
-mock_provider "aws" {
-  override_data {
-    target = data.aws_iam_openid_connect_provider.github
-    values = {
-      arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
-    }
-  }
-}
+mock_provider "aws" {}
 
 variables {
   account_id     = "123456789012"
@@ -42,6 +35,14 @@ run "trust_policy_is_pinned_to_this_repo_main_branch" {
       == "repo:sgarcese@2701478/federal-mcps@1361995308:ref:refs/heads/main"
     )
     error_message = "trust must be pinned to the ID-qualified subject for main"
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role.deploy.assume_role_policy).Statement[0].Principal.Federated
+      == "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
+    )
+    error_message = "trust principal must be the account's GitHub OIDC provider ARN, constructed from account_id"
   }
 
   assert {
