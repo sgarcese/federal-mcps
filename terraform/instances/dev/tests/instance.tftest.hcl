@@ -1,14 +1,11 @@
 # Offline test of the dev root: the fleet record drives every value (ADR-005 §2).
 
 mock_provider "aws" {
-  # bls-server's aws_iam_role.exec.arn feeds aws_lambda_function.role, which
-  # the AWS provider validates as an ARN client-side even under a mocked
-  # provider (terraform/modules/bls-server/tests/bls-server.tftest.hcl has
-  # the full explanation); without this override `plan` fails for the whole
-  # root, not just bls_server's own resources.
-  override_resource {
-    target          = module.bls_server.aws_iam_role.exec
-    override_during = plan
+  # bls-server reads its admin-provisioned execution role by data source (ADR-007);
+  # its arn feeds aws_lambda_function.role, which the AWS provider validates as an
+  # ARN client-side even under a mocked provider, so `plan` needs this value.
+  override_data {
+    target = module.bls_server.data.aws_iam_role.exec
     values = {
       arn = "arn:aws:iam::123456789012:role/rc-bls-mcp-dev-role"
     }

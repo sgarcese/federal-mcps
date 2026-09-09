@@ -12,9 +12,8 @@ mock_provider "aws" {
   # destination_arn, ...), which the AWS provider validates client-side even
   # under mock_provider. Without these overrides, `command = plan` fails on
   # every run in this file — not just ones asserting the affected values.
-  override_resource {
-    target          = aws_iam_role.exec
-    override_during = plan
+  override_data {
+    target = data.aws_iam_role.exec
     values = {
       arn = "arn:aws:iam::123456789012:role/rc-bls-mcp-dev-role"
     }
@@ -150,34 +149,20 @@ run "tracing_and_log_retention" {
   }
 }
 
-run "execution_role_grants_exactly_the_documented_permissions" {
+run "lambda_uses_the_admin_provisioned_execution_role" {
   command = plan
 
+  # The execution role is provisioned by an administrator and read by data source
+  # (ADR-007); the module attaches it to the Lambda by its <function_name>-role name.
   assert {
-    condition     = aws_iam_role.exec.name == "rc-bls-mcp-dev-role"
-    error_message = "execution role must be named <function_name>-role"
+    condition     = data.aws_iam_role.exec.name == "rc-bls-mcp-dev-role"
+    error_message = "the Lambda must reference the <function_name>-role execution role by name"
   }
 
   assert {
-    condition = (
-      jsondecode(aws_iam_role.exec.assume_role_policy).Statement[0].Principal.Service == "lambda.amazonaws.com"
-    )
-    error_message = "execution role must trust lambda.amazonaws.com"
+    condition     = aws_lambda_function.bls.role == data.aws_iam_role.exec.arn
+    error_message = "the Lambda's role must be the admin-provisioned execution role's ARN"
   }
-
-  assert {
-    condition = alltrue([
-      for statement in jsondecode(aws_iam_role_policy.exec.policy).Statement : alltrue([
-        for action in statement.Action :
-        contains([
-          "logs:CreateLogStream", "logs:PutLogEvents", "logs:CreateLogGroup",
-          "xray:PutTraceSegments", "xray:PutTelemetryRecords",
-        ], action)
-      ])
-    ])
-    error_message = "execution policy must contain no action outside the documented set"
-  }
-
 }
 
 run "http_api_routes_post_and_get_mcp_to_the_lambda" {
@@ -277,7 +262,7 @@ run "outputs_expose_the_invoke_urls" {
   }
 
   assert {
-    condition     = output.lambda_role_arn == aws_iam_role.exec.arn
+    condition     = output.lambda_role_arn == data.aws_iam_role.exec.arn
     error_message = "lambda_role_arn output must equal the execution role's ARN"
   }
 }

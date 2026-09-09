@@ -13,5 +13,5 @@ output "function_name" {
 }
 
 output "lambda_role_arn" {
-  value = aws_iam_role.exec.arn
+  value = data.aws_iam_role.exec.arn
 }
