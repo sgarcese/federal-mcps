@@ -1,9 +1,3 @@
-variable "name_prefix" {
-  description = "Prefix every federal-mcps-managed resource name carries (matches the deploy role's scoping, ADR-005)."
-  type        = string
-  default     = "federal-mcps-"
-}
-
 variable "function_name" {
   description = "Lambda function name; also names the execution role (<function_name>-exec) and log groups."
   type        = string
