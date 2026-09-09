@@ -1,11 +1,20 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
 import { assemble, type Sources } from "../assemble.js";
 import { buildCatalog } from "../catalog.js";
 import { fetchCached, SOURCE_URLS } from "../download.js";
+
+/** The vendored Geocorr sample shipped in this package (#55; see its README). */
+const GEOCORR_SAMPLE_PATH = join(
+  import.meta.dirname,
+  "..",
+  "data",
+  "geocorr",
+  "geocorr2022_sample.csv",
+);
 
 /**
  * Builds the catalog end to end: download (cached), unzip the gazetteers, assemble, and
@@ -26,11 +35,27 @@ async function main(): Promise<void> {
     const zip = await fetchCached(url);
     sources.gazetteers[sumlevel] = unzipSingleText(zip);
   }
-  for (const key of ["lausArea", "cesArea", "oewsArea", "cpiArea"] as const) {
+  for (const key of [
+    "lausArea",
+    "cesArea",
+    "oewsArea",
+    "cpiArea",
+    "zctaTract",
+    "zctaCounty",
+    "zctaPlace",
+    "cdCounty",
+    "cdPlace",
+    "tractLineage",
+  ] as const) {
     const url = SOURCE_URLS[key];
     process.stderr.write(`${key}: ${url}\n`);
     sources[key] = (await fetchCached(url)).toString("utf-8");
   }
+
+  // Geocorr has no API and no stable download URL (ADR-008 §2); the vendored sample
+  // ships in this package. A full-scale build points this at a regenerated export
+  // (see data/geocorr/README.md) via the same field.
+  sources.geocorr = readFileSync(GEOCORR_SAMPLE_PATH, "utf-8");
 
   const rows = assemble(sources);
   mkdirSync(outDir, { recursive: true });
@@ -39,7 +64,8 @@ async function main(): Promise<void> {
   db.close();
 
   process.stderr.write(
-    `built ${outPath}: ${rows.entities.length} entities, ${rows.agencyCodes.length} agency codes\n`,
+    `built ${outPath}: ${rows.entities.length} entities, ${rows.agencyCodes.length} agency codes, ` +
+      `${rows.containment.length} containment edges, ${rows.lineage.length} lineage rows\n`,
   );
 }
 
