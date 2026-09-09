@@ -8,6 +8,27 @@ GitHub assumes. Release 1 has one instance, `dev`.
 
 Run every step from the repository root with `AWS_PROFILE=rc-deploy` exported.
 
+## 0. Prerequisite: grant rc-deploy the bootstrap actions (once per account)
+
+`rc-deploy` can assume the CDK bootstrap roles but holds no direct permissions, so
+step 2 fails with `AccessDenied: s3:CreateBucket` until an administrator attaches the
+bootstrap policy. The policy is committed at
+`terraform/bootstrap/rc-deploy-bootstrap-policy.json` and grants only: create and
+configure `federal-mcps-tfstate-*`, read and write its objects, read the GitHub OIDC
+provider, create and update `federal-mcps-*` IAM roles, and create `federal-mcps/*`
+secrets. An administrator (an SSO profile with IAM rights, not rc-deploy) runs:
+
+```sh
+aws iam put-role-policy --role-name rc-deploy \
+  --policy-name federal-mcps-bootstrap \
+  --policy-document file://terraform/bootstrap/rc-deploy-bootstrap-policy.json \
+  --profile <admin-profile>
+```
+
+If the admin profile is SSO-backed, `aws sso login --profile <admin-profile>` first.
+This is the only administrator action the project needs; everything after it is
+`rc-deploy` once and CI thereafter.
+
 ## 1. Confirm identity
 
 ```sh
