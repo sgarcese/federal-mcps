@@ -12,7 +12,7 @@
       "!**/cdk.out",
       "!**/fixtures/**/*.json",
       "!**/*.sqlite",
-      "!docs/spikes/geo-ontologies/**"
+      "!docs/spikes/geo-ontologies"
     ]
   },
   "formatter": {
