@@ -24,6 +24,21 @@ export const SOURCE_URLS = {
   cesArea: "https://download.bls.gov/pub/time.series/sm/sm.area",
   oewsArea: "https://download.bls.gov/pub/time.series/oe/oe.area",
   cpiArea: "https://download.bls.gov/pub/time.series/cu/cu.area",
+  // Census 2020 relationship files (ADR-008 §2, #55). Layouts verified live 2026-09-09.
+  // Note: Census does not publish a 2020 place<->county relationship file (the `place/`
+  // directory holds only place20<->place10 comparability); that edge is Geocorr-only.
+  zctaTract:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_tract20_natl.txt",
+  zctaCounty:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt",
+  zctaPlace:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_place20_natl.txt",
+  cdCounty:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/cd-sld/tab20_cd11920_county20_natl.txt",
+  cdPlace:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/cd-sld/tab20_cd11920_place20_natl.txt",
+  tractLineage:
+    "https://www2.census.gov/geo/docs/maps-data/data/rel2020/tract/tab20_tract20_tract10_natl.txt",
 } as const;
 
 const DEFAULT_CACHE_DIR = join(import.meta.dirname, "..", "downloads");
