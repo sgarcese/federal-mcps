@@ -107,8 +107,10 @@ describe("createServer", () => {
 
   it("leaves input validation to the SDK", async () => {
     const client = await connected();
-    await expect(
-      client.callTool({ name: "demo_get_raw", arguments: { text: 42 } }),
-    ).rejects.toThrow(/Invalid arguments/);
+    const result = await client.callTool({ name: "demo_get_raw", arguments: { text: 42 } });
+    // The SDK validates `inputSchema` before the handler runs; the shell must
+    // not produce a second, differently worded message for the same mistake.
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain("Input validation error");
   });
 });
