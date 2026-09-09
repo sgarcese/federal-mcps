@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolHandlerResult } from "../server/definition.js";
 import type { GeographyCatalog } from "./catalog.js";
+import { ucgidOf } from "./identifiers.js";
 import {
   getAvailability,
   getContainment,
@@ -103,32 +104,38 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     );
   }
   if (include.includes("get_lineage")) {
-    const input = z.object({ geoid: z.string().describe("A 2010 census tract GEOID.") });
+    const input = z.object({
+      ucgid: z
+        .string()
+        .describe("A 2010 census tract UCGID, e.g. 1400000US25025010104 (from resolve_place)."),
+    });
     tools.push({
       name: p("get_lineage"),
       fromCore: true,
       description:
         "A census tract's successors across the 2010 → 2020 vintage change, with shares.",
       input,
-      examples: [{ title: "tract lineage", input: { geoid: "25025010104" } }],
+      examples: [{ title: "tract lineage", input: { ucgid: "1400000US25025010104" } }],
       handler: async (args): Promise<ToolHandlerResult> => ({
-        data: { lineage: getLineage(options.catalog(), input.parse(args).geoid) },
+        data: { lineage: getLineage(options.catalog(), input.parse(args).ucgid) },
         source: SOURCE,
       }),
     });
   }
 
   if (include.includes("list_availability")) {
-    const input = z.object({ geoid: z.string().describe("A Census GEOID.") });
+    const input = z.object({
+      ucgid: z.string().describe("A Census UCGID, e.g. 0500000US08031 (from resolve_place)."),
+    });
     tools.push({
       name: p("list_availability"),
       fromCore: true,
       description:
         "Which programs publish data for a place's summary level, and whether this exact place has a code (else data falls back, e.g. to its county).",
       input,
-      examples: [{ title: "availability for Denver County", input: { geoid: "08031" } }],
+      examples: [{ title: "availability for Denver County", input: { ucgid: "0500000US08031" } }],
       handler: async (args): Promise<ToolHandlerResult> => ({
-        data: { availability: getAvailability(options.catalog(), input.parse(args).geoid) },
+        data: { availability: getAvailability(options.catalog(), input.parse(args).ucgid) },
         source: SOURCE,
       }),
     });
@@ -141,17 +148,21 @@ function edgeTool(
   name: string,
   what: string,
   options: GeographyToolsOptions,
-  fn: (catalog: GeographyCatalog, geoid: string) => unknown,
+  fn: (catalog: GeographyCatalog, ucgid: string) => unknown,
 ): ToolDefinition {
-  const input = z.object({ geoid: z.string().describe("A Census GEOID.") });
+  const input = z.object({
+    ucgid: z
+      .string()
+      .describe("A Census UCGID, e.g. 0500000US08031 or 8600000US19104 (from resolve_place)."),
+  });
   return {
     name,
     fromCore: true,
     description: `Return ${what}.`,
     input,
-    examples: [{ title: "by geoid", input: { geoid: "08031" } }],
+    examples: [{ title: "by ucgid", input: { ucgid: "0500000US08031" } }],
     handler: async (args): Promise<ToolHandlerResult> => ({
-      data: { edges: fn(options.catalog(), input.parse(args).geoid) },
+      data: { edges: fn(options.catalog(), input.parse(args).ucgid) },
       source: SOURCE,
     }),
   };
@@ -167,7 +178,7 @@ function placeRefOf(c: PlaceCandidate) {
     kind: c.kind,
     parents: c.parents.map((pp) => ({
       geoid: pp.geoid,
-      ucgid: `${pp.kind.sumlevel}0000US${pp.geoid}`,
+      ucgid: ucgidOf(pp.kind.sumlevel, pp.geoid),
       dcid: `geoId/${pp.geoid}`,
       name: pp.name,
       kind: pp.kind,

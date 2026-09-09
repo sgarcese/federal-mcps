@@ -2,6 +2,7 @@ import BetterSqlite3, { type Database } from "better-sqlite3";
 
 /** A row from the `entity` table. */
 export interface EntityRecord {
+  ucgid: string;
   geoid: string;
   sumlevel: string;
   name: string;
@@ -70,25 +71,30 @@ export class GeographyCatalog {
     const limit = filters.limit ?? 50;
     const rows = this.db
       .prepare(
-        `SELECT e.* FROM name_fts f JOIN entity e ON e.geoid = f.geoid
+        `SELECT e.* FROM name_fts f JOIN entity e ON e.ucgid = f.ucgid
          WHERE ${clauses.join(" AND ")}${sumlevelClause}
-         GROUP BY e.geoid
+         GROUP BY e.ucgid
          LIMIT ${limit}`,
       )
       .all(params) as EntityRecord[];
     return rows;
   }
 
-  getEntity(geoid: string): EntityRecord | undefined {
-    return this.db.prepare("SELECT * FROM entity WHERE geoid = ?").get(geoid) as
+  getEntity(ucgid: string): EntityRecord | undefined {
+    return this.db.prepare("SELECT * FROM entity WHERE ucgid = ?").get(ucgid) as
       | EntityRecord
       | undefined;
   }
 
+  /** Entities sharing a bare GEOID (a county and a ZCTA can collide) — for disambiguation. */
+  entitiesByGeoid(geoid: string): EntityRecord[] {
+    return this.db.prepare("SELECT * FROM entity WHERE geoid = ?").all(geoid) as EntityRecord[];
+  }
+
   /** Every alias for an entity (used to detect exact-name matches for ranking). */
-  aliasesOf(geoid: string): string[] {
+  aliasesOf(ucgid: string): string[] {
     return (
-      this.db.prepare("SELECT alias FROM alias WHERE geoid = ?").all(geoid) as {
+      this.db.prepare("SELECT alias FROM alias WHERE ucgid = ?").all(ucgid) as {
         alias: string;
       }[]
     ).map((r) => r.alias);
@@ -99,31 +105,31 @@ export class GeographyCatalog {
    * county/state, with allocation shares. Excludes areal-overlap edges (#57), so a tract's
    * parents do not include an overlapping ZCTA.
    */
-  parentsOf(geoid: string): { entity: EntityRecord; share: number }[] {
+  parentsOf(ucgid: string): { entity: EntityRecord; share: number }[] {
     const rows = this.db
       .prepare(
-        `SELECT c.parent_geoid AS geoid, c.share AS share FROM containment c
-         WHERE c.child_geoid = ? AND c.relation = 'nests' ORDER BY c.share DESC`,
+        `SELECT c.parent_ucgid AS ucgid, c.share AS share FROM containment c
+         WHERE c.child_ucgid = ? AND c.relation = 'nests' ORDER BY c.share DESC`,
       )
-      .all(geoid) as { geoid: string; share: number }[];
+      .all(ucgid) as { ucgid: string; share: number }[];
     return this.attachEntities(rows);
   }
 
   /** Areal overlaps of an area (relation "overlaps") — e.g. a ZCTA's overlapping tracts. */
-  overlapsOf(geoid: string): { entity: EntityRecord; share: number }[] {
+  overlapsOf(ucgid: string): { entity: EntityRecord; share: number }[] {
     const rows = this.db
       .prepare(
-        `SELECT c.child_geoid AS geoid, c.share AS share FROM containment c
-         WHERE c.parent_geoid = ? AND c.relation = 'overlaps' ORDER BY c.share DESC`,
+        `SELECT c.child_ucgid AS ucgid, c.share AS share FROM containment c
+         WHERE c.parent_ucgid = ? AND c.relation = 'overlaps' ORDER BY c.share DESC`,
       )
-      .all(geoid) as { geoid: string; share: number }[];
+      .all(ucgid) as { ucgid: string; share: number }[];
     return this.attachEntities(rows);
   }
 
-  agencyCodesOf(geoid: string): { agency: string; program: string; code: string }[] {
+  agencyCodesOf(ucgid: string): { agency: string; program: string; code: string }[] {
     return this.db
-      .prepare("SELECT agency, program, code FROM agency_code WHERE geoid = ?")
-      .all(geoid) as { agency: string; program: string; code: string }[];
+      .prepare("SELECT agency, program, code FROM agency_code WHERE ucgid = ?")
+      .all(ucgid) as { agency: string; program: string; code: string }[];
   }
 
   publishesAt(sumlevel: string): {
@@ -144,41 +150,49 @@ export class GeographyCatalog {
     }[];
   }
 
-  /** Whether a geoid appears on either side of a county_change (drives `vintage_mismatch`). */
-  hasCountyChange(geoid: string): boolean {
+  /** Whether a ucgid appears on either side of a county_change (drives `vintage_mismatch`). */
+  hasCountyChange(ucgid: string): boolean {
     const row = this.db
-      .prepare("SELECT 1 FROM county_change WHERE old_geoid = ? OR new_geoid = ? LIMIT 1")
-      .get(geoid, geoid);
+      .prepare("SELECT 1 FROM county_change WHERE old_ucgid = ? OR new_ucgid = ? LIMIT 1")
+      .get(ucgid, ucgid);
     return row !== undefined;
   }
 
-  lineageFrom(geoid: string): {
+  lineageFrom(ucgid: string): {
     fromGeoid: string;
     toGeoid: string;
     fromVintage: number;
     toVintage: number;
     share: number;
   }[] {
-    return this.db
+    const rows = this.db
       .prepare(
-        `SELECT from_geoid AS fromGeoid, to_geoid AS toGeoid, from_vintage AS fromVintage,
-                to_vintage AS toVintage, share FROM lineage WHERE from_geoid = ? ORDER BY share DESC`,
+        `SELECT from_ucgid AS fromUcgid, to_ucgid AS toUcgid, from_vintage AS fromVintage,
+                to_vintage AS toVintage, share FROM lineage WHERE from_ucgid = ? ORDER BY share DESC`,
       )
-      .all(geoid) as {
-      fromGeoid: string;
-      toGeoid: string;
+      .all(ucgid) as {
+      fromUcgid: string;
+      toUcgid: string;
       fromVintage: number;
       toVintage: number;
       share: number;
     }[];
+    // Lineage is tract→tract; tract GEOIDs are unique, so the output carries the plain geoid.
+    return rows.map((r) => ({
+      fromGeoid: geoidFromUcgid(r.fromUcgid),
+      toGeoid: geoidFromUcgid(r.toUcgid),
+      fromVintage: r.fromVintage,
+      toVintage: r.toVintage,
+      share: r.share,
+    }));
   }
 
   private attachEntities(
-    rows: { geoid: string; share: number }[],
+    rows: { ucgid: string; share: number }[],
   ): { entity: EntityRecord; share: number }[] {
     const out: { entity: EntityRecord; share: number }[] = [];
     for (const r of rows) {
-      const entity = this.getEntity(r.geoid);
+      const entity = this.getEntity(r.ucgid);
       if (entity) out.push({ entity, share: r.share });
     }
     return out;
@@ -192,4 +206,10 @@ export class GeographyCatalog {
 function ftsQuery(query: string): string {
   const trimmed = query.trim().replace(/"/g, '""');
   return `"${trimmed}"`;
+}
+
+/** The GEOID embedded in a UCGID (`<level>0000US<geoid>` → `<geoid>`). */
+function geoidFromUcgid(ucgid: string): string {
+  const i = ucgid.indexOf("US");
+  return i >= 0 ? ucgid.slice(i + 2) : ucgid;
 }

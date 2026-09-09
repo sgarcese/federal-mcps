@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import {
   parseCdCounty,
@@ -33,14 +34,14 @@ function zctaTractFixture19104(): string {
 describe("parseZctaTract", () => {
   it("A01: ZCTA 19104 overlaps 17 distinct 2020 tracts", () => {
     const rows = parseZctaTract(zctaTractFixture19104());
-    const forZcta = rows.filter((r) => r.parentGeoid === "19104");
-    const distinctTracts = new Set(forZcta.map((r) => r.childGeoid));
+    const forZcta = rows.filter((r) => r.parentUcgid === ucgidOf("860", "19104"));
+    const distinctTracts = new Set(forZcta.map((r) => r.childUcgid));
     expect(distinctTracts.size).toBe(17);
   });
 
   it("shares are the fraction of the ZCTA's area covered by each tract", () => {
     const rows = parseZctaTract(zctaTractFixture19104());
-    const forZcta = rows.filter((r) => r.parentGeoid === "19104");
+    const forZcta = rows.filter((r) => r.parentUcgid === ucgidOf("860", "19104"));
     for (const r of forZcta) {
       expect(r.share).toBeCloseTo(1_000_000 / 17_000_000, 6);
     }
@@ -60,7 +61,11 @@ describe("parseZctaTract", () => {
       "42101036900|500000|19104|1000000",
     ].join("\n");
     expect(parseZctaTract(reordered)).toEqual([
-      { childGeoid: "42101036900", parentGeoid: "19104", share: 0.5 },
+      {
+        childUcgid: ucgidOf("140", "42101036900"),
+        parentUcgid: ucgidOf("860", "19104"),
+        share: 0.5,
+      },
     ]);
   });
 });
@@ -72,7 +77,7 @@ describe("parseZctaCounty and parseZctaPlace", () => {
       "19104|1000000|42101|1000000",
     ].join("\n");
     expect(parseZctaCounty(text)).toEqual([
-      { childGeoid: "42101", parentGeoid: "19104", share: 1 },
+      { childUcgid: ucgidOf("050", "42101"), parentUcgid: ucgidOf("860", "19104"), share: 1 },
     ]);
   });
 
@@ -82,7 +87,7 @@ describe("parseZctaCounty and parseZctaPlace", () => {
       "19104|1000000|4260000|750000",
     ].join("\n");
     expect(parseZctaPlace(text)).toEqual([
-      { childGeoid: "4260000", parentGeoid: "19104", share: 0.75 },
+      { childUcgid: ucgidOf("160", "4260000"), parentUcgid: ucgidOf("860", "19104"), share: 0.75 },
     ]);
   });
 });
@@ -93,7 +98,9 @@ describe("parseCdCounty and parseCdPlace", () => {
       "GEOID_CD119_20|AREALAND_CD119_20|GEOID_COUNTY_20|AREALAND_PART",
       "0101|2000000|01003|1000000",
     ].join("\n");
-    expect(parseCdCounty(text)).toEqual([{ childGeoid: "01003", parentGeoid: "0101", share: 0.5 }]);
+    expect(parseCdCounty(text)).toEqual([
+      { childUcgid: ucgidOf("050", "01003"), parentUcgid: ucgidOf("500", "0101"), share: 0.5 },
+    ]);
   });
 
   it("parseCdPlace anchors on the congressional district", () => {
@@ -102,7 +109,7 @@ describe("parseCdCounty and parseCdPlace", () => {
       "0101|2000000|0103220|1500000",
     ].join("\n");
     expect(parseCdPlace(text)).toEqual([
-      { childGeoid: "0103220", parentGeoid: "0101", share: 0.75 },
+      { childUcgid: ucgidOf("160", "0103220"), parentUcgid: ucgidOf("500", "0101"), share: 0.75 },
     ]);
   });
 });
@@ -116,8 +123,8 @@ describe("parsePlaceCounty", () => {
       "1304000|340000000|13089|24000000",
     ].join("\n");
     const rows = parsePlaceCounty(text);
-    const fulton = rows.find((r) => r.parentGeoid === "13121");
-    const dekalb = rows.find((r) => r.parentGeoid === "13089");
+    const fulton = rows.find((r) => r.parentUcgid === ucgidOf("050", "13121"));
+    const dekalb = rows.find((r) => r.parentUcgid === ucgidOf("050", "13089"));
     expect(fulton?.share).toBeCloseTo(316_000_000 / 340_000_000, 6);
     expect(dekalb?.share).toBeCloseTo(24_000_000 / 340_000_000, 6);
     expect((fulton?.share ?? 0) < 1).toBe(true);
@@ -137,7 +144,10 @@ describe("parseTractLineage", () => {
     expect(rows.every((r) => r.fromVintage === 2010 && r.toVintage === 2020)).toBe(true);
     const shares = rows.map((r) => r.share);
     expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 6);
-    expect(rows.map((r) => r.toGeoid).sort()).toEqual(["42101036801", "42101036802"]);
+    expect(rows.map((r) => r.toUcgid).sort()).toEqual([
+      ucgidOf("140", "42101036801"),
+      ucgidOf("140", "42101036802"),
+    ]);
   });
 
   it("an unchanged tract maps to itself with share 1", () => {
@@ -147,8 +157,8 @@ describe("parseTractLineage", () => {
     ].join("\n");
     expect(parseTractLineage(text)).toEqual([
       {
-        fromGeoid: "42101036900",
-        toGeoid: "42101036900",
+        fromUcgid: ucgidOf("140", "42101036900"),
+        toUcgid: ucgidOf("140", "42101036900"),
         fromVintage: 2010,
         toVintage: 2020,
         share: 1,

@@ -5,7 +5,9 @@
 
 /** One geographic entity: a state, county, place, tract, CBSA, ZCTA, … */
 export interface EntityRow {
-  /** Census GEOID — the primary key. County "08031", place "0820000", CBSA "19740". */
+  /** Census UCGID — the primary key, unique across summary levels (#73). e.g. "0500000US08031". */
+  ucgid: string;
+  /** Census GEOID (not unique across levels). County "08031", place "0820000", CBSA "19740". */
   geoid: string;
   /** Census summary level: "040" state, "050" county, "160" place, "310" CBSA, "860" ZCTA, … */
   sumlevel: string;
@@ -26,7 +28,7 @@ export interface EntityRow {
 
 /** An alternate or normalized name for an entity (feeds fuzzy resolution). */
 export interface AliasRow {
-  geoid: string;
+  ucgid: string;
   alias: string;
   /** Where the alias came from: "gazetteer", "lsad-stripped", "hand", … */
   source: string;
@@ -34,8 +36,8 @@ export interface AliasRow {
 
 /** A containment edge. `share` = 1.0 when nested; area/pop-weighted otherwise (added in #55). */
 export interface ContainmentRow {
-  childGeoid: string;
-  parentGeoid: string;
+  childUcgid: string;
+  parentUcgid: string;
   share: number;
   /**
    * How the two relate: "nests" = a containment-hierarchy edge (share = fraction of the
@@ -48,7 +50,7 @@ export interface ContainmentRow {
 
 /** An agency-specific code for an entity: BLS LAUS/CES/OEWS/CPI area codes, etc. */
 export interface AgencyCodeRow {
-  geoid: string;
+  ucgid: string;
   /** "bls", later "census", "cdc". */
   agency: string;
   /** Program: "LAUS", "SM" (CES State & Area), "OEWS", "CPI". */
@@ -71,8 +73,8 @@ export interface PublishesAtRow {
 
 /** A county-equivalent boundary change (CT planning regions, AK, SD, VA). */
 export interface CountyChangeRow {
-  oldGeoid: string;
-  newGeoid: string;
+  oldUcgid: string;
+  newUcgid: string;
   /** ISO date the change took effect. */
   effective: string;
   /** "split", "merge", "rename", "recode". */
@@ -81,8 +83,8 @@ export interface CountyChangeRow {
 
 /** Tract lineage across vintages (2010 → 2020). Populated by #55. */
 export interface LineageRow {
-  fromGeoid: string;
-  toGeoid: string;
+  fromUcgid: string;
+  toUcgid: string;
   fromVintage: number;
   toVintage: number;
   share: number;

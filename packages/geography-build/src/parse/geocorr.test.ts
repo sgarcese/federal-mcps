@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { parseGeocorr } from "./geocorr.js";
 
@@ -6,15 +7,15 @@ const CSV = [
   'place_county,1304000,"Atlanta city, GA",13121,"Fulton County, GA",0.930,392230',
   'place_county,1304000,"Atlanta city, GA",13089,"DeKalb County, GA",0.070,29520',
   'cousub_cbsa,0937000,"Hartford town, CT",25540,"Hartford-East Hartford-Middletown, CT",1.000,121054',
-  'zcta_tract,19104,"ZCTA5 19104",42101036900,"Census Tract 369, Philadelphia County, PA",0.550,9840',
+  'zcta_tract,42101036900,"Census Tract 369, Philadelphia County, PA",19104,"ZCTA5 19104",0.550,9840',
 ].join("\n");
 
 describe("parseGeocorr", () => {
   it("reads afact as share, filtered to the requested geo_pair", () => {
     const rows = parseGeocorr(CSV, "place_county");
     expect(rows).toEqual([
-      { childGeoid: "1304000", parentGeoid: "13121", share: 0.93 },
-      { childGeoid: "1304000", parentGeoid: "13089", share: 0.07 },
+      { childUcgid: ucgidOf("160", "1304000"), parentUcgid: ucgidOf("050", "13121"), share: 0.93 },
+      { childUcgid: ucgidOf("160", "1304000"), parentUcgid: ucgidOf("050", "13089"), share: 0.07 },
     ]);
   });
 
@@ -25,10 +26,14 @@ describe("parseGeocorr", () => {
 
   it("filters out other geo_pairs", () => {
     expect(parseGeocorr(CSV, "cousub_cbsa")).toEqual([
-      { childGeoid: "0937000", parentGeoid: "25540", share: 1 },
+      { childUcgid: ucgidOf("060", "0937000"), parentUcgid: ucgidOf("310", "25540"), share: 1 },
     ]);
     expect(parseGeocorr(CSV, "zcta_tract")).toEqual([
-      { childGeoid: "19104", parentGeoid: "42101036900", share: 0.55 },
+      {
+        childUcgid: ucgidOf("140", "42101036900"),
+        parentUcgid: ucgidOf("860", "19104"),
+        share: 0.55,
+      },
     ]);
   });
 

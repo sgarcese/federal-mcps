@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import type { CountyChangeRow, PublishesAtRow } from "../types.js";
 
 /**
@@ -68,20 +69,85 @@ export const PUBLISHES_AT: readonly PublishesAtRow[] = [
  */
 export const COUNTY_CHANGES: readonly CountyChangeRow[] = [
   // Connecticut: 8 counties (09001–09015) → 9 planning regions (09110–09190), 2022.
-  { oldGeoid: "09001", newGeoid: "09190", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09003", newGeoid: "09110", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09005", newGeoid: "09160", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09007", newGeoid: "09130", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09009", newGeoid: "09170", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09011", newGeoid: "09180", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09013", newGeoid: "09110", effective: "2022-06-01", kind: "recode" },
-  { oldGeoid: "09015", newGeoid: "09150", effective: "2022-06-01", kind: "recode" },
+  {
+    oldUcgid: ucgidOf("050", "09001"),
+    newUcgid: ucgidOf("050", "09190"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09003"),
+    newUcgid: ucgidOf("050", "09110"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09005"),
+    newUcgid: ucgidOf("050", "09160"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09007"),
+    newUcgid: ucgidOf("050", "09130"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09009"),
+    newUcgid: ucgidOf("050", "09170"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09011"),
+    newUcgid: ucgidOf("050", "09180"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09013"),
+    newUcgid: ucgidOf("050", "09110"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
+  {
+    oldUcgid: ucgidOf("050", "09015"),
+    newUcgid: ucgidOf("050", "09150"),
+    effective: "2022-06-01",
+    kind: "recode",
+  },
   // Alaska.
-  { oldGeoid: "02261", newGeoid: "02063", effective: "2019-01-02", kind: "split" },
-  { oldGeoid: "02261", newGeoid: "02066", effective: "2019-01-02", kind: "split" },
-  { oldGeoid: "02270", newGeoid: "02158", effective: "2015-07-01", kind: "rename" },
+  {
+    oldUcgid: ucgidOf("050", "02261"),
+    newUcgid: ucgidOf("050", "02063"),
+    effective: "2019-01-02",
+    kind: "split",
+  },
+  {
+    oldUcgid: ucgidOf("050", "02261"),
+    newUcgid: ucgidOf("050", "02066"),
+    effective: "2019-01-02",
+    kind: "split",
+  },
+  {
+    oldUcgid: ucgidOf("050", "02270"),
+    newUcgid: ucgidOf("050", "02158"),
+    effective: "2015-07-01",
+    kind: "rename",
+  },
   // South Dakota: Shannon → Oglala Lakota.
-  { oldGeoid: "46113", newGeoid: "46102", effective: "2015-05-01", kind: "rename" },
+  {
+    oldUcgid: ucgidOf("050", "46113"),
+    newUcgid: ucgidOf("050", "46102"),
+    effective: "2015-05-01",
+    kind: "rename",
+  },
   // Virginia: Bedford city → Bedford County.
-  { oldGeoid: "51515", newGeoid: "51019", effective: "2013-07-01", kind: "merge" },
+  {
+    oldUcgid: ucgidOf("050", "51515"),
+    newUcgid: ucgidOf("050", "51019"),
+    effective: "2013-07-01",
+    kind: "merge",
+  },
 ];

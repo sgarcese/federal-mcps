@@ -1,3 +1,4 @@
+import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { parseGazetteer, stripLsad } from "./gazetteer.js";
 
@@ -52,9 +53,13 @@ describe("parseGazetteer", () => {
 
   it("emits an LSAD-stripped alias so the bare name is searchable", () => {
     const { aliases } = parseGazetteer(COUNTIES, "050");
-    expect(aliases).toContainEqual({ geoid: "08031", alias: "Denver", source: "lsad-stripped" });
     expect(aliases).toContainEqual({
-      geoid: "06075",
+      ucgid: ucgidOf("050", "08031"),
+      alias: "Denver",
+      source: "lsad-stripped",
+    });
+    expect(aliases).toContainEqual({
+      ucgid: ucgidOf("050", "06075"),
       alias: "San Francisco",
       source: "lsad-stripped",
     });
