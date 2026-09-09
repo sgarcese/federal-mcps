@@ -3,7 +3,13 @@ import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GeographyCatalog } from "./catalog.js";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
-import { getContainment, getLineage, getOverlap, resolvePlace } from "./resolver.js";
+import {
+  getAvailability,
+  getContainment,
+  getLineage,
+  getOverlap,
+  resolvePlace,
+} from "./resolver.js";
 import type { PlaceCandidate } from "./types.js";
 
 let path: string;
@@ -117,6 +123,23 @@ describe("containment, overlap, lineage", () => {
       fromVintage: 2010,
       toVintage: 2020,
     });
+  });
+
+  it("lists which programs publish for a place's level, with hasCode per program", () => {
+    const availability = getAvailability(catalog, "08031"); // Denver County, has a LAUS code
+    expect(availability.length).toBeGreaterThan(0);
+    const laus = availability.find((a) => a.agency === "bls" && a.program === "LAUS");
+    expect(laus).toMatchObject({ sumlevel: "050", hasCode: true });
+  });
+
+  it("marks hasCode false when the level publishes but this place has no code", () => {
+    const availability = getAvailability(catalog, "0899999"); // Smallburg: below threshold, no LAUS code
+    const laus = availability.find((a) => a.agency === "bls" && a.program === "LAUS");
+    expect(laus).toMatchObject({ sumlevel: "160", hasCode: false });
+  });
+
+  it("returns empty availability for an unknown geoid, without error", () => {
+    expect(getAvailability(catalog, "99999999")).toEqual([]);
   });
 });
 

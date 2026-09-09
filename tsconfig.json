@@ -9,6 +9,9 @@
       "path": "packages/server-bls"
     },
     {
+      "path": "packages/server-geo"
+    },
+    {
       "path": "packages/geography-build"
     }
   ]
