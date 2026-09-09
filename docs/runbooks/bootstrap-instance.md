@@ -54,6 +54,15 @@ aws secretsmanager create-secret --name federal-mcps/dev/bls \
 
 The name must match the record's `secrets.bls`.
 
+## 5. Turn on CI deploys
+
+```sh
+gh variable set FEDERAL_MCPS_DEPLOY_ENABLED --body true
+```
+
+`deploy.yml` skips its job until this repository variable is `true`, so merges before
+the bootstrap do not produce failed deploy runs.
+
 ## Done
 
 CI (`deploy.yml`, #10) now assumes `federal-mcps-github-deploy` on every merge to `main`
