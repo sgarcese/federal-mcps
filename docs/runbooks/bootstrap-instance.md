@@ -1,67 +1,52 @@
-# Runbook: bootstrap an instance
+# Runbook: deploy an instance
 
-**This is the single documented exception to "no deploys from the CLI"
-(`CLAUDE.md`, ADR-004 §3, ADR-005 §3, ADR-006 §4).** Every other deploy is CI,
-triggered by a merge to `main`. A person runs this once per record in `instances.json`,
-because the OIDC role GitHub assumes has to exist before GitHub can assume it. Release 1
-has one instance, `dev`.
+This account deploys **locally**, under `AWS_PROFILE=rc-deploy`, matching the Responsive
+City pattern (ADR-007): CI validates every change, a person applies. There is no deploy
+role to bootstrap and no state bucket to create — the account's `rc-tfstate-<account>`
+bucket already exists, and `rc-deploy` can create everything a server needs
+(`rc-<service>-<env>` Lambda, role, HTTP API, ACM certificate, Route 53 records).
 
-Nothing here needs an administrator: the state bucket already exists in the account
-(the Responsive City pattern, ADR-006), and `rc-deploy` can create `rc-*` resources.
+## Prerequisites
 
-Run every step from the repository root with `AWS_PROFILE=rc-deploy` exported.
+- `AWS_PROFILE=rc-deploy` (or ambient `rc-deploy` credentials) for the instance's account.
+  If SSO-backed, `aws sso login --profile <profile>` first.
+- `./.env` with `BLS_API_KEY=<your key>` (gitignored). Register free at
+  <https://data.bls.gov/registrationEngine/>.
+- The account already has the GitHub Actions OIDC provider only if push-to-deploy is
+  later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
-## 1. Confirm identity
-
-```sh
-aws sts get-caller-identity
-```
-
-`Account` must equal the instance's `account` in `instances.json`. Stop otherwise.
-
-## 2. Create the deploy role (targeted apply)
+## Deploy
 
 ```sh
-terraform -chdir=terraform/instances/dev init $(node scripts/tf-backend-config.mjs dev)
-set -a; source .env; set +a
-TF_VAR_bls_api_key="$BLS_API_KEY" \
-  terraform -chdir=terraform/instances/dev apply -target=module.github_oidc_deploy_role
+export AWS_PROFILE=rc-deploy
+scripts/deploy.sh dev
 ```
 
-The backend flags come from the fleet record (`terraform.stateBucket`,
-`terraform.stateKey`). The key variable is required by the root even for a targeted
-apply of the role; sourcing `.env` supplies it without typing it. The `deploy_role_arn`
-output must equal the record's `deployRoleArn`
-(`arn:aws:iam::<account>:role/rc-federal-mcps-github-deploy-role`). The role's trust
-references the account's GitHub OIDC provider by its deterministic ARN without reading
-it (#37). If the provider does not exist, the first CI run fails at "Configure AWS
-credentials"; an administrator creates it once (URL
-`https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`). This
-account already has one, used by sibling deployments.
+The script confirms the identity, builds and bundles the Lambda, runs
+`terraform init/plan/apply` against `terraform/instances/dev` (backend flags from the
+fleet record), then verifies the live endpoint with an MCP `initialize` and `tools/list`
+and prints `deployed <sha> to <url>`. That printed line is the per-SHA deploy record
+(`CLAUDE.md`, amended by ADR-007).
 
-## 3. Give CI the agency key
+The BLS key is passed as `TF_VAR_bls_api_key` from `.env` and set on the Lambda as the
+`BLS_API_KEY` environment variable (ADR-006 §3). It is stored in Terraform state, in the
+private `rc-tfstate` bucket, and never written to the repo.
 
-The key is a repository secret, never a file in the repo. From `.env`:
+## First deploy
 
-```sh
-gh secret set BLS_API_KEY --body "$BLS_API_KEY"
-```
+The first `apply` also creates the ACM certificate and its DNS validation records; the
+certificate can take a few minutes to validate, which the script's `curl --retry` in the
+verification step is sized for. If the very first verification times out, re-run
+`scripts/deploy.sh dev` once DNS has propagated; the apply is idempotent.
 
-`deploy.yml` passes it to Terraform as `TF_VAR_bls_api_key`; Terraform sets it on the
-Lambda as the `BLS_API_KEY` environment variable and stores it in state (ADR-006 §3).
+## Rotating the key
 
-## 4. Turn on CI deploys
+Update `BLS_API_KEY` in `.env`, then re-run `scripts/deploy.sh dev`. Terraform updates
+the Lambda's environment variable in place.
 
-```sh
-gh variable set FEDERAL_MCPS_DEPLOY_ENABLED --body true
-```
+## If a missing OIDC provider ever blocks a future CI upgrade
 
-`deploy.yml` skips its job until this repository variable is `true`, so merges before
-the bootstrap do not produce failed deploy runs.
-
-## Done
-
-CI now assumes `rc-federal-mcps-github-deploy-role` on every merge to `main` and runs
-`terraform apply` for the whole instance root. Re-running this runbook is safe; every
-step is idempotent. To rotate the key: update `.env`, rerun step 3, and merge anything
-to `main` (or re-run the last deploy).
+Local deploys never touch the provider. Push-to-deploy (the ADR-007 upgrade path) would
+need an administrator to create the provider (URL
+`https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`) and a deploy
+role once; that is out of scope for Release 1.

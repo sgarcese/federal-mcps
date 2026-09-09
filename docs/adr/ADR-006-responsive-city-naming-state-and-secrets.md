@@ -2,6 +2,10 @@
 
 **Status:** accepted (2026-09-08) · **Amends:** ADR-004 §2, §6; ADR-005 §1, §3 · **Affects:** `instances.json`, `terraform/`, `scripts/`, `.github/workflows/deploy.yml`, the bootstrap runbook
 
+> **Superseded in part by ADR-007 (2026-09-08):** the CI deploy role in §2 is removed —
+> there is no GitHub OIDC role; `rc-deploy` applies locally. The `rc-*` naming, the
+> shared state bucket and the env-var secret decision all stand.
+
 ## Context
 
 The first bootstrap attempt under `AWS_PROFILE=rc-deploy` failed on `s3:CreateBucket`.
