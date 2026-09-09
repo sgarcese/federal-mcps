@@ -13,9 +13,9 @@ BLS server stack and deploy workflow exist would be three.
 ## Decision
 
 1. **Terraform ≥ 1.10, `hashicorp/aws` provider pinned exactly**, in a `terraform/` tree:
-   - `terraform/bootstrap/` — local-state, applied once per account by a person, creates
-     the state bucket `federal-mcps-tfstate-<account>` (versioned, SSE-S3, public access
-     blocked). Locking uses S3's native lockfile (`use_lockfile = true`); no DynamoDB.
+   - *(Amended by ADR-006 §1: no bootstrap bucket; state lives in the account's
+     pre-existing `rc-tfstate-<account>` under `rc/federal-mcps/<instance>/`.)*
+     Locking uses S3's native lockfile (`use_lockfile = true`); no DynamoDB.
    - `terraform/modules/github-oidc-deploy-role/` — the deploy role from ADR-004 §2,
      with the permissions `terraform apply` needs for the BLS server stack in place of
      CDK's `sts:AssumeRole` on `cdk-*`. It reads the account's existing OIDC provider
@@ -31,8 +31,8 @@ BLS server stack and deploy workflow exist would be three.
    `terraform fmt -check`, `terraform validate` and tflint are CI gates. A Vitest test
    greps `terraform/` for the account id, zone id and domain and fails if any appear
    outside `instances.json`.
-3. **The bootstrap runbook now has two applies:** `terraform/bootstrap` (state bucket)
-   then `terraform/instances/<name>` limited to the deploy-role module
+3. **The bootstrap runbook** *(amended by ADR-006 §4: one targeted apply, no bucket)*:
+   `terraform/instances/<name>` limited to the deploy-role module
    (`-target=module.github_oidc_deploy_role`), both by a person with
    `AWS_PROFILE=rc-deploy`. Everything after that is CI. ADR-004 §3's "single exception"
    wording stands; it is one runbook, run once per instance.

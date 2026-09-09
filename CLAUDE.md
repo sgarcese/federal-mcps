@@ -19,8 +19,8 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   one commit. (They also make recovery free when a session or agent dies mid-work.)
 - **No deploys from the CLI.** Deploys are CI-only, triggered by merge to `main`.
   Local verification stops at tests, lint, and synth/build. The single exception is
-  the one-time bootstrap per instance with `AWS_PROFILE=rc-deploy` (ADR-004, ADR-005:
-  state bucket plus the OIDC deploy role), after which CI does every deploy.
+  the one-time bootstrap per instance with `AWS_PROFILE=rc-deploy` (ADR-004–006: the
+  OIDC deploy role), after which CI does every deploy.
 - **Docs describe what is.** A doc that has drifted is worse than none, because it is
   trusted: change the doc that owns a behaviour in the same PR that changes the
   behaviour. Superseded documents move to `docs/archive/` with a banner and a pointer —
@@ -42,9 +42,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   a unit test against a known-good published ID.
 - **Numbers carry their caveats.** Preliminary flags, suppression codes, vintage and
   footnotes travel in the envelope; a tool never silently drops them.
-- **Secrets never enter the repository.** Local: `.env` (gitignored). Deployed: AWS
-  Secrets Manager, referenced by ARN only. CI: GitHub repository secrets. gitleaks in
-  the `ci` job enforces it (#25).
+- **Secrets never enter the repository.** Local: `.env` (gitignored). Deployed: sensitive
+  Terraform variables set as Lambda environment variables (ADR-006). CI: GitHub
+  repository secrets. gitleaks in the `ci` job enforces it (#25).
 - **Quota is a shared resource.** All upstream calls go through the core HTTP client
   (retry, backoff, batching, budget counter). No direct `fetch` to an agency host.
 
@@ -115,9 +115,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   (`server-bls`, `server-census`, `server-cdc-places`, …).
 - `packages/server-composite/` — one endpoint that mounts several agency servers with
   prefixed tool names and a single shared `resolve_place`.
-- `terraform/` — `bootstrap/` (state bucket, applied once by a person), `modules/`
-  (`github-oidc-deploy-role`, `bls-server`), `instances/<name>/` (one root per fleet
-  record). Tests are `*.tftest.hcl` with a mocked provider (ADR-005).
+- `terraform/` — `modules/` (`github-oidc-deploy-role`, `bls-server`), `instances/<name>/`
+  (one root per fleet record; state in the account's `rc-tfstate` bucket, ADR-006).
+  Tests are `*.tftest.hcl` with a mocked provider (ADR-005).
 - `scripts/` — `instance.mjs` (fleet-record loader used by CI and tests),
   `tf-backend-config.mjs`, `infra-check.sh`.
 - `instances.json` — the fleet record (ADR-004); the only place an AWS account or

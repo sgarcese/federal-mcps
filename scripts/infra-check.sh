@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-roots=(terraform/bootstrap terraform/modules/github-oidc-deploy-role terraform/modules/bls-server terraform/instances/dev)
+roots=(terraform/modules/github-oidc-deploy-role terraform/modules/bls-server terraform/instances/dev)
 
 echo "== terraform fmt -check -recursive terraform/"
 terraform fmt -check -recursive terraform/

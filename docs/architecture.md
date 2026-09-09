@@ -64,7 +64,7 @@ additive.
 | 1 | Repo shape | One monorepo: `packages/core`, `packages/geography-build`, one `packages/server-<agency>` each, `packages/server-composite`, `infra/` | Keeps catalog, HTTP client and conventions from drifting; one CI. |
 | 2 | Language / SDK | TypeScript, official `@modelcontextprotocol/sdk`, Node 22, vitest, Biome | Both usable BLS donor codebases and the Census Bureau's official server are TypeScript. Consumers talk MCP over HTTP or stdio, so the server language constrains nobody downstream. FastMCP 3 (Python, as OpenContext uses) is the fallback. |
 | 3 | Deployment | Remote Streamable HTTP, stateless JSON-response mode, one AWS Lambda per server behind an HTTP API, defined in Terraform (ADR-005); stdio entry point for local dev. Target: Responsive City account via the fleet record in `instances.json` (ADR-004) | Stateless and cheap for public data with no sessions and no SSE; anyone can self-host the same container or run it locally over stdio. Cloudflare Workers is faster to first deploy; the code stays portable to either. |
-| 4 | Auth | None for end users; agency API keys in Secrets Manager; optional per-client usage plans | Public data. Anthropic directory accepts unauthenticated public-data connectors. Organizations that need caller identity or audit can front the server with their own gateway. |
+| 4 | Auth | None for end users; agency API keys as sensitive Terraform variables on the Lambda (ADR-006); optional per-client usage plans | Public data. Anthropic directory accepts unauthenticated public-data connectors. Organizations that need caller identity or audit can front the server with their own gateway. |
 | 5 | Tool pattern | One tool per action, 8–12 per server, family verb set | Surface is small once organized by place and indicator. Raw-ID `get_raw` is the escape hatch. |
 | 6 | Geography catalog | Build-time SQLite shipped with each server, generated from Census/OMB/agency code tables | Read-only, versioned, no runtime database; removes the Census server's Postgres dependency for a Lambda. |
 | 7 | Census strategy | Adapt the official `uscensusbureau/us-census-bureau-data-api-mcp` (CC0, TypeScript) onto the core; contribute upstream where it fits | Already solves dataset discovery and FIPS resolution with CI and tests. We replace its Postgres and stdio-only transport. |
@@ -197,7 +197,7 @@ multi-vintage geography.
 
 ## Deployment
 
-Per ADR-004: `instances.json` is the fleet record; Release 1 has one instance, `dev`, in
+Per ADR-004 and ADR-006: `instances.json` is the fleet record; Release 1 has one instance, `dev`, in
 the Responsive City account (`564762345093`, `us-east-1`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
 `bls-mcp.responsive.city/mcp` in Release 1.

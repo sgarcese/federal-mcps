@@ -49,7 +49,8 @@ cannot list IAM or CloudFormation resources.
    pattern, named when they ship. Each server stack creates its own ACM certificate
    in `us-east-1` and Route 53 alias in the existing zone from the fleet record's
    `domain` field, so a server can be added or removed without touching another's DNS.
-6. **Secrets.** `BLS_API_KEY` lives in Secrets Manager under `federal-mcps/dev/bls`;
+6. **Secrets.** *(Withdrawn by ADR-006 §3: keys are sensitive Terraform variables set as
+   Lambda environment variables.)* Original text: `BLS_API_KEY` lives in Secrets Manager under `federal-mcps/dev/bls`;
    the Lambda role may read exactly that ARN. The secret value is created by a person
    with `rc-deploy`, not by CDK, so it never passes through a template.
 

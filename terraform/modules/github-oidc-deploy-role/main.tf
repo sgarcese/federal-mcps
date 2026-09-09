@@ -2,8 +2,8 @@
 #
 # Assumable only by this repository's main branch through the account's EXISTING
 # GitHub OIDC provider (an account singleton; referenced, never created here).
-# Holds what `terraform apply` needs for the federal-mcps stacks, scoped to
-# federal-mcps-* / FederalMcps* names wherever the service supports it.
+# Holds what `terraform apply` needs for the federal-mcps stacks, scoped to the
+# account's rc-* naming pattern (ADR-006) wherever the service supports it.
 
 terraform {
   required_version = ">= 1.10"
@@ -20,8 +20,8 @@ locals {
   oidc_host = "token.actions.githubusercontent.com"
   # ID-qualified subject: immutable across renames (ADR-004 §2).
   github_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/main"
-  # Terraform-managed federal-mcps resources use these name prefixes.
-  name_prefix = "federal-mcps-"
+  # Terraform-managed resources in this account use the rc- prefix (ADR-006 §2).
+  name_prefix = "rc-"
 }
 
 data "aws_iam_openid_connect_provider" "github" {
@@ -69,7 +69,7 @@ locals {
         Sid      = "StateObjects"
         Effect   = "Allow"
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-        Resource = ["arn:aws:s3:::${var.state_bucket}/*"]
+        Resource = ["arn:aws:s3:::${var.state_bucket}/${var.state_key_prefix}*"]
       },
       {
         Sid      = "ReadOidcProvider"
@@ -124,12 +124,6 @@ locals {
         Effect   = "Allow"
         Action   = ["route53:GetChange", "route53:ListHostedZones"]
         Resource = ["*"]
-      },
-      {
-        Sid      = "DescribePrefixedSecrets"
-        Effect   = "Allow"
-        Action   = ["secretsmanager:DescribeSecret", "secretsmanager:GetResourcePolicy"]
-        Resource = ["arn:aws:secretsmanager:${var.region}:${var.account_id}:secret:federal-mcps/*"]
       },
       {
         Sid      = "PostDeployVerification"

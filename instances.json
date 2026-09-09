@@ -4,8 +4,8 @@
     "Nothing else in the repository names an AWS account or region. Consumers:",
     "infra/ (CDK reads the instance selected by FEDERAL_MCPS_INSTANCE, default dev)",
     "and .github/workflows/deploy.yml (role, region, concurrency).",
-    "Adding a stage or a dedicated deployment is adding a record here and running",
-    "the one-time CI/CD bootstrap in that account with a human deployer profile."
+    "Adding a stage or a dedicated deployment is adding a record here and running the",
+    "one-time bootstrap runbook in that account with rc-deploy (ADR-006)."
   ],
   "instances": [
     {
@@ -14,14 +14,18 @@
       "account": "564762345093",
       "region": "us-east-1",
       "environmentTag": "dev",
-      "deployRoleArn": "arn:aws:iam::564762345093:role/federal-mcps-github-deploy",
+      "deployRoleArn": "arn:aws:iam::564762345093:role/rc-federal-mcps-github-deploy",
       "domain": {
         "blsDomainName": "bls-mcp.responsive.city",
         "hostedZoneId": "Z02890412WHZ405FIOT0Y",
         "hostedZoneName": "responsive.city"
       },
-      "secrets": {
-        "bls": "federal-mcps/dev/bls"
+      "terraform": {
+        "stateBucket": "rc-tfstate-564762345093",
+        "stateKey": "rc/federal-mcps/dev/terraform.tfstate"
+      },
+      "naming": {
+        "blsService": "rc-bls-mcp"
       }
     }
   ]
