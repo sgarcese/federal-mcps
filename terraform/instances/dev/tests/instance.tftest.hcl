@@ -51,24 +51,9 @@ run "fleet_record_drives_the_root" {
     error_message = "the dev root must select the dev record"
   }
 
-  # The role ARN is computed at apply time; the name is known at plan, so the
-  # record's deployRoleArn is checked by rebuilding it from account + role name.
-  assert {
-    condition = (
-      "arn:aws:iam::${local.instance.account}:role/${module.github_oidc_deploy_role.role_name}"
-      == local.instance.deployRoleArn
-    )
-    error_message = "the deploy role name and account must rebuild the fleet record's deployRoleArn"
-  }
-
   assert {
     condition     = output.state_bucket == local.instance.terraform.stateBucket
     error_message = "state bucket must be the fleet record's pre-existing rc-tfstate bucket"
-  }
-
-  assert {
-    condition     = module.github_oidc_deploy_role.github_subject == "repo:sgarcese@2701478/federal-mcps@1361995308:ref:refs/heads/main"
-    error_message = "the root must not override the pinned subject"
   }
 }
 

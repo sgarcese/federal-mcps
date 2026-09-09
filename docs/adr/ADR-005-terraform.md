@@ -2,6 +2,9 @@
 
 **Status:** accepted (2026-09-08) · **Supersedes:** ADR-002 §3 (tooling only), ADR-004 §2–3 (how the role is created; what the bootstrap creates) · **Affects:** `terraform/`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `docs/runbooks/bootstrap-instance.md`
 
+> **Superseded in part by ADR-007 (2026-09-08):** §4 (Terraform apply from a CI deploy
+> workflow) no longer applies — deploys run locally via `scripts/deploy.sh`.
+
 ## Context
 
 ADR-002 chose CDK for infrastructure and #11 shipped the GitHub OIDC trust stack in CDK.

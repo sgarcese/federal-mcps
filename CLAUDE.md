@@ -17,10 +17,11 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   contains `Closes #<issue>`. Never commit directly to `main`.
 - **Incremental commits** at red/green/refactor boundaries — don't squash a story into
   one commit. (They also make recovery free when a session or agent dies mid-work.)
-- **No deploys from the CLI.** Deploys are CI-only, triggered by merge to `main`.
-  Local verification stops at tests, lint, and synth/build. The single exception is
-  the one-time bootstrap per instance with `AWS_PROFILE=rc-deploy` (ADR-004–006: the
-  OIDC deploy role), after which CI does every deploy.
+- **Deploys are a deliberate local act, matching the account pattern (ADR-007).** This
+  account has no CI deploy path (`rc-deploy` cannot create a GitHub OIDC role), so a
+  person runs `scripts/deploy.sh` under `AWS_PROFILE=rc-deploy`; CI validates but never
+  applies. Do not add a CLI deploy anywhere else; the script is the one sanctioned path,
+  and it is never run from an agent or unattended.
 - **Docs describe what is.** A doc that has drifted is worse than none, because it is
   trusted: change the doc that owns a behaviour in the same PR that changes the
   behaviour. Superseded documents move to `docs/archive/` with a banner and a pointer —
@@ -87,8 +88,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 - **Merges require explicit CI `pass`** — never "not pending" or absence of failure.
   Merge only inside a checks-pass verification, even where branch protection can't
   enforce it.
-- **Verify the deploy per merge SHA.** A green PR is not a deployed PR — check the
-  deploy run's conclusion for exactly the SHA that merged.
+- **Verify the deploy per SHA.** A green PR is not a deployed PR. `scripts/deploy.sh`
+  prints `deployed <sha> to <url>` after verifying the live endpoint; that line is the
+  record of what is actually running (ADR-007).
 - **Pre-PR local gate suite, run visibly** (no piping that masks exit codes):
   tests · lint · format-check · typecheck · build · contract tests · infra:check. Keep the
   list in this file current.
@@ -115,8 +117,8 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   (`server-bls`, `server-census`, `server-cdc-places`, …).
 - `packages/server-composite/` — one endpoint that mounts several agency servers with
   prefixed tool names and a single shared `resolve_place`.
-- `terraform/` — `modules/` (`github-oidc-deploy-role`, `bls-server`), `instances/<name>/`
-  (one root per fleet record; state in the account's `rc-tfstate` bucket, ADR-006).
+- `terraform/` — `modules/bls-server`, `instances/<name>/` (one root per fleet record;
+  state in the account's `rc-tfstate` bucket, ADR-006; deployed locally, ADR-007).
   Tests are `*.tftest.hcl` with a mocked provider (ADR-005).
 - `scripts/` — `instance.mjs` (fleet-record loader used by CI and tests),
   `tf-backend-config.mjs`, `infra-check.sh`.
@@ -129,7 +131,8 @@ Pre-PR gate suite, run each visibly (same order as the `ci` job):
 `npm ci` · `npm run lint` · `npm run format:check` · `npm run typecheck` · `npm test` ·
 `npm run test:contract` · `npm run build` · `npm run infra:check`.
 `npm run format` fixes formatting. `npm run geography:build` joins the list when M2 lands.
-One-time bootstrap per instance: `docs/runbooks/bootstrap-instance.md`.
+Deploy (local, ADR-007): `AWS_PROFILE=rc-deploy scripts/deploy.sh dev`; see
+`docs/runbooks/bootstrap-instance.md`.
 The required status check on `main` is the job named `ci`.
 
 ## Agent delegation (adopt if running parallel subagent builds)
