@@ -25,7 +25,9 @@ describe("instance record loader", () => {
   it("selects dev by default and validates the record shape", () => {
     const dev = selectInstance();
     expect(dev.name).toBe("dev");
-    expect(dev.deployRoleArn).toBe(`arn:aws:iam::${dev.account}:role/federal-mcps-github-deploy`);
+    expect(dev.deployRoleArn).toBe(
+      `arn:aws:iam::${dev.account}:role/rc-federal-mcps-github-deploy`,
+    );
     expect(loadInstances().map((i) => i.name)).toContain("dev");
   });
 
@@ -35,9 +37,10 @@ describe("instance record loader", () => {
 
   it("derives the state bucket and backend flags from the record", () => {
     const dev = selectInstance();
-    expect(stateBucket(dev)).toBe(`federal-mcps-tfstate-${dev.account}`);
+    expect(stateBucket(dev)).toBe(`rc-tfstate-${dev.account}`);
     expect(backendConfigFlags(dev)).toEqual([
-      `-backend-config=bucket=federal-mcps-tfstate-${dev.account}`,
+      `-backend-config=bucket=rc-tfstate-${dev.account}`,
+      "-backend-config=key=rc/federal-mcps/dev/terraform.tfstate",
       `-backend-config=region=${dev.region}`,
     ]);
   });

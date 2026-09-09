@@ -168,4 +168,10 @@ describe("deploy.yml", () => {
     expect(header).toMatch(/docs-only/i);
     expect(header).toMatch(/verif/i);
   });
+
+  it("passes the BLS key to Terraform only as TF_VAR_bls_api_key from the repository secret (ADR-006 §3)", () => {
+    expect(workflow).toMatch(/TF_VAR_bls_api_key: \$\{\{ secrets\.BLS_API_KEY \}\}/);
+    const runBlocks = workflow.split("\n").filter((line) => line.includes("run:"));
+    expect(runBlocks.some((line) => line.includes("BLS_API_KEY"))).toBe(false);
+  });
 });
