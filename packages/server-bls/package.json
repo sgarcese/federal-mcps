@@ -6,6 +6,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "federal-mcps-bls": "./dist/stdio.js"
+  },
   "files": [
     "dist"
   ],
@@ -13,9 +16,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "postbuild": "node -e \"require('node:fs').chmodSync('dist/stdio.js', 0o755)\"",
+    "dev:http": "tsx src/http-dev.ts"
   },
   "dependencies": {
-    "@federal-mcps/core": "0.0.0"
+    "@federal-mcps/core": "0.0.0",
+    "@modelcontextprotocol/sdk": "1.30.0"
   }
 }

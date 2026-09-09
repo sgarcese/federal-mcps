@@ -1,15 +1,20 @@
 /**
- * @federal-mcps/server-bls — Bureau of Labor Statistics server.
+ * @federal-mcps/server-bls — Bureau of Labor Statistics server (issue #8).
  *
- * The server definition, tools and transports land in issue #8 on top of the
- * core shell (#6). This placeholder proves the workspace wiring: the package
- * builds, depends on core through the workspace, and runs under the shared
- * Vitest projects.
+ * `createBlsServer` builds the family shell's `McpServer` from this
+ * package's `definition` (`packages/core/src/server/create-server.ts`); a
+ * caller then runs it over stdio (`src/stdio.ts`, the `federal-mcps-bls` bin)
+ * or Streamable HTTP (`src/http.ts`).
  */
-import { CORE_VERSION } from "@federal-mcps/core";
+import { type CreateServerOptions, createServer } from "@federal-mcps/core";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { definition } from "./definition.js";
 
-export const AGENCY = "bls" as const;
+export { definition } from "./definition.js";
+export { describeSource } from "./describe-source.js";
+export { BLS_SERVER_VERSION } from "./version.js";
 
-export function describeBuild(): { agency: typeof AGENCY; coreVersion: string } {
-  return { agency: AGENCY, coreVersion: CORE_VERSION };
+/** Builds the configured BLS `McpServer`, ready for `runStdio` or `createHttpHandler`. */
+export function createBlsServer(options?: CreateServerOptions): McpServer {
+  return createServer(definition, options);
 }
