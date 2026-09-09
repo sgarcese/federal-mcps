@@ -7,6 +7,12 @@ const repoRoot = join(import.meta.dirname, "..");
 const workflowPath = join(repoRoot, ".github", "workflows", "deploy.yml");
 const workflow = readFileSync(workflowPath, "utf-8");
 
+describe("deploy workflow is gated until the instance is bootstrapped", () => {
+  it("skips the job unless FEDERAL_MCPS_DEPLOY_ENABLED is true", () => {
+    expect(workflow).toMatch(/if: \$\{\{ vars\.FEDERAL_MCPS_DEPLOY_ENABLED == 'true' \}\}/);
+  });
+});
+
 describe("deploy.yml", () => {
   it("triggers on push to main only, skipping docs-only paths", () => {
     expect(workflow).toMatch(/name:\s*Deploy/);

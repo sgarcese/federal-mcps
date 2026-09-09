@@ -41,6 +41,10 @@ concurrency:
 jobs:
   deploy:
     name: deploy
+    # Off until the owner has run the bootstrap runbook for the instance and set the
+    # repository variable FEDERAL_MCPS_DEPLOY_ENABLED=true; before that, every merge
+    # would fail here for want of a state bucket and role.
+    if: ${{ vars.FEDERAL_MCPS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
