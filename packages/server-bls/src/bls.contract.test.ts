@@ -7,6 +7,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { buildBlsDefinition } from "./definition.js";
+import { scriptedBlsClient } from "./__fixtures__/scripted-client.js";
 
 /**
  * The family contract suite (issue #7) for the BLS server, picked up by
@@ -27,14 +28,15 @@ afterAll(() => {
 });
 
 async function connect(): Promise<Client> {
-  const server = createServer(buildBlsDefinition(catalog));
+  const server = createServer(buildBlsDefinition({ catalog, httpClient: scriptedBlsClient() }));
   const client = new Client({ name: "contract-test-client", version: "0.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([client.connect(clientTransport), server.connect(serverTransport)]);
   return client;
 }
 
-it("meets the family contract", () => assertFamilyContract(buildBlsDefinition(catalog)));
+it("meets the family contract", () =>
+  assertFamilyContract(buildBlsDefinition({ catalog, httpClient: scriptedBlsClient() })));
 
 it("does not call agencies directly", () => assertServerSources(new URL("./", import.meta.url)));
 

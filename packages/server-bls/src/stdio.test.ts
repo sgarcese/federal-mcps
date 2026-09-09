@@ -7,6 +7,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { buildBlsDefinition } from "./definition.js";
+import { stubHttpClient } from "./__fixtures__/stub-client.js";
 
 /**
  * Spawns the `federal-mcps-bls` bin's source directly under `tsx`, the same
@@ -27,7 +28,10 @@ let expected: ReturnType<typeof buildBlsDefinition>;
 
 beforeAll(() => {
   catalogPath = buildFixtureCatalog();
-  expected = buildBlsDefinition(new GeographyCatalog(catalogPath));
+  expected = buildBlsDefinition({
+    catalog: new GeographyCatalog(catalogPath),
+    httpClient: stubHttpClient(),
+  });
 });
 afterAll(() => {
   rmSync(dirname(catalogPath), { recursive: true, force: true });
