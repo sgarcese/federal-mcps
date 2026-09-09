@@ -1,0 +1,48 @@
+# gitleaks configuration (issue #25; CLAUDE.md "Secrets never enter the repository").
+# Extends the default ruleset and adds the agency-key shapes this project handles.
+
+title = "federal-mcps"
+
+[extend]
+useDefault = true
+
+# BLS Public Data API v2 keys are 32 hex characters, passed as `registrationkey`.
+[[rules]]
+id = "bls-api-key"
+description = "Bureau of Labor Statistics API key"
+regex = '''(?i)(?:bls_api_key|registrationkey)\s*[=:]\s*["']?([a-f0-9]{32})["']?'''
+secretGroup = 1
+keywords = ["bls_api_key", "registrationkey"]
+
+# Census Data API keys are 40 hex characters.
+[[rules]]
+id = "census-api-key"
+description = "Census Bureau Data API key"
+regex = '''(?i)census_api_key\s*[=:]\s*["']?([a-f0-9]{40})["']?'''
+secretGroup = 1
+keywords = ["census_api_key"]
+
+# Socrata app tokens (data.cdc.gov) are 25 alphanumerics.
+[[rules]]
+id = "socrata-app-token"
+description = "Socrata application token"
+regex = '''(?i)socrata_app_token\s*[=:]\s*["']?([A-Za-z0-9]{25})["']?'''
+secretGroup = 1
+keywords = ["socrata_app_token"]
+
+[allowlist]
+description = "Values that look like secrets but are public identifiers or recorded public responses"
+paths = [
+  # The fleet record carries an AWS account id and a hosted zone id: identifiers, not secrets.
+  '''^instances\.json$''',
+  # Recorded agency responses are public data.
+  '''(^|/)fixtures/.*\.json$''',
+  # Lockfile integrity hashes.
+  '''^package-lock\.json$''',
+  # Terraform provider lock hashes.
+  '''\.terraform\.lock\.hcl$''',
+]
+regexes = [
+  # The example file documents variable names with empty values.
+  '''^[A-Z_]+=$''',
+]
