@@ -17,6 +17,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   design for the shared geography catalog and place resolver.
 - [spikes/geo-ontologies/](spikes/geo-ontologies/README.md) — imported research and the
   UGEO-Bench benchmark that shaped M2 (ADR-008).
+- [spikes/geography-hosting.md](spikes/geography-hosting.md) — datastore, serving topology
+  and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 
 ## ADRs
 
