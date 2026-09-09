@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # Create the Lambda execution role for one instance, and let rc-deploy pass it.
 #
-# Run ONCE per instance by an ADMINISTRATOR (root or an IAM-admin identity),
-# because the deploy identity (rc-deploy) cannot create IAM roles in this
-# account (ADR-007). Everything after this is a normal `scripts/deploy.sh`.
+# Run ONCE per instance AND SERVER by an ADMINISTRATOR (root or an IAM-admin
+# identity), because the deploy identity (rc-deploy) cannot create IAM roles in
+# this account (ADR-007). Everything after this is a normal `scripts/deploy.sh`.
 #
-#   AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh [instance]   # default: dev
+#   AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh [instance] [server]
+#     instance  fleet-record name          (default: dev)
+#     server    bls | geo                   (default: bls)
+#
+# Each server (bls, geo) is a separate Lambda with its own execution role, so run
+# this once per server: e.g. `... dev bls` and `... dev geo`.
 #
 # It is idempotent: re-running updates the inline policies in place.
 #
@@ -18,13 +23,19 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 INSTANCE="${1:-dev}"
+SERVER="${2:-bls}"
+case "$SERVER" in
+  bls | geo) ;;
+  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo)"; exit 1 ;;
+esac
 
 read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
-  FEDERAL_MCPS_INSTANCE="$INSTANCE" node --input-type=module -e '
+  FEDERAL_MCPS_INSTANCE="$INSTANCE" SERVER="$SERVER" node --input-type=module -e '
     import { selectInstance } from "./scripts/instance.mjs";
     const i = selectInstance();
+    const service = process.env.SERVER === "geo" ? i.naming.geoService : i.naming.blsService;
     const deployRole = "rc-deploy"; // the role scripts/deploy.sh assumes
-    process.stdout.write([i.account, i.region, i.naming.blsService, i.environmentTag, deployRole].join(" "));
+    process.stdout.write([i.account, i.region, service, i.environmentTag, deployRole].join(" "));
   '
 )
 
@@ -35,7 +46,7 @@ ROLE_ARN="arn:aws:iam::${ACCOUNT}:role/${ROLE}"
 
 echo "== admin identity"
 aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output json
-echo "instance=${INSTANCE} account=${ACCOUNT} role=${ROLE} function=${FUNCTION}"
+echo "instance=${INSTANCE} server=${SERVER} account=${ACCOUNT} role=${ROLE} function=${FUNCTION}"
 
 TRUST='{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
 
