@@ -60,35 +60,35 @@ export function assemble(sources: Sources): CatalogRows {
   for (const [sumlevel, text] of Object.entries(sources.gazetteers)) {
     if (!text) continue;
     const parsed = parseGazetteer(text, sumlevel);
-    entities.push(...parsed.entities);
-    aliases.push(...parsed.aliases);
+    extend(entities, parsed.entities);
+    extend(aliases, parsed.aliases);
   }
 
   const agencyCodes: AgencyCodeRow[] = [];
-  if (sources.lausArea) agencyCodes.push(...parseLausArea(sources.lausArea));
-  if (sources.cesArea) agencyCodes.push(...parseCesArea(sources.cesArea));
-  if (sources.oewsArea) agencyCodes.push(...parseOewsArea(sources.oewsArea));
-  if (sources.cpiArea) agencyCodes.push(...parseCpiArea(sources.cpiArea));
+  if (sources.lausArea) extend(agencyCodes, parseLausArea(sources.lausArea));
+  if (sources.cesArea) extend(agencyCodes, parseCesArea(sources.cesArea));
+  if (sources.oewsArea) extend(agencyCodes, parseOewsArea(sources.oewsArea));
+  if (sources.cpiArea) extend(agencyCodes, parseCpiArea(sources.cpiArea));
 
   // Relationship-file edges are areal overlaps (ZCTA/CD layers do not nest); a place
   // spanning counties is a hierarchy allocation ("nests"). (#57 discriminator.)
   const weighted: ContainmentRow[] = [];
   if (sources.zctaTract)
-    weighted.push(...withRelation(parseZctaTract(sources.zctaTract), "overlaps"));
+    extend(weighted, withRelation(parseZctaTract(sources.zctaTract), "overlaps"));
   if (sources.zctaCounty)
-    weighted.push(...withRelation(parseZctaCounty(sources.zctaCounty), "overlaps"));
+    extend(weighted, withRelation(parseZctaCounty(sources.zctaCounty), "overlaps"));
   if (sources.zctaPlace)
-    weighted.push(...withRelation(parseZctaPlace(sources.zctaPlace), "overlaps"));
-  if (sources.cdCounty) weighted.push(...withRelation(parseCdCounty(sources.cdCounty), "overlaps"));
-  if (sources.cdPlace) weighted.push(...withRelation(parseCdPlace(sources.cdPlace), "overlaps"));
+    extend(weighted, withRelation(parseZctaPlace(sources.zctaPlace), "overlaps"));
+  if (sources.cdCounty) extend(weighted, withRelation(parseCdCounty(sources.cdCounty), "overlaps"));
+  if (sources.cdPlace) extend(weighted, withRelation(parseCdPlace(sources.cdPlace), "overlaps"));
   if (sources.placeCounty)
-    weighted.push(...withRelation(parsePlaceCounty(sources.placeCounty), "nests"));
+    extend(weighted, withRelation(parsePlaceCounty(sources.placeCounty), "nests"));
 
   const geocorr: ContainmentRow[] = [];
   if (sources.geocorr) {
     for (const pair of ["place_county", "cousub_cbsa", "zcta_tract"]) {
       const rel = pair.startsWith("zcta") ? "overlaps" : "nests";
-      geocorr.push(...withRelation(parseGeocorr(sources.geocorr, pair), rel));
+      extend(geocorr, withRelation(parseGeocorr(sources.geocorr, pair), rel));
     }
   }
 
@@ -130,6 +130,15 @@ function withRelation(
   relation: "nests" | "overlaps",
 ): ContainmentRow[] {
   return rows.map((r) => ({ ...r, relation }));
+}
+
+/**
+ * Append every item of `source` to `target`. Used instead of `target.push(...source)`
+ * because the national relationship files run to hundreds of thousands of rows, and a
+ * spread into a function call overflows the argument-count / call-stack limit (#73).
+ */
+function extend<T>(target: T[], source: readonly T[]): void {
+  for (const item of source) target.push(item);
 }
 
 function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
