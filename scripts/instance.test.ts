@@ -1,18 +1,32 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { backendConfigFlags, loadInstances, selectInstance, stateBucket } from "./instance.mjs";
 
 const repoRoot = join(import.meta.dirname, "..");
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    if (entry === ".terraform") continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else out.push(full);
-  }
-  return out;
+/**
+ * The files git tracks under the given repo-relative dirs — never untracked, gitignored
+ * local artifacts (a developer's `terraform/bootstrap/` state, a `.terraform/` cache). The
+ * property under test is "no account/zone/domain literal is *committed* outside the fleet
+ * record", so the scan must match git's view, not the raw filesystem (#67).
+ */
+function trackedFiles(...dirs: string[]): string[] {
+  const out = execFileSync("git", ["ls-files", "-z", "--", ...dirs], {
+    cwd: repoRoot,
+    encoding: "utf-8",
+  });
+  return out
+    .split("\0")
+    .filter((f) => f.length > 0)
+    .map((f) => join(repoRoot, f));
+}
+
+/** Files whose content contains `literal` — the offenders the guard must find. */
+function findOffenders(files: string[], literal: string): string[] {
+  return files.filter((file) => readFileSync(file, "utf-8").includes(literal));
 }
 
 describe("instance record loader", () => {
@@ -60,14 +74,27 @@ describe("the fleet record is the only place an account, zone or domain is writt
     dev.domain.blsDomainName,
     dev.domain.geoDomainName,
   ];
-  const scanned = [
-    ...walk(join(repoRoot, "terraform")),
-    ...walk(join(repoRoot, "scripts")),
-    ...walk(join(repoRoot, ".github")),
-  ].filter((f) => !f.endsWith(".tftest.hcl"));
+  // Git-tracked files only, so a developer's gitignored local terraform state never turns
+  // this into a false-positive red (#67). `.tftest.hcl` files legitimately pin these values.
+  const scanned = trackedFiles("terraform", "scripts", ".github").filter(
+    (f) => !f.endsWith(".tftest.hcl"),
+  );
 
   it.each(literals)("%s appears nowhere under terraform/, scripts/ or .github/", (literal) => {
-    const offenders = scanned.filter((file) => readFileSync(file, "utf-8").includes(literal));
-    expect(offenders).toEqual([]);
+    expect(findOffenders(scanned, literal)).toEqual([]);
+  });
+
+  it("still catches a committed literal outside the fleet record (guard preserved)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "scan-guard-"));
+    try {
+      const clean = join(dir, "clean.tf");
+      const offender = join(dir, "leak.tf");
+      writeFileSync(clean, 'region = "us-east-1"\n');
+      writeFileSync(offender, `account = "${dev.account}"\n`);
+      expect(findOffenders([clean], dev.account)).toEqual([]);
+      expect(findOffenders([clean, offender], dev.account)).toEqual([offender]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
