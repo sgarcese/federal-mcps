@@ -40,6 +40,8 @@ export interface HttpResult<T> {
 export interface HttpClient {
   getJson<T>(url: string, options?: RequestOptions): Promise<HttpResult<T>>;
   getText(url: string, options?: RequestOptions): Promise<HttpResult<string>>;
+  /** POST a JSON body and parse a JSON response, through the same retry/budget/cache/fixtures path. */
+  postJson<T>(url: string, body: unknown, options?: RequestOptions): Promise<HttpResult<T>>;
 }
 
 interface RawResponse {
@@ -63,6 +65,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     url: string,
     headers: Record<string, string> | undefined,
     timeoutMs: number,
+    body: string | undefined,
   ): Promise<RawResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -70,6 +73,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       const init: RequestInit = { signal: controller.signal };
       if (headers) {
         init.headers = headers;
+      }
+      if (body !== undefined) {
+        init.method = "POST";
+        init.body = body;
       }
       const response = await fetchFn(url, init);
       const bodyText = await response.text();
@@ -96,13 +103,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     url: string,
     headers: Record<string, string> | undefined,
     timeoutMs: number,
+    body: string | undefined,
   ): Promise<RawResponse> {
     let attempt = 0;
     for (;;) {
       attempt++;
       let raw: RawResponse;
       try {
-        raw = await doFetchOnce(url, headers, timeoutMs);
+        raw = await doFetchOnce(url, headers, timeoutMs, body);
       } catch (err) {
         if (err instanceof TimeoutError) {
           throw err;
@@ -135,9 +143,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     url: string,
     headers: Record<string, string> | undefined,
     timeoutMs: number,
+    body: string | undefined,
   ): Promise<RawResponse> {
     if (fixtureMode === "replay") {
-      const fixture = await readFixture(fixtureDir, source, url);
+      const fixture = await readFixture(fixtureDir, source, url, body);
       if (fixture.status >= 400) {
         throw new HttpError({ source, status: fixture.status, url, attempts: 1 });
       }
@@ -149,26 +158,27 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       throw new QuotaExceededError({ source, resetsAt: budgetResult.resetsAt });
     }
 
-    const response = await fetchWithRetry(url, headers, timeoutMs);
+    const response = await fetchWithRetry(url, headers, timeoutMs, body);
 
     if (fixtureMode === "record") {
-      await writeFixture(fixtureDir, source, url, response, now);
+      await writeFixture(fixtureDir, source, url, response, now, body);
     }
 
     return response;
   }
 
   async function getWithCache<T>(
-    method: "GET",
+    method: "GET" | "POST",
     url: string,
     options: RequestOptions | undefined,
     parse: (body: string) => T,
+    body?: string,
   ): Promise<HttpResult<T>> {
     const headers = options?.headers;
     const timeoutMs = options?.timeoutMs ?? defaultTimeoutMs;
     const freshTtlSeconds = options?.freshTtlSeconds;
     const staleTtlSeconds = options?.staleTtlSeconds;
-    const key = cacheKey(method, url, headers);
+    const key = cacheKey(method, url, headers, body);
 
     let existing: CacheEntry | undefined;
     if (freshTtlSeconds !== undefined) {
@@ -188,7 +198,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
 
       try {
-        const response = await performRequest(url, headers, timeoutMs);
+        const response = await performRequest(url, headers, timeoutMs, body);
         const value = parse(response.body);
         await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
         return { value, cache: CACHE_MISS, status: response.status };
@@ -205,7 +215,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
     }
 
-    const response = await performRequest(url, headers, timeoutMs);
+    const response = await performRequest(url, headers, timeoutMs, body);
     const value = parse(response.body);
     if (freshTtlSeconds !== undefined) {
       await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
@@ -219,6 +229,16 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     },
     getText(url: string, options?: RequestOptions) {
       return getWithCache<string>("GET", url, options, (body) => body);
+    },
+    postJson<T>(url: string, requestBody: unknown, options?: RequestOptions) {
+      const headers = { "content-type": "application/json", ...(options?.headers ?? {}) };
+      return getWithCache<T>(
+        "POST",
+        url,
+        { ...options, headers },
+        (body) => JSON.parse(body) as T,
+        JSON.stringify(requestBody),
+      );
     },
   };
 }
