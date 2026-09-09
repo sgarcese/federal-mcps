@@ -1,4 +1,13 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+
+// Workspace-package imports resolve to source in tests, so the suite runs without a
+// prior build (CI runs tests before build). Add an entry per published workspace package.
+const alias = {
+  "@federal-mcps/geography-build": fileURLToPath(
+    new URL("./packages/geography-build/src/index.ts", import.meta.url),
+  ),
+};
 
 // One command runs every package's tests. Each entry under `packages/*` is a
 // Vitest project; packages may add their own vitest.config.ts to override.
@@ -7,6 +16,7 @@ import { defineConfig } from "vitest/config";
 // test:contract`. Until #7 lands it matches nothing and --passWithNoTests keeps
 // the gate green.
 export default defineConfig({
+  resolve: { alias },
   test: {
     projects: [
       {
