@@ -51,6 +51,40 @@ ruled on (2026-09-09). UGEO-Bench (55 items, four model arms) found:
    licensing-encumbered; full multi-vintage history beyond 2010/2020; and Census/CDC
    agency codes, which land with those servers.
 
+## Datastore and serving (ruled 2026-09-09, hosting spike #50)
+
+The hosting spike (`docs/spikes/geography-hosting.md`) evaluated the datastore engine,
+the AWS serving topology and the retrieval interface against the workload (read-only,
+sub-gigabyte, fuzzy name lookup + fixed-depth hierarchy + weighted-overlap joins, from a
+Lambda and in-process, inside an agent turn). The owner accepted its recommendations:
+
+6. **Embedded SQLite, one versioned artifact.** The catalog is a single `.sqlite` file
+   built by `packages/geography-build`, opened read-only with **better-sqlite3** (not
+   Node's built-in `node:sqlite`, whose official builds omit FTS5). FTS5 with a trigram
+   tokenizer does fuzzy names; recursive CTEs do the hierarchy; indexed edge tables with
+   a weight column do overlap and lineage.
+7. **Bundled as a versioned npm asset.** `@rc/geo-catalog@<vintage>` carries the file;
+   the hosted `server-geo` and every in-process library depend on it, so the file is
+   baked into each Lambda's own zip — local memory-mapped reads, no network hop, no VPC,
+   no new IAM role. Refresh is a redeploy. The escape hatch, when the unzipped footprint
+   nears ~200 MB (the 250 MB code+layers cap) or refresh must decouple from deploys, is
+   an S3 object downloaded once per cold start to `/tmp`.
+8. **MCP-native; REST and GraphQL deferred.** The core is a plain
+   `resolvePlace(query) → envelope` the MCP tools call; a REST read API is an additive
+   adapter added only when a non-MCP consumer appears. GraphQL is not planned.
+9. **Rollout by immutable artifact.** A new catalog is a new package version (or S3 key);
+   the hosted server publishes a new Lambda version and moves its alias via local
+   `terraform apply`; in-process hosts pin an exact version and upgrade deliberately.
+   Read-only data swaps whole-file, so there is no in-place migration.
+10. **The BLS data mirror is a separate store** (spike #51, a later milestone): Parquet
+    on S3 queried by DuckDB, not co-located with geography. DuckDB may later serve as one
+    query client over both, but is not introduced until the mirror lands.
+
+Graph databases (Neptune) and always-on relational databases (Aurora Serverless v2) are
+rejected in the spike: containment is fixed-depth indexed joins, not graph traversal, and
+a read-only sub-gigabyte dataset gains nothing from a server it must reach over the
+network and pay a floor for.
+
 ## Consequences
 
 - `server-geo` follows every account rule already established: `rc-geo-mcp-<env>` names,
