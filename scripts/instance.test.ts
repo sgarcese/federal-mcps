@@ -26,7 +26,7 @@ describe("instance record loader", () => {
     const dev = selectInstance();
     expect(dev.name).toBe("dev");
     expect(dev.deployRoleArn).toBe(
-      `arn:aws:iam::${dev.account}:role/rc-federal-mcps-github-deploy`,
+      `arn:aws:iam::${dev.account}:role/rc-federal-mcps-github-deploy-role`,
     );
     expect(loadInstances().map((i) => i.name)).toContain("dev");
   });
