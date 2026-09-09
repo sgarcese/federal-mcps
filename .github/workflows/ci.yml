@@ -47,3 +47,35 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.15.5"
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform validate
+        run: |
+          for root in terraform/bootstrap terraform/modules/github-oidc-deploy-role terraform/instances/dev; do
+            echo "== $root"
+            terraform -chdir="$root" init -backend=false -input=false >/dev/null
+            terraform -chdir="$root" validate
+          done
+
+      - name: Terraform test
+        run: |
+          for root in terraform/modules/github-oidc-deploy-role terraform/instances/dev; do
+            echo "== $root"
+            terraform -chdir="$root" test
+          done
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+
+      - name: tflint
+        run: |
+          tflint --init
+          tflint --recursive --chdir=terraform

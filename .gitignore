@@ -32,10 +32,15 @@ venv/
 .mypy_cache/
 *.egg-info/
 
-# --- AWS CDK ---
-cdk.out/
-cdk.context.json
-.cdk.staging/
+# --- Terraform ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.auto.tfvars
+*.auto.tfvars.json
+crash.log
+.tflint.d/
 
 # --- Geography catalog build artifacts ---
 # Raw downloads (TIGER, gazetteer, LABSTAT code tables, OMB delineations) are fetched
