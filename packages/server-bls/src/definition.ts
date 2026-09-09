@@ -45,21 +45,26 @@ asks about local prices or inflation and their place is not one of those ~23 are
 so plainly and offer the nearest published geography (region, division, or U.S. city
 average) instead of fabricating a local figure.
 
-This server exposes \`bls_resolve_place\`, which turns a place name into candidates
-carrying every identifier (GEOID, UCGID, Data Commons DCID), the place's parents, which
-BLS programs publish at its level, its BLS area codes, and structured flags — including
+Start with \`bls_resolve_place\`, which turns a place name into candidates carrying every
+identifier (GEOID, UCGID, Data Commons DCID), the place's parents, which BLS programs
+publish at its level, its BLS area codes, and structured flags — including
 \`below_threshold\` when a place is under the LAUS 25,000 cutoff, with its county as the
-fallback. Resolve the place first, then read a number. It also exposes
-\`bls_describe_source\`, which reports what this server covers today and what is planned:
-Local Area Unemployment Statistics (LAUS,
-unemployment), Current Employment Statistics State & Area (CES S&A, payroll
-employment), the Quarterly Census of Employment and Wages (QCEW, employment and wages by
-industry), Occupational Employment and Wage Statistics (OEWS, wages by occupation), the
-Consumer Price Index (CPI), and the Job Openings and Labor Turnover Survey (JOLTS).
-Every one of them is listed as "planned" right now — data-fetching tools for
-unemployment, payroll employment, wages, prices and job openings arrive in later
-milestones. Call \`bls_describe_source\` first when you are unsure what this server can
-answer, rather than assuming a tool exists.
+fallback. Resolve the place first, then read a number.
+
+Unemployment is available now. \`bls_get_indicator\` returns a LAUS measure —
+unemployment rate, unemployment, employment or labor force — for a resolved place over
+time, applying the county fallback below the 25,000 threshold; \`bls_list_indicators\`
+lists those measures and whether LAUS publishes at a place's level; \`bls_get_raw\`
+returns the unprocessed BLS response for exact series ids.
+
+\`bls_describe_source\` reports what this server covers and what is planned: Local Area
+Unemployment Statistics (LAUS, unemployment) is available; Current Employment Statistics
+State & Area (CES S&A, payroll employment), the Quarterly Census of Employment and Wages
+(QCEW, employment and wages by industry), Occupational Employment and Wage Statistics
+(OEWS, wages by occupation), the Consumer Price Index (CPI), and the Job Openings and
+Labor Turnover Survey (JOLTS) are planned — their data tools arrive in later milestones.
+Call \`bls_describe_source\` when you are unsure what this server can answer, rather than
+assuming a tool exists.
 
 Every result this server family returns — now and once data tools land — carries a
 provenance block: the resolved place, the BLS program and series id, the retrieval date,
@@ -71,11 +76,11 @@ never writes or modifies anything.
 
 /**
  * The BLS server's definition (issue #8, on the shell from #6; #59 adds place
- * resolution). Its one tool today is `bls_resolve_place`, mounted from the shared
- * resolver (`geographyTools`, ADR-003 §8, ADR-008) over the bundled catalog — the BLS
- * server ships no place lookup of its own, so the contract's no-own-resolve rule stays
- * green (the tool is `fromCore`). Data-fetching tools arrive from M3
- * (docs/architecture.md, "Release 1: BLS only").
+ * resolution; #82/#83 add the LAUS data tools). `bls_resolve_place` is mounted from the
+ * shared resolver (`geographyTools`, ADR-003 §8, ADR-008) over the bundled catalog — the
+ * BLS server ships no place lookup of its own, so the contract's no-own-resolve rule
+ * stays green (the tool is `fromCore`); `bls_get_indicator`, `bls_list_indicators` and
+ * `bls_get_raw` come from `blsIndicatorTools` (LAUS over the BLS timeseries API, ADR-009).
  */
 export interface BlsDefinitionDeps {
   catalog: GeographyCatalog;
