@@ -32,10 +32,12 @@ The backend flags come from the fleet record (`terraform.stateBucket`,
 `terraform.stateKey`). The key variable is required by the root even for a targeted
 apply of the role; sourcing `.env` supplies it without typing it. The `deploy_role_arn`
 output must equal the record's `deployRoleArn`
-(`arn:aws:iam::<account>:role/rc-federal-mcps-github-deploy`). If the apply fails on
-`iam:GetOpenIDConnectProvider`, the account is missing the GitHub OIDC provider; an
-administrator creates it once (URL `https://token.actions.githubusercontent.com`,
-audience `sts.amazonaws.com`).
+(`arn:aws:iam::<account>:role/rc-federal-mcps-github-deploy`). The role's trust
+references the account's GitHub OIDC provider by its deterministic ARN without reading
+it (#37). If the provider does not exist, the first CI run fails at "Configure AWS
+credentials"; an administrator creates it once (URL
+`https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`). This
+account already has one, used by sibling deployments.
 
 ## 3. Give CI the agency key
 

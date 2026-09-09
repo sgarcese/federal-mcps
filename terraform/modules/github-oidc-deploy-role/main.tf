@@ -1,7 +1,7 @@
 # The GitHub Actions deploy role (ADR-004 §2, ADR-005 §1).
 #
 # Assumable only by this repository's main branch through the account's EXISTING
-# GitHub OIDC provider (an account singleton; referenced, never created here).
+# GitHub OIDC provider (an account singleton; its ARN is constructed, never read or created here).
 # Holds what `terraform apply` needs for the federal-mcps stacks, scoped to the
 # account's rc-* naming pattern (ADR-006) wherever the service supports it.
 
@@ -24,8 +24,10 @@ locals {
   name_prefix = "rc-"
 }
 
-data "aws_iam_openid_connect_provider" "github" {
-  url = "https://${local.oidc_host}"
+# The provider ARN is deterministic, so it is constructed rather than read:
+# reading it needs iam:ListOpenIDConnectProviders, which rc-deploy is denied (#37).
+locals {
+  oidc_provider_arn = "arn:aws:iam::${var.account_id}:oidc-provider/${local.oidc_host}"
 }
 
 locals {
@@ -38,7 +40,7 @@ locals {
       Effect = "Allow"
       Action = "sts:AssumeRoleWithWebIdentity"
       Principal = {
-        Federated = data.aws_iam_openid_connect_provider.github.arn
+        Federated = local.oidc_provider_arn
       }
       Condition = {
         StringEquals = { "${local.oidc_host}:aud" = "sts.amazonaws.com" }
@@ -70,12 +72,6 @@ locals {
         Effect   = "Allow"
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = ["arn:aws:s3:::${var.state_bucket}/${var.state_key_prefix}*"]
-      },
-      {
-        Sid      = "ReadOidcProvider"
-        Effect   = "Allow"
-        Action   = ["iam:GetOpenIDConnectProvider"]
-        Resource = [data.aws_iam_openid_connect_provider.github.arn]
       },
       {
         Sid      = "ManagePrefixedRoles"

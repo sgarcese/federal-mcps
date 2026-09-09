@@ -1,13 +1,6 @@
 # Offline test of the dev root: the fleet record drives every value (ADR-005 §2).
 
 mock_provider "aws" {
-  override_data {
-    target = module.github_oidc_deploy_role.data.aws_iam_openid_connect_provider.github
-    values = {
-      arn = "arn:aws:iam::564762345093:oidc-provider/token.actions.githubusercontent.com"
-    }
-  }
-
   # bls-server's aws_iam_role.exec.arn feeds aws_lambda_function.role, which
   # the AWS provider validates as an ARN client-side even under a mocked
   # provider (terraform/modules/bls-server/tests/bls-server.tftest.hcl has
