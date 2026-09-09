@@ -49,8 +49,8 @@ terraform -chdir="$ROOT" apply -input=false tfplan
 rm -f "$ROOT/tfplan"
 
 echo "== verify the deployed server"
-url="$(terraform -chdir="$ROOT" output -raw custom_domain_url)"
-[ -n "$url" ] || { echo "::error:: custom_domain_url output is empty"; exit 1; }
+url="$(terraform -chdir="$ROOT" output -raw bls_custom_domain_url)"
+[ -n "$url" ] || { echo "::error:: bls_custom_domain_url output is empty"; exit 1; }
 
 init_body='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"deploy-verify","version":"0"}}}'
 curl --fail-with-body --retry 5 --retry-delay 10 --retry-all-errors -sS -X POST "$url" \
