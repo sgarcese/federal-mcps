@@ -54,6 +54,16 @@ variable "bls_lambda_zip_path" {
   default     = "../../../packages/server-bls/dist/lambda.zip"
 }
 
+# The geography Lambda's zip (catalog baked in, ADR-008 §7), from
+# `npm run bundle -w packages/server-geo`. Like bls, a variable rather than a literal
+# in the module block so the root's own test can point filebase64sha256 at the
+# geo-server module's committed placeholder zip without a real bundle first.
+variable "geo_lambda_zip_path" {
+  description = "Path to the geography Lambda's esbuild bundle zip (catalog baked in)."
+  type        = string
+  default     = "../../../packages/server-geo/dist/lambda.zip"
+}
+
 module "bls_server" {
   source = "../../modules/bls-server"
 
@@ -62,5 +72,18 @@ module "bls_server" {
   domain_name     = local.instance.domain.blsDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
   bls_api_key     = var.bls_api_key
+  environment_tag = local.instance.environmentTag
+}
+
+# The hosted geography server (#58, ADR-008). A separate module instance from
+# bls_server (its own Lambda, API and domain), sharing only the fleet record. It
+# needs no agency key — its data is the bundled catalog, addressed by GEO_CATALOG_PATH.
+module "geo_server" {
+  source = "../../modules/geo-server"
+
+  service_name    = local.instance.naming.geoService
+  lambda_zip_path = var.geo_lambda_zip_path
+  domain_name     = local.instance.domain.geoDomainName
+  hosted_zone_id  = local.instance.domain.hostedZoneId
   environment_tag = local.instance.environmentTag
 }
