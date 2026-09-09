@@ -14,7 +14,6 @@
       "account": "123456789012",
       "region": "us-east-1",
       "environmentTag": "dev",
-      "deployRoleArn": "arn:aws:iam::123456789012:role/rc-federal-mcps-github-deploy-role",
       "domain": {
         "blsDomainName": "bls-mcp.responsive.city",
         "hostedZoneId": "Z02890412WHZ405FIOT0Y",

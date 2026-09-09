@@ -1,6 +1,6 @@
 # The BLS server module (#9, ADR-004 §5-6, ADR-005 §1): Lambda + HTTP API +
 # custom domain for one agency server, configured through environment variables (ADR-006). Follows the style of
-# ../github-oidc-deploy-role — jsonencode locals for IAM policies so
+# jsonencode locals for IAM policies so
 # `terraform test` can assert on them under a mocked provider, and the
 # account's rc-<service>-<env> naming the deploy role's permissions are scoped to.
 

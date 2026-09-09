@@ -2,6 +2,9 @@
 
 **Status:** accepted (2026-09-08) · **Refines:** ADR-002 §3 · **Affects:** `instances.json`, `infra/`, `.github/workflows/deploy.yml`, `CLAUDE.md`
 
+> **Superseded in part by ADR-007 (2026-09-08):** §2 (a GitHub OIDC deploy role) and §4
+> (a CI deploy workflow) no longer apply — this account deploys locally with `rc-deploy`.
+
 ## Context
 
 ADR-002 chose one Lambda per server behind an HTTP API, deployed from CI. It left the

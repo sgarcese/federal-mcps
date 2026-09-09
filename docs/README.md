@@ -34,6 +34,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [ADR-006](adr/ADR-006-responsive-city-naming-state-and-secrets.md) — the account's
   actual pattern: `rc-*` names, the shared `rc-tfstate` bucket, agency keys as sensitive
   Terraform variables; no administrator step.
+- [ADR-007](adr/ADR-007-local-deploys-matching-the-account-pattern.md) — deploy locally
+  with `scripts/deploy.sh` under `rc-deploy`; no GitHub OIDC role; CI validates only.
 
 ## Runbooks
 

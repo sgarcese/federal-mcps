@@ -10,18 +10,11 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_INSTANCES_PATH = join(here, "..", "instances.json");
 
-const REQUIRED_STRINGS = [
-  "name",
-  "description",
-  "account",
-  "region",
-  "environmentTag",
-  "deployRoleArn",
-];
+const REQUIRED_STRINGS = ["name", "description", "account", "region", "environmentTag"];
 
 /**
  * @typedef {{ name: string; description: string; account: string; region: string;
- *   environmentTag: string; deployRoleArn: string;
+ *   environmentTag: string;
  *   domain: { blsDomainName: string; hostedZoneId: string; hostedZoneName: string };
  *   terraform: { stateBucket: string; stateKey: string };
  *   naming: { blsService: string } }} InstanceRecord
@@ -101,15 +94,6 @@ export function selectInstance(name = process.env.FEDERAL_MCPS_INSTANCE ?? "dev"
 /** The pre-existing Terraform state bucket for an instance (ADR-006 §1). */
 export function stateBucket(instance) {
   return instance.terraform.stateBucket;
-}
-
-/**
- * The GitHub Actions concurrency group deploy.yml must hardcode (ADR-004 §4):
- * the workflow cannot expand `env` inside its `concurrency` block, so a test
- * asserts the literal in the file equals this.
- */
-export function deployConcurrencyGroup(instance) {
-  return `deploy-${instance.name}`;
 }
 
 /** `-backend-config` flags for `terraform init` in the instance root (ADR-006 §1). */
