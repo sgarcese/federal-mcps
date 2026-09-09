@@ -84,6 +84,22 @@ export interface ToolDefinition<TInput extends z.ZodType = z.ZodType, TData = un
     input: z.output<TInput>,
     context: ToolContext,
   ) => Promise<ToolHandlerResult<TData>>;
+  /**
+   * True for a tool produced by `core.geographyTools()`. The contract harness allows a
+   * `*_resolve_place` tool only when this is set — servers must not ship their own place
+   * lookup (ADR-003 §8), but may mount core's.
+   */
+  readonly fromCore?: boolean;
+}
+
+/** A read-only MCP resource a server exposes (e.g. `geography://guide`). */
+export interface ResourceDefinition {
+  readonly uri: string;
+  readonly name: string;
+  readonly description: string;
+  readonly mimeType: string;
+  /** Returns the resource body. Called when a host reads the URI. */
+  readonly read: () => string;
 }
 
 /** The whole server, declaratively. */
@@ -97,6 +113,8 @@ export interface ServerDefinition {
   readonly instructions: string;
   // biome-ignore lint/suspicious/noExplicitAny: heterogeneous tool list; each tool is typed at its definition site.
   readonly tools: readonly ToolDefinition<any, any>[];
+  /** Read-only resources to register (e.g. the geography guide). Optional. */
+  readonly resources?: readonly ResourceDefinition[];
   /** Backs the auto-registered `${agency}_describe_source` tool. */
   readonly describeSource: () => SourceDescription;
 }
