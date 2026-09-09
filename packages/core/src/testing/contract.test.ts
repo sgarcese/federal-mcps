@@ -160,7 +160,9 @@ describe("assertFamilyContract", () => {
 
   it("throws one error listing every violation", async () => {
     const report = await checkFamilyContract(broken.missingPrefix);
-    const error = await assertFamilyContract(broken.missingPrefix).catch((thrown: unknown) => thrown);
+    const error = await assertFamilyContract(broken.missingPrefix).catch(
+      (thrown: unknown) => thrown,
+    );
     expect(error).toBeInstanceOf(Error);
     const message = (error as Error).message;
     for (const violation of report.violations) {

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { buildCitation } from "../../envelope/index.js";
-import type { ServerDefinition, ToolDefinition, ToolHandlerResult } from "../../server/definition.js";
+import type {
+  ServerDefinition,
+  ToolDefinition,
+  ToolHandlerResult,
+} from "../../server/definition.js";
 
 /**
  * The canonical compliant fixture: the demo shape from `server/definition.test.ts`
@@ -11,7 +15,10 @@ import type { ServerDefinition, ToolDefinition, ToolHandlerResult } from "../../
 
 const DEMO_URL = "https://example.invalid/echo";
 
-function demoResult(ids: readonly string[], now: Date): ToolHandlerResult<{ ids: readonly string[] }> {
+function demoResult(
+  ids: readonly string[],
+  now: Date,
+): ToolHandlerResult<{ ids: readonly string[] }> {
   const source = {
     agency: "demo",
     program: "Echo",
@@ -51,9 +58,7 @@ const comparePlaces: ToolDefinition<typeof compareInput, { ids: readonly string[
   name: "demo_compare_places",
   description: "Compares one indicator across places, aligned on period.",
   input: compareInput,
-  examples: [
-    { title: "two places", input: { indicator: "ECHO", places: ["0820000", "0876000"] } },
-  ],
+  examples: [{ title: "two places", input: { indicator: "ECHO", places: ["0820000", "0876000"] } }],
   handler: async (input, context) => demoResult([input.indicator], context.now()),
 };
 
