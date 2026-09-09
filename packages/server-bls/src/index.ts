@@ -14,6 +14,14 @@ export { buildBlsDefinition } from "./definition.js";
 export { describeSource } from "./describe-source.js";
 export { openBundledCatalog, setCatalogForTest } from "@federal-mcps/core";
 export { BLS_SERVER_VERSION } from "./version.js";
+export {
+  buildLausSeriesId,
+  isLausSeriesId,
+  LAUS_MEASURE_CODES,
+  LAUS_MEASURES,
+  type LausMeasure,
+  type LausSeriesOptions,
+} from "./laus.js";
 
 /** Builds the configured BLS `McpServer` over the bundled catalog, ready to run. */
 export function createBlsServer(options?: CreateServerOptions): McpServer {
