@@ -6,7 +6,6 @@ locals {
   instances = { for i in local.fleet.instances : i.name => i }
   instance  = local.instances[local.instance_name]
 
-  # Derived names that other modules and the runbook rely on.
-  state_bucket     = local.instance.terraform.stateBucket
-  deploy_role_name = element(split("/", local.instance.deployRoleArn), 1)
+  # Derived name for the Terraform state bucket (ADR-006).
+  state_bucket = local.instance.terraform.stateBucket
 }

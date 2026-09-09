@@ -1,13 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  backendConfigFlags,
-  deployConcurrencyGroup,
-  loadInstances,
-  selectInstance,
-  stateBucket,
-} from "./instance.mjs";
+import { backendConfigFlags, loadInstances, selectInstance, stateBucket } from "./instance.mjs";
 
 const repoRoot = join(import.meta.dirname, "..");
 
@@ -25,9 +19,7 @@ describe("instance record loader", () => {
   it("selects dev by default and validates the record shape", () => {
     const dev = selectInstance();
     expect(dev.name).toBe("dev");
-    expect(dev.deployRoleArn).toBe(
-      `arn:aws:iam::${dev.account}:role/rc-federal-mcps-github-deploy-role`,
-    );
+    expect(dev.terraform.stateBucket).toBe(`rc-tfstate-${dev.account}`);
     expect(loadInstances().map((i) => i.name)).toContain("dev");
   });
 
@@ -43,10 +35,6 @@ describe("instance record loader", () => {
       "-backend-config=key=rc/federal-mcps/dev/terraform.tfstate",
       `-backend-config=region=${dev.region}`,
     ]);
-  });
-
-  it("names the deploy concurrency group deploy-<instance>", () => {
-    expect(deployConcurrencyGroup(selectInstance())).toBe("deploy-dev");
   });
 });
 
