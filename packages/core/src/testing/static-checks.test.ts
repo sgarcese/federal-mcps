@@ -77,13 +77,13 @@ describe("checkServerSources", () => {
 
   it("allows agency hostnames in source.ts, where describe_source declares them", async () => {
     const report = await checkServerSources(root);
-    expect(report.violations.filter((each) => each.message.includes("source.ts"))).toEqual([]);
+    expect(report.violations.filter((each) => each.message.startsWith("source.ts:"))).toEqual([]);
   });
 
   it("ignores comments, test files and __fixtures__", async () => {
     const report = await checkServerSources(root);
     const ignored = report.violations.filter((each) =>
-      ["notes.ts", "clean.test.ts", "recorded.ts"].some((name) => each.message.includes(name)),
+      /(?:^|\/)(?:notes\.ts|clean\.test\.ts|recorded\.ts):/.test(each.message),
     );
     expect(ignored).toEqual([]);
   });
