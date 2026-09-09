@@ -124,6 +124,12 @@ run "lambda_environment_carries_transport_and_key" {
     error_message = "BLS_API_KEY must be set from var.bls_api_key"
   }
 
+  # #59, ADR-008 §7: the BLS server resolves places off the bundled catalog.
+  assert {
+    condition     = aws_lambda_function.bls.environment[0].variables["GEO_CATALOG_PATH"] == "/var/task/geo-catalog.sqlite"
+    error_message = "GEO_CATALOG_PATH must point at the bundled catalog in the deployment package"
+  }
+
   assert {
     condition     = !contains(keys(aws_lambda_function.bls.environment[0].variables), "BLS_SECRET_ARN")
     error_message = "no Secrets Manager indirection remains"

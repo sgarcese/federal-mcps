@@ -35,15 +35,16 @@ aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output json
 echo "== build + bundle"
 npm ci
 npm run build
-npm run bundle -w packages/server-bls
 
-# The geography Lambda bakes the catalog into its zip (ADR-008 §7). Build the catalog
-# artifact once if it is not already present (it is release data, not rebuilt per deploy;
-# delete packages/geography-build/dist or set GEO_CATALOG_ARTIFACT to force a refresh).
+# Both Lambdas bake the geography catalog into their zips (#59, ADR-008 §7). Build the
+# catalog artifact once if it is not already present (it is release data, not rebuilt per
+# deploy; delete packages/geography-build/dist or set GEO_CATALOG_ARTIFACT to refresh),
+# then bundle both servers off it.
 if [ -z "${GEO_CATALOG_ARTIFACT:-}" ] && ! ls packages/geography-build/dist/geo-catalog@*.sqlite >/dev/null 2>&1; then
   echo "== build geography catalog (no artifact found)"
   npm run geography:build
 fi
+npm run bundle -w packages/server-bls
 npm run bundle -w packages/server-geo
 
 echo "== terraform init"
