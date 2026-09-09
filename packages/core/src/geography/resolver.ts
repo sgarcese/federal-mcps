@@ -83,6 +83,9 @@ const KIND_HINTS: Readonly<Record<string, string[]>> = Object.freeze({
   tract: ["140"],
 });
 
+/** Longest query we tokenize; anything past this is a caller error or an attack, not a place name. */
+const MAX_QUERY_LENGTH = 200;
+
 /**
  * Resolves a place name to ranked candidates, each carrying every identifier, its parents,
  * what data is available at its level, and structured flags. Stops with `status:
@@ -93,15 +96,20 @@ export function resolvePlace(
   query: string,
   options: ResolveOptions = {},
 ): ResolveResult {
+  // Bound user input before it reaches FTS5: cap length (a megabyte query would make the
+  // trigram tokenizer do needless work) and require the trigram minimum of 3 characters.
+  const bounded = query.slice(0, MAX_QUERY_LENGTH);
+  if (bounded.trim().length < 3) return { status: "ok", candidates: [] };
+
   const stateFips = normalizeState(options.state);
   const sumlevels = normalizeKind(options.kind);
-  const normQuery = normalizeName(query);
+  const normQuery = normalizeName(bounded);
 
   const searchOpts: { stateFips?: string; sumlevels?: string[]; limit: number } = { limit: 50 };
   if (stateFips) searchOpts.stateFips = stateFips;
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
-  const rows = catalog.searchNames(query, searchOpts);
+  const rows = catalog.searchNames(bounded, searchOpts);
   const scored = rows
     .map((e) => scoreCandidate(catalog, e, normQuery))
     .sort((a, b) => b.score - a.score);
