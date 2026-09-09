@@ -2,7 +2,9 @@ import { ucgidOf } from "@federal-mcps/core";
 import type { AliasRow, EntityRow } from "../types.js";
 
 /**
- * Census National Gazetteer files: tab-delimited, one header row, one entity per line.
+ * Census National Gazetteer files: one header row, one entity per line. The delimiter
+ * varies by vintage — the 2025 national files are pipe-delimited (and add a GEOIDFQ
+ * column); older files were tab-delimited (#73) — so it is detected from the header.
  * Column sets differ by entity type, so we map by header NAME rather than position.
  * The caller supplies the `sumlevel` (the gazetteer file is per entity type).
  *
@@ -16,14 +18,17 @@ export function parseGazetteer(
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const header = lines.shift();
   if (!header) return { entities: [], aliases: [] };
-  const cols = header.split("\t").map((c) => c.trim().toUpperCase());
+  // Pipe (2025+) or tab (older). Pick whichever the header actually uses.
+  const delimiter = header.includes("|") ? "|" : "\t";
+  const cols = header.split(delimiter).map((c) => c.trim().toUpperCase());
   const idx = (name: string): number => cols.indexOf(name);
 
   const iGeoid = idx("GEOID");
   const iName = idx("NAME");
-  if (iGeoid < 0 || iName < 0) {
-    throw new Error(`gazetteer: header lacks GEOID or NAME (got ${cols.join(",")})`);
+  if (iGeoid < 0) {
+    throw new Error(`gazetteer: header lacks GEOID (got ${cols.join(",")})`);
   }
+  // The 2025 ZCTA gazetteer has no NAME column — a ZCTA's code is its name (#73).
   const iAnsi = idx("ANSICODE");
   const iLsad = idx("LSAD");
   const iFunc = idx("FUNCSTAT");
@@ -35,10 +40,11 @@ export function parseGazetteer(
   const aliases: AliasRow[] = [];
 
   for (const line of lines) {
-    const f = line.split("\t");
+    const f = line.split(delimiter);
     const geoid = f[iGeoid]?.trim();
-    const name = f[iName]?.trim();
-    if (!geoid || !name) continue;
+    if (!geoid) continue;
+    // A ZCTA gazetteer carries no NAME; its GEOID (the ZCTA code) is its name.
+    const name = (iName >= 0 ? f[iName]?.trim() : undefined) || geoid;
 
     const num = (i: number): number | null => {
       if (i < 0) return null;

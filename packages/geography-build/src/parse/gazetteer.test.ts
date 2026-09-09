@@ -10,6 +10,32 @@ const COUNTIES = [
 ].join("\n");
 
 describe("parseGazetteer", () => {
+  // The 2025 national gazetteers are pipe-delimited with a GEOIDFQ column (Census changed
+  // the format); older vintages were tab-delimited. The parser must handle both (#73).
+  const STATE_2025_PIPE = [
+    "USPS|GEOID|GEOIDFQ|NAME|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG",
+    "AL|01|0400000US01|Alabama|131186429591|4590079330|50651.6|1772.2|32.7794|-86.8287",
+    "CO|08|0400000US08|Colorado|268418796417|1181621591|103641.9|456.2|38.9979|-105.5479",
+  ].join("\n");
+
+  it("parses the 2025 pipe-delimited gazetteer (with a GEOIDFQ column)", () => {
+    const { entities } = parseGazetteer(STATE_2025_PIPE, "040");
+    expect(entities).toHaveLength(2);
+    const co = entities.find((e) => e.geoid === "08");
+    expect(co).toMatchObject({ sumlevel: "040", name: "Colorado", aland: 268_418_796_417 });
+    expect(co?.lat).toBeCloseTo(38.9979, 3);
+  });
+
+  it("names a ZCTA by its GEOID when the gazetteer has no NAME column (#73)", () => {
+    const ZCTA_2025 = [
+      "GEOID|GEOIDFQ|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG",
+      "02134|860Z200US02134|4200000|100000|1.6|0.0|42.3552|-71.1289",
+    ].join("\n");
+    const { entities } = parseGazetteer(ZCTA_2025, "860");
+    expect(entities).toHaveLength(1);
+    expect(entities[0]).toMatchObject({ geoid: "02134", name: "02134", sumlevel: "860" });
+  });
+
   it("parses entities with derived state FIPS, centroid and land area", () => {
     const { entities } = parseGazetteer(COUNTIES, "050");
     expect(entities).toHaveLength(2);
