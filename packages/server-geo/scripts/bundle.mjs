@@ -1,0 +1,130 @@
+/**
+ * Build the geography Lambda deployment zip (#58, ADR-008 §7): the esbuild bundle, the
+ * better-sqlite3 native addon, and the catalog file, laid out for /var/task.
+ *
+ * Why a script and not a one-liner (as server-bls has): this Lambda ships a native
+ * module and a data file, not just JS.
+ *   - esbuild bundles src/lambda.ts to ESM but keeps `better-sqlite3` external, so at
+ *     runtime Node resolves it from node_modules next to the bundle. better-sqlite3
+ *     13.x carries prebuilt binaries for every platform in its own `prebuilds/`; on
+ *     Lambda (linux, arm64, glibc) its loader picks `prebuilds/linux-arm64.node`. We
+ *     copy the package's `lib/`, its `package.json`, and just that one prebuild — no
+ *     node-gyp, no cross-compile, no prebuild-install. node-addon-api is build-time
+ *     only and not copied.
+ *   - The catalog (`@rc/geo-catalog`, ADR-008 §7) is copied to `geo-catalog.sqlite`;
+ *     Terraform sets GEO_CATALOG_PATH to /var/task/geo-catalog.sqlite (the module's
+ *     default), so the two must agree.
+ *
+ * Inputs:
+ *   GEO_CATALOG_ARTIFACT  path to the catalog .sqlite to bundle. Default: the newest
+ *                         packages/geography-build/dist/geo-catalog@*.sqlite (produced
+ *                         by `npm run geography:build`). Fails loudly if none exists.
+ *
+ * Output: packages/server-geo/dist/lambda.zip
+ *
+ * This runs at deploy time (scripts/deploy.sh), never in CI or unattended.
+ */
+import { execFileSync } from "node:child_process";
+import {
+  cpSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import * as esbuild from "esbuild";
+
+const require = createRequire(import.meta.url);
+const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const distDir = join(pkgRoot, "dist");
+const stageDir = join(distDir, "lambda");
+const zipPath = join(distDir, "lambda.zip");
+
+const CATALOG_BASENAME = "geo-catalog.sqlite"; // must match the module's GEO_CATALOG_PATH
+
+function resolveCatalog() {
+  const override = process.env.GEO_CATALOG_ARTIFACT;
+  if (override) {
+    if (!existsSync(override)) throw new Error(`GEO_CATALOG_ARTIFACT does not exist: ${override}`);
+    return override;
+  }
+  const buildDist = join(pkgRoot, "..", "geography-build", "dist");
+  const candidates = existsSync(buildDist)
+    ? readdirSync(buildDist)
+        .filter((f) => f.startsWith("geo-catalog@") && f.endsWith(".sqlite"))
+        .map((f) => join(buildDist, f))
+        .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+    : [];
+  if (candidates.length === 0) {
+    throw new Error(
+      "No geography catalog found. Set GEO_CATALOG_ARTIFACT, or run `npm run geography:build` " +
+        "to produce packages/geography-build/dist/geo-catalog@<vintage>.sqlite first.",
+    );
+  }
+  return candidates[0];
+}
+
+async function esbuildBundle() {
+  await esbuild.build({
+    entryPoints: [join(pkgRoot, "src", "lambda.ts")],
+    bundle: true,
+    platform: "node",
+    target: "node22",
+    format: "esm",
+    // better-sqlite3 is a native addon: keep it external so Node resolves it (and its
+    // prebuilt binary) from node_modules next to the bundle at runtime.
+    external: ["better-sqlite3"],
+    outfile: join(stageDir, "lambda.mjs"),
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
+  });
+}
+
+function copyBetterSqlite3() {
+  const src = dirname(require.resolve("better-sqlite3/package.json"));
+  const dst = join(stageDir, "node_modules", "better-sqlite3");
+  mkdirSync(join(dst, "prebuilds"), { recursive: true });
+  cpSync(join(src, "lib"), join(dst, "lib"), { recursive: true });
+  copyFileSync(join(src, "package.json"), join(dst, "package.json"));
+  const prebuild = join(src, "prebuilds", "linux-arm64.node");
+  if (!existsSync(prebuild)) {
+    throw new Error(
+      `better-sqlite3 is missing prebuilds/linux-arm64.node at ${prebuild}; the installed ` +
+        "version must ship the arm64 Linux prebuild (better-sqlite3 >= 12 does).",
+    );
+  }
+  copyFileSync(prebuild, join(dst, "prebuilds", "linux-arm64.node"));
+}
+
+function zip() {
+  // Deterministic, directory-aware zip of the staged tree, via Python's stdlib (present
+  // on the deploy host, as server-bls's bundle already assumes).
+  execFileSync(
+    "python3",
+    [
+      "-c",
+      "import shutil,sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2])",
+      zipPath.replace(/\.zip$/, ""),
+      stageDir,
+    ],
+    { stdio: "inherit" },
+  );
+}
+
+const catalog = resolveCatalog();
+rmSync(stageDir, { recursive: true, force: true });
+rmSync(zipPath, { force: true });
+mkdirSync(stageDir, { recursive: true });
+
+await esbuildBundle();
+copyBetterSqlite3();
+copyFileSync(catalog, join(stageDir, CATALOG_BASENAME));
+zip();
+
+process.stdout.write(`bundled ${zipPath} (catalog: ${catalog})\n`);
