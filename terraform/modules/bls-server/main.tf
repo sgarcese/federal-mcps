@@ -1,8 +1,8 @@
 # The BLS server module (#9, ADR-004 §5-6, ADR-005 §1): Lambda + HTTP API +
-# custom domain + secret access for one agency server. Follows the style of
+# custom domain for one agency server, configured through environment variables (ADR-006). Follows the style of
 # ../github-oidc-deploy-role — jsonencode locals for IAM policies so
 # `terraform test` can assert on them under a mocked provider, and the
-# federal-mcps- name prefix the deploy role's permissions are scoped to.
+# account's rc-<service>-<env> naming the deploy role's permissions are scoped to.
 
 terraform {
   required_version = ">= 1.10"
@@ -15,13 +15,10 @@ terraform {
   }
 }
 
-data "aws_secretsmanager_secret" "bls" {
-  name = var.secret_name
-}
-
 locals {
-  lambda_log_group_name = "/aws/lambda/${var.function_name}"
-  api_log_group_name    = "/aws/apigateway/${var.function_name}"
+  function_name         = "${var.service_name}-${var.environment_tag}"
+  lambda_log_group_name = "/aws/lambda/${local.function_name}"
+  api_log_group_name    = "/aws/apigateway/${local.function_name}"
 }
 
 # --- Lambda ------------------------------------------------------------
@@ -47,8 +44,7 @@ locals {
     }]
   })
 
-  # Exactly logs on its own log group, X-Ray, and GetSecretValue on the one
-  # BLS secret — nothing else (spec DESIGN REQUIREMENTS, Terraform).
+  # Exactly logs on its own log group and X-Ray — nothing else.
   exec_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -67,30 +63,24 @@ locals {
         Action   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"]
         Resource = ["*"]
       },
-      {
-        Sid      = "ReadBlsSecret"
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue"]
-        Resource = [data.aws_secretsmanager_secret.bls.arn]
-      },
     ]
   })
 }
 
 resource "aws_iam_role" "exec" {
-  name               = "${var.function_name}-exec"
-  description        = "Execution role for the ${var.function_name} Lambda"
+  name               = "${local.function_name}-role"
+  description        = "Execution role for the ${local.function_name} Lambda"
   assume_role_policy = local.exec_trust_policy
 }
 
 resource "aws_iam_role_policy" "exec" {
-  name   = "${var.function_name}-exec"
+  name   = "${local.function_name}-role"
   role   = aws_iam_role.exec.id
   policy = local.exec_policy
 }
 
 resource "aws_lambda_function" "bls" {
-  function_name = var.function_name
+  function_name = local.function_name
   role          = aws_iam_role.exec.arn
 
   runtime       = "nodejs22.x"
@@ -105,8 +95,8 @@ resource "aws_lambda_function" "bls" {
 
   environment {
     variables = {
-      MCP_TRANSPORT  = "http"
-      BLS_SECRET_ARN = data.aws_secretsmanager_secret.bls.arn
+      MCP_TRANSPORT = "http"
+      BLS_API_KEY   = var.bls_api_key
     }
   }
 
@@ -125,7 +115,7 @@ resource "aws_lambda_function" "bls" {
 # --- HTTP API ------------------------------------------------------------
 
 resource "aws_apigatewayv2_api" "bls" {
-  name          = var.function_name
+  name          = "${local.function_name}-api"
   protocol_type = "HTTP"
 }
 

@@ -12,7 +12,7 @@ mock_provider "aws" {
 variables {
   account_id     = "123456789012"
   region         = "us-east-1"
-  state_bucket   = "federal-mcps-tfstate-123456789012"
+  state_bucket   = "rc-tfstate-123456789012"
   hosted_zone_id = "ZTESTZONE"
 }
 
@@ -20,7 +20,7 @@ run "trust_policy_is_pinned_to_this_repo_main_branch" {
   command = plan
 
   assert {
-    condition     = aws_iam_role.deploy.name == "federal-mcps-github-deploy"
+    condition     = aws_iam_role.deploy.name == "rc-federal-mcps-github-deploy"
     error_message = "role name must match the instance record's deployRoleArn"
   }
 
@@ -63,7 +63,7 @@ run "permissions_stay_inside_the_documented_set" {
     condition = alltrue([
       for statement in jsondecode(aws_iam_role_policy.deploy.policy).Statement : alltrue([
         for action in statement.Action :
-        contains(["s3", "iam", "lambda", "logs", "apigateway", "acm", "route53", "secretsmanager"], split(":", action)[0])
+        contains(["s3", "iam", "lambda", "logs", "apigateway", "acm", "route53"], split(":", action)[0])
       ])
     ])
     error_message = "deploy policy contains an action outside the documented service set"
@@ -80,24 +80,24 @@ run "permissions_stay_inside_the_documented_set" {
     error_message = "deploy policy must not grant wildcard actions"
   }
 
-  # IAM role management is confined to the federal-mcps- prefix.
+  # IAM role management is confined to the rc- prefix (ADR-006 §2).
   assert {
     condition = alltrue([
       for statement in jsondecode(aws_iam_role_policy.deploy.policy).Statement :
       statement.Sid != "ManagePrefixedRoles" ||
-      alltrue([for r in statement.Resource : endswith(r, ":role/federal-mcps-*")])
+      alltrue([for r in statement.Resource : endswith(r, ":role/rc-*")])
     ])
-    error_message = "role management must be scoped to federal-mcps-* roles"
+    error_message = "role management must be scoped to rc-* roles"
   }
 
-  # Secrets: describe only, never GetSecretValue.
+  # No secrets service at all: keys ride as Terraform variables (ADR-006 §3).
   assert {
     condition = !anytrue([
       for statement in jsondecode(aws_iam_role_policy.deploy.policy).Statement : anytrue([
         for action in statement.Action :
-        action == "secretsmanager:GetSecretValue"
+        startswith(action, "secretsmanager:")
       ])
     ])
-    error_message = "the deploy role must never read secret values"
+    error_message = "the deploy role must not touch Secrets Manager"
   }
 }

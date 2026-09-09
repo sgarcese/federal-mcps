@@ -7,6 +7,6 @@ locals {
   instance  = local.instances[local.instance_name]
 
   # Derived names that other modules and the runbook rely on.
-  state_bucket     = "federal-mcps-tfstate-${local.instance.account}"
+  state_bucket     = local.instance.terraform.stateBucket
   deploy_role_name = element(split("/", local.instance.deployRoleArn), 1)
 }
