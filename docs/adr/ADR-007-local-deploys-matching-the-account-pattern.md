@@ -31,9 +31,18 @@ The owner ruled on 2026-09-08: match the pattern.
 3. **CI validates, never deploys.** The `ci` job's existing `terraform fmt`, `validate`,
    `test` and `tflint` steps are the infrastructure gate. `deploy.yml` and its tests are
    removed. This matches OpenContext's `infra.yml`.
-4. **`rc-deploy` can already do everything a deploy needs** — create the `rc-bls-mcp-<env>`
-   Lambda, its `-role`, the HTTP API, the ACM certificate and Route 53 records, and read
-   and write this project's state under `rc/federal-mcps/`. No new permission is required.
+4. **The Lambda execution role is provisioned by an administrator, not the deploy.**
+   `rc-deploy` (and the `rc-deployer` user) cannot create IAM roles at all — the first
+   real apply proved it, failing on `iam:CreateRole` for `rc-bls-mcp-dev-role`. So an
+   administrator runs `scripts/admin-create-exec-role.sh <instance>` once (root or an
+   IAM-admin identity): it creates `<service>-<env>-role` with the Lambda trust and the
+   logs + X-Ray inline policy, and grants `rc-deploy` `iam:PassRole` on it. The
+   `bls-server` module then reads that role with `data "aws_iam_role"` and attaches it;
+   it never tries to create it. This keeps `rc-deploy` without standing role-creation
+   rights, matching how the account is locked down.
+5. **`rc-deploy` can do everything else a deploy needs** — create the `rc-bls-mcp-<env>`
+   Lambda, the HTTP API, the ACM certificate and Route 53 records, and read and write
+   this project's state under `rc/federal-mcps/`. No further permission is required.
 
 ## Consequences
 
