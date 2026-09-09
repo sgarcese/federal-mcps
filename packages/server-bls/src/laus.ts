@@ -23,6 +23,14 @@ export type LausMeasure = keyof typeof LAUS_MEASURE_CODES;
 /** The measure vocabulary, for tool enums and `list_indicators`. */
 export const LAUS_MEASURES = Object.keys(LAUS_MEASURE_CODES) as LausMeasure[];
 
+/** Plain-language descriptions of each LAUS indicator, for `list_indicators`. */
+export const LAUS_MEASURE_DESCRIPTIONS: Record<LausMeasure, string> = {
+  unemployment_rate: "Unemployed as a percent of the labor force.",
+  unemployment: "Number of unemployed persons.",
+  employment: "Number of employed persons.",
+  labor_force: "Employed plus unemployed (the civilian labor force).",
+};
+
 /** A LAUS `la.area` area code is a 2-letter type prefix plus 13 digits. */
 const LAUS_AREA_CODE_LENGTH = 15;
 

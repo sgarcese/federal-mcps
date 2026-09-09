@@ -85,27 +85,49 @@ function parseSeries(res: BlsApiResponse): LausSeriesResult[] {
  * Fetch observations for one or more LAUS series ids, batching into ≤50-series requests.
  * Returns one result per series id (in request order across batches).
  */
-export async function fetchLausObservations(
+/** POST each ≤50-series batch and return the raw BLS responses (one per batch). Shared by the
+ *  parsed fetch and `fetchLausRaw`. Keyless body unless a production key is supplied. */
+async function fetchLausBatches(
   client: HttpClient,
   seriesIds: readonly string[],
-  options: LausFetchOptions = {},
-): Promise<LausSeriesResult[]> {
-  const results: LausSeriesResult[] = [];
+  options: LausFetchOptions,
+): Promise<BlsApiResponse[]> {
+  const responses: BlsApiResponse[] = [];
   for (const batch of chunk(seriesIds, MAX_SERIES_PER_REQUEST)) {
-    // The body is keyless unless a production key is supplied, so its cache/fixture identity
-    // is stable and secret-free.
     const body = {
       seriesid: batch,
       ...(options.startYear === undefined ? {} : { startyear: String(options.startYear) }),
       ...(options.endYear === undefined ? {} : { endyear: String(options.endYear) }),
       ...(options.apiKey ? { registrationkey: options.apiKey } : {}),
     };
-
     const reqOptions: RequestOptions =
       options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
-
     const { value } = await client.postJson<BlsApiResponse>(LAUS_ENDPOINT, body, reqOptions);
-    results.push(...parseSeries(value));
+    responses.push(value);
+  }
+  return responses;
+}
+
+export async function fetchLausObservations(
+  client: HttpClient,
+  seriesIds: readonly string[],
+  options: LausFetchOptions = {},
+): Promise<LausSeriesResult[]> {
+  const results: LausSeriesResult[] = [];
+  for (const response of await fetchLausBatches(client, seriesIds, options)) {
+    results.push(...parseSeries(response));
   }
   return results;
+}
+
+/**
+ * Fetch the *unprocessed* BLS response for the given series ids (the `bls_get_raw` escape
+ * hatch). Returns one raw response object per ≤50-series batch, for transparency/debugging.
+ */
+export async function fetchLausRaw(
+  client: HttpClient,
+  seriesIds: readonly string[],
+  options: LausFetchOptions = {},
+): Promise<unknown[]> {
+  return fetchLausBatches(client, seriesIds, options);
 }

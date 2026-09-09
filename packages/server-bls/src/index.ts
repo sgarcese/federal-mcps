@@ -25,11 +25,20 @@ export {
   buildLausSeriesId,
   isLausSeriesId,
   LAUS_MEASURE_CODES,
+  LAUS_MEASURE_DESCRIPTIONS,
   LAUS_MEASURES,
   type LausMeasure,
   type LausSeriesOptions,
 } from "./laus.js";
 export { blsIndicatorTools, type BlsIndicatorToolsOptions } from "./get-indicator.js";
+export {
+  fetchLausObservations,
+  fetchLausRaw,
+  LAUS_ENDPOINT,
+  type LausFetchOptions,
+  type LausObservation,
+  type LausSeriesResult,
+} from "./laus-fetch.js";
 
 /**
  * The daily BLS API budget (500 queries/day with a key, ADR-009 §2) and the per-container
