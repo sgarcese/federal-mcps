@@ -1,33 +1,35 @@
 /**
- * Build the geography Lambda deployment zip (#58, ADR-008 §7): the esbuild bundle, the
- * better-sqlite3 native addon, and the catalog file, laid out for /var/task.
+ * Build a server package's Lambda deployment zip: the esbuild bundle, the better-sqlite3
+ * native addon, and the geography catalog, laid out for /var/task (ADR-008 §7). Shared by
+ * every server that bakes the catalog in (server-bls, server-geo) — run from the package
+ * directory (npm sets the cwd), e.g. `npm run bundle -w packages/server-bls`.
  *
- * Why a script and not a one-liner (as server-bls has): this Lambda ships a native
- * module and a data file, not just JS.
+ * Why a script and not a one-liner: these Lambdas ship a native module and a data file,
+ * not just JS.
  *   - esbuild bundles src/lambda.ts to ESM but keeps `better-sqlite3` external, so at
- *     runtime Node resolves it from node_modules next to the bundle. better-sqlite3
- *     13.x carries prebuilt binaries for every platform in its own `prebuilds/`; on
- *     Lambda (linux, arm64, glibc) its loader picks `prebuilds/linux-arm64.node`. We
- *     copy the package's `lib/`, its `package.json`, and just that one prebuild — no
- *     node-gyp, no cross-compile, no prebuild-install. node-addon-api is build-time
- *     only and not copied.
+ *     runtime Node resolves it from node_modules next to the bundle. better-sqlite3 13.x
+ *     carries prebuilt binaries for every platform in its own `prebuilds/`; on Lambda
+ *     (linux, arm64, glibc) its loader picks `prebuilds/linux-arm64.node`. We copy the
+ *     package's `lib/`, its `package.json`, and just that one prebuild — no node-gyp, no
+ *     cross-compile, no prebuild-install. node-addon-api is build-time only, not copied.
  *   - The catalog (`@rc/geo-catalog`, ADR-008 §7) is copied to `geo-catalog.sqlite`;
- *     Terraform sets GEO_CATALOG_PATH to /var/task/geo-catalog.sqlite (the module's
+ *     Terraform sets GEO_CATALOG_PATH to /var/task/geo-catalog.sqlite (the modules'
  *     default), so the two must agree.
  *
  * Inputs:
+ *   cwd                   the server package directory (has src/lambda.ts).
  *   GEO_CATALOG_ARTIFACT  path to the catalog .sqlite to bundle. Default: the newest
- *                         packages/geography-build/dist/geo-catalog@*.sqlite (produced
- *                         by `npm run geography:build`). Fails loudly if none exists.
+ *                         packages/geography-build/dist/geo-catalog@*.sqlite (produced by
+ *                         `npm run geography:build`). Fails loudly if none exists.
  *
- * Output: packages/server-geo/dist/lambda.zip
+ * Output: <cwd>/dist/lambda.zip
  *
  * This runs at deploy time (scripts/deploy.sh), never in CI or unattended.
  */
 import { execFileSync } from "node:child_process";
 import {
-  cpSync,
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -36,16 +38,19 @@ import {
 } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 
 const require = createRequire(import.meta.url);
-const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const pkgRoot = process.cwd();
 const distDir = join(pkgRoot, "dist");
 const stageDir = join(distDir, "lambda");
 const zipPath = join(distDir, "lambda.zip");
 
-const CATALOG_BASENAME = "geo-catalog.sqlite"; // must match the module's GEO_CATALOG_PATH
+const CATALOG_BASENAME = "geo-catalog.sqlite"; // must match the modules' GEO_CATALOG_PATH
+
+if (!existsSync(join(pkgRoot, "src", "lambda.ts"))) {
+  throw new Error(`No src/lambda.ts under ${pkgRoot}; run this from a server package directory.`);
+}
 
 function resolveCatalog() {
   const override = process.env.GEO_CATALOG_ARTIFACT;
@@ -103,8 +108,7 @@ function copyBetterSqlite3() {
 }
 
 function zip() {
-  // Deterministic, directory-aware zip of the staged tree, via Python's stdlib (present
-  // on the deploy host, as server-bls's bundle already assumes).
+  // Deterministic, directory-aware zip of the staged tree via Python's stdlib.
   execFileSync(
     "python3",
     [
