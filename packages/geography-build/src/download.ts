@@ -10,7 +10,7 @@ import { dirname, join } from "node:path";
 export const SOURCE_URLS = {
   gazetteers: {
     "040":
-      "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_states_national.zip",
+      "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_state_national.zip",
     "050":
       "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip",
     "160":
