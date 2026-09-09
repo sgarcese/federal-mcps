@@ -35,8 +35,9 @@ description = "Values that look like secrets but are public identifiers or recor
 paths = [
   # The fleet record carries an AWS account id and a hosted zone id: identifiers, not secrets.
   '''^instances\.json$''',
-  # Recorded agency responses are public data.
-  '''(^|/)fixtures/.*\.json$''',
+  # Recorded agency responses (core HTTP client, issue #5) are public data. Only the
+  # exact layout the recorder writes is allowed: packages/<pkg>/fixtures/<source>/<sha256>.json
+  '''^packages/[a-z0-9-]+/fixtures/[a-z0-9-]+/[a-f0-9]{64}\.json$''',
   # Lockfile integrity hashes.
   '''^package-lock\.json$''',
   # Terraform provider lock hashes.
