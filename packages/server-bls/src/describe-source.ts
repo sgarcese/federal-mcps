@@ -63,6 +63,10 @@ const PROGRAMS: readonly ProgramDescription[] = [
 ];
 
 const CAVEATS: readonly string[] = [
+  "Place resolution is available now (bls_resolve_place): it maps a name to candidates with " +
+    "identifiers, BLS area codes, which programs publish at the place's level, and structured flags " +
+    "(e.g. below_threshold with the county fallback). Data-fetching tools for the programs below are " +
+    "still planned.",
   "LAUS publishes a city-level series only for incorporated places with population 25,000 or more " +
     "(about 1,700 places), plus New England towns via county-subdivision codes; smaller places have no " +
     "city series and must fall back to their county.",

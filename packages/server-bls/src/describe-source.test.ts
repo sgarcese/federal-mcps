@@ -35,6 +35,12 @@ describe("BLS describeSource()", () => {
     expect(text).toContain("preliminary");
   });
 
+  it("notes that place resolution is available now (#59)", () => {
+    const text = describeSource().caveats.join(" ").toLowerCase();
+    expect(text).toContain("bls_resolve_place");
+    expect(text).toContain("below_threshold");
+  });
+
   it("gives a citation format", () => {
     const d = describeSource();
     expect(d.citationFormat.length).toBeGreaterThan(0);
