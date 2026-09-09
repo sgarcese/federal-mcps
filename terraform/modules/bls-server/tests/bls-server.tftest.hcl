@@ -5,13 +5,6 @@
 # to have run first.
 
 mock_provider "aws" {
-  override_data {
-    target = data.aws_secretsmanager_secret.bls
-    values = {
-      arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:federal-mcps/dev/bls-AbCdEf"
-    }
-  }
-
   # Everything below is `override_during = plan`, not the default (apply):
   # the mock provider's auto-generated values for Computed attributes are NOT
   # shaped like real ARNs, and several resources here feed one resource's
@@ -23,7 +16,7 @@ mock_provider "aws" {
     target          = aws_iam_role.exec
     override_during = plan
     values = {
-      arn = "arn:aws:iam::123456789012:role/federal-mcps-bls-exec"
+      arn = "arn:aws:iam::123456789012:role/rc-bls-mcp-dev-role"
     }
   }
 
@@ -31,7 +24,7 @@ mock_provider "aws" {
     target          = aws_cloudwatch_log_group.lambda
     override_during = plan
     values = {
-      arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/federal-mcps-bls"
+      arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/lambda/rc-bls-mcp-dev"
     }
   }
 
@@ -39,7 +32,7 @@ mock_provider "aws" {
     target          = aws_cloudwatch_log_group.api
     override_during = plan
     values = {
-      arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/apigateway/federal-mcps-bls"
+      arn = "arn:aws:logs:us-east-1:123456789012:log-group:/aws/apigateway/rc-bls-mcp-dev"
     }
   }
 
@@ -80,7 +73,7 @@ variables {
   lambda_zip_path = "./tests/placeholder.zip"
   domain_name     = "bls-mcp.responsive.city"
   hosted_zone_id  = "ZTESTZONE"
-  secret_name     = "federal-mcps/dev/bls"
+  bls_api_key     = "test-key-value"
   environment_tag = "dev"
 }
 
@@ -88,8 +81,8 @@ run "lambda_runtime_and_sizing" {
   command = plan
 
   assert {
-    condition     = aws_lambda_function.bls.function_name == "federal-mcps-bls"
-    error_message = "function name must default to federal-mcps-bls"
+    condition     = aws_lambda_function.bls.function_name == "rc-bls-mcp-dev"
+    error_message = "function name must default to rc-bls-mcp-dev"
   }
 
   assert {
@@ -118,7 +111,7 @@ run "lambda_runtime_and_sizing" {
   }
 }
 
-run "lambda_environment_carries_no_key_values" {
+run "lambda_environment_carries_transport_and_key" {
   command = plan
 
   assert {
@@ -126,19 +119,15 @@ run "lambda_environment_carries_no_key_values" {
     error_message = "MCP_TRANSPORT must be http"
   }
 
+  # ADR-006 §3: the key rides as an environment variable from a sensitive variable.
   assert {
-    condition     = aws_lambda_function.bls.environment[0].variables["BLS_SECRET_ARN"] == "arn:aws:secretsmanager:us-east-1:123456789012:secret:federal-mcps/dev/bls-AbCdEf"
-    error_message = "BLS_SECRET_ARN must be the bls secret's ARN"
+    condition     = aws_lambda_function.bls.environment[0].variables["BLS_API_KEY"] == "test-key-value"
+    error_message = "BLS_API_KEY must be set from var.bls_api_key"
   }
 
-  # No env var value may look like a raw key (a long unbroken alphanumeric run) —
-  # only ARNs and fixed strings belong here, never a secret value.
   assert {
-    condition = alltrue([
-      for value in values(aws_lambda_function.bls.environment[0].variables) :
-      !can(regex("^[A-Za-z0-9]{24,}$", value))
-    ])
-    error_message = "no Lambda environment value may look like a raw secret key"
+    condition     = !contains(keys(aws_lambda_function.bls.environment[0].variables), "BLS_SECRET_ARN")
+    error_message = "no Secrets Manager indirection remains"
   }
 }
 
@@ -151,7 +140,7 @@ run "tracing_and_log_retention" {
   }
 
   assert {
-    condition     = aws_cloudwatch_log_group.lambda.name == "/aws/lambda/federal-mcps-bls"
+    condition     = aws_cloudwatch_log_group.lambda.name == "/aws/lambda/rc-bls-mcp-dev"
     error_message = "lambda log group must be named after the function"
   }
 
@@ -165,8 +154,8 @@ run "execution_role_grants_exactly_the_documented_permissions" {
   command = plan
 
   assert {
-    condition     = aws_iam_role.exec.name == "federal-mcps-bls-exec"
-    error_message = "execution role must be named <function_name>-exec"
+    condition     = aws_iam_role.exec.name == "rc-bls-mcp-dev-role"
+    error_message = "execution role must be named <function_name>-role"
   }
 
   assert {
@@ -183,21 +172,12 @@ run "execution_role_grants_exactly_the_documented_permissions" {
         contains([
           "logs:CreateLogStream", "logs:PutLogEvents", "logs:CreateLogGroup",
           "xray:PutTraceSegments", "xray:PutTelemetryRecords",
-          "secretsmanager:GetSecretValue",
         ], action)
       ])
     ])
     error_message = "execution policy must contain no action outside the documented set"
   }
 
-  assert {
-    condition = anytrue([
-      for statement in jsondecode(aws_iam_role_policy.exec.policy).Statement :
-      contains(statement.Action, "secretsmanager:GetSecretValue") &&
-      statement.Resource == ["arn:aws:secretsmanager:us-east-1:123456789012:secret:federal-mcps/dev/bls-AbCdEf"]
-    ])
-    error_message = "secretsmanager:GetSecretValue must be scoped to exactly the bls secret's ARN"
-  }
 }
 
 run "http_api_routes_post_and_get_mcp_to_the_lambda" {
@@ -292,7 +272,7 @@ run "outputs_expose_the_invoke_urls" {
   }
 
   assert {
-    condition     = output.function_name == "federal-mcps-bls"
+    condition     = output.function_name == "rc-bls-mcp-dev"
     error_message = "function_name output must equal the Lambda function name"
   }
 

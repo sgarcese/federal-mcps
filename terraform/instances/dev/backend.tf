@@ -1,6 +1,7 @@
-# The S3 backend's `bucket` and `region` are supplied at init time, not written here:
+# The S3 backend's `bucket`, `key` and `region` are supplied at init time, not written here:
 #
-#   terraform init -backend-config="bucket=federal-mcps-tfstate-<account>" \
+#   terraform init -backend-config="bucket=rc-tfstate-<account>" \
+#                  -backend-config="key=rc/federal-mcps/<instance>/terraform.tfstate" \
 #                  -backend-config="region=<region>"
 #
 # `node scripts/tf-backend-config.mjs dev` prints exactly those flags from

@@ -11,7 +11,7 @@ variable "region" {
 variable "role_name" {
   description = "Name of the deploy role. Must match the instance record's deployRoleArn."
   type        = string
-  default     = "federal-mcps-github-deploy"
+  default     = "rc-federal-mcps-github-deploy"
 }
 
 variable "github_owner" {
@@ -39,8 +39,14 @@ variable "github_repo_id" {
 }
 
 variable "state_bucket" {
-  description = "Terraform state bucket the role may read and write."
+  description = "Pre-existing Terraform state bucket (rc-tfstate-<account>) the role may read and write."
   type        = string
+}
+
+variable "state_key_prefix" {
+  description = "Key prefix inside the state bucket this project owns, e.g. rc/federal-mcps/."
+  type        = string
+  default     = "rc/federal-mcps/"
 }
 
 variable "hosted_zone_id" {
