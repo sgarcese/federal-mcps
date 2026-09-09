@@ -70,18 +70,25 @@ export function assemble(sources: Sources): CatalogRows {
   if (sources.oewsArea) agencyCodes.push(...parseOewsArea(sources.oewsArea));
   if (sources.cpiArea) agencyCodes.push(...parseCpiArea(sources.cpiArea));
 
+  // Relationship-file edges are areal overlaps (ZCTA/CD layers do not nest); a place
+  // spanning counties is a hierarchy allocation ("nests"). (#57 discriminator.)
   const weighted: ContainmentRow[] = [];
-  if (sources.zctaTract) weighted.push(...parseZctaTract(sources.zctaTract));
-  if (sources.zctaCounty) weighted.push(...parseZctaCounty(sources.zctaCounty));
-  if (sources.zctaPlace) weighted.push(...parseZctaPlace(sources.zctaPlace));
-  if (sources.cdCounty) weighted.push(...parseCdCounty(sources.cdCounty));
-  if (sources.cdPlace) weighted.push(...parseCdPlace(sources.cdPlace));
-  if (sources.placeCounty) weighted.push(...parsePlaceCounty(sources.placeCounty));
+  if (sources.zctaTract)
+    weighted.push(...withRelation(parseZctaTract(sources.zctaTract), "overlaps"));
+  if (sources.zctaCounty)
+    weighted.push(...withRelation(parseZctaCounty(sources.zctaCounty), "overlaps"));
+  if (sources.zctaPlace)
+    weighted.push(...withRelation(parseZctaPlace(sources.zctaPlace), "overlaps"));
+  if (sources.cdCounty) weighted.push(...withRelation(parseCdCounty(sources.cdCounty), "overlaps"));
+  if (sources.cdPlace) weighted.push(...withRelation(parseCdPlace(sources.cdPlace), "overlaps"));
+  if (sources.placeCounty)
+    weighted.push(...withRelation(parsePlaceCounty(sources.placeCounty), "nests"));
 
   const geocorr: ContainmentRow[] = [];
   if (sources.geocorr) {
     for (const pair of ["place_county", "cousub_cbsa", "zcta_tract"]) {
-      geocorr.push(...parseGeocorr(sources.geocorr, pair));
+      const rel = pair.startsWith("zcta") ? "overlaps" : "nests";
+      geocorr.push(...withRelation(parseGeocorr(sources.geocorr, pair), rel));
     }
   }
 
@@ -118,11 +125,19 @@ function mergeWeighted(
  * Only emitted when the parent entity is actually present, so we never point at a missing
  * row. Non-nesting relations (place↔county, county↔CBSA) are #55's weighted containment.
  */
+function withRelation(
+  rows: readonly ContainmentRow[],
+  relation: "nests" | "overlaps",
+): ContainmentRow[] {
+  return rows.map((r) => ({ ...r, relation }));
+}
+
 function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
   const present = new Set(entities.map((e) => e.geoid));
   const out: ContainmentRow[] = [];
   const add = (child: string, parent: string): void => {
-    if (present.has(parent)) out.push({ childGeoid: child, parentGeoid: parent, share: 1 });
+    if (present.has(parent))
+      out.push({ childGeoid: child, parentGeoid: parent, share: 1, relation: "nests" });
   };
   for (const e of entities) {
     switch (e.sumlevel) {
