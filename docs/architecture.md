@@ -202,20 +202,19 @@ the Responsive City account (`123456789012`, `us-east-1`). Each server has its o
 hostname following the account's `<service>.responsive.city` pattern:
 `bls-mcp.responsive.city/mcp` in Release 1.
 
-`.github/workflows/deploy.yml` (#10) runs on every push to `main`, skipping docs-only
-changes via a path filter. It resolves the current instance through
-`scripts/instance.mjs` (the same loader used by the tests, so no account, region, role
-ARN or hostname is ever hardcoded in the workflow), builds and bundles the BLS server,
-assumes the fleet record's deploy role via GitHub OIDC
-(`aws-actions/configure-aws-credentials`, no stored keys), and runs
-`terraform init` / `plan -out` / `apply` in `terraform/instances/dev`. A final step
-reads `custom_domain_url` from the Terraform outputs and verifies the live deploy by
-calling `initialize` then `tools/list` on the deployed MCP endpoint, failing the job
-unless `bls_describe_source` is present, per CLAUDE.md's per-merge-SHA deploy-verification
-rule. The Terraform state bucket and the OIDC deploy role are created once by a person
-with `AWS_PROFILE=rc-deploy` (`docs/runbooks/bootstrap-instance.md`, per ADR-005);
-until that bootstrap runs for an instance, its deploys fail at the credentials or
-Terraform-init step. The first green run's URL for `dev` is recorded on #10.
+Deploys are local, matching the account pattern (ADR-007): the account has no CI deploy
+path, so a person runs `scripts/deploy.sh dev` under `AWS_PROFILE=rc-deploy`. The script
+resolves the instance through `scripts/instance.mjs` (the same loader the tests use, so
+no account, region or hostname is hardcoded), builds and bundles the BLS server, runs
+`terraform init` / `plan` / `apply` in `terraform/instances/dev` against the account's
+pre-existing `rc-tfstate` bucket, then verifies the live deploy by calling `initialize`
+then `tools/list` on the deployed endpoint, failing unless `bls_describe_source` is
+present, and prints `deployed <sha> to <url>`. CI (`ci.yml`) validates the Terraform
+(`fmt`, `validate`, `test`, `tflint`) on every push and pull request but never applies.
+Nothing needs bootstrapping: `rc-deploy` can create the `rc-bls-mcp-dev` Lambda, its
+role, the HTTP API, the certificate and the DNS records, and read and write this
+project's state. Push-to-deploy remains a documented upgrade path (an administrator
+creates the OIDC provider and a deploy role once).
 
 ## Repository settings
 
