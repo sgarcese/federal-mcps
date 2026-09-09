@@ -11,16 +11,16 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 ## Ground rules
 
 - **TDD is mandatory.** Write the failing test first; acceptance criteria from the
-  GitHub issue become test cases. This applies to infrastructure code (e.g. CDK
-  `assertions.Template`) as much as to application packages.
+  GitHub issue become test cases. This applies to infrastructure code (`terraform test`
+  with a mocked provider) as much as to application packages.
 - **One issue, one branch, one PR.** Branch `feat/<issue#>-<slug>` off `main`; PR body
   contains `Closes #<issue>`. Never commit directly to `main`.
 - **Incremental commits** at red/green/refactor boundaries — don't squash a story into
   one commit. (They also make recovery free when a session or agent dies mid-work.)
 - **No deploys from the CLI.** Deploys are CI-only, triggered by merge to `main`.
   Local verification stops at tests, lint, and synth/build. The single exception is
-  the one-time `FederalMcpsCiCd` bootstrap per instance with `AWS_PROFILE=rc-deploy`
-  (ADR-004), which creates the OIDC role CI then uses.
+  the one-time bootstrap per instance with `AWS_PROFILE=rc-deploy` (ADR-004, ADR-005:
+  state bucket plus the OIDC deploy role), after which CI does every deploy.
 - **Docs describe what is.** A doc that has drifted is worse than none, because it is
   trusted: change the doc that owns a behaviour in the same PR that changes the
   behaviour. Superseded documents move to `docs/archive/` with a banner and a pointer —
@@ -42,6 +42,9 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   a unit test against a known-good published ID.
 - **Numbers carry their caveats.** Preliminary flags, suppression codes, vintage and
   footnotes travel in the envelope; a tool never silently drops them.
+- **Secrets never enter the repository.** Local: `.env` (gitignored). Deployed: AWS
+  Secrets Manager, referenced by ARN only. CI: GitHub repository secrets. gitleaks in
+  the `ci` job enforces it (#25).
 - **Quota is a shared resource.** All upstream calls go through the core HTTP client
   (retry, backoff, batching, budget counter). No direct `fetch` to an agency host.
 
@@ -87,7 +90,7 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 - **Verify the deploy per merge SHA.** A green PR is not a deployed PR — check the
   deploy run's conclusion for exactly the SHA that merged.
 - **Pre-PR local gate suite, run visibly** (no piping that masks exit codes):
-  tests · lint · format-check · typecheck · build · contract tests · synth. Keep the
+  tests · lint · format-check · typecheck · build · contract tests · infra:check. Keep the
   list in this file current.
 - **Combined-tree gates after parallel merges** — cross-PR seams are invisible per-PR;
   run the full suite on the merged tree.
@@ -112,8 +115,11 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
   (`server-bls`, `server-census`, `server-cdc-places`, …).
 - `packages/server-composite/` — one endpoint that mounts several agency servers with
   prefixed tool names and a single shared `resolve_place`.
-- `infra/` — CDK app: one Lambda and route per server, shared secrets, usage plans,
-  and the `FederalMcpsCiCd` trust stack.
+- `terraform/` — `bootstrap/` (state bucket, applied once by a person), `modules/`
+  (`github-oidc-deploy-role`, `bls-server`), `instances/<name>/` (one root per fleet
+  record). Tests are `*.tftest.hcl` with a mocked provider (ADR-005).
+- `scripts/` — `instance.mjs` (fleet-record loader used by CI and tests),
+  `tf-backend-config.mjs`, `infra-check.sh`.
 - `instances.json` — the fleet record (ADR-004); the only place an AWS account or
   region is named.
 
@@ -121,7 +127,7 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 
 Pre-PR gate suite, run each visibly (same order as the `ci` job):
 `npm ci` · `npm run lint` · `npm run format:check` · `npm run typecheck` · `npm test` ·
-`npm run test:contract` · `npm run build` · `npm run synth`.
+`npm run test:contract` · `npm run build` · `npm run infra:check`.
 `npm run format` fixes formatting. `npm run geography:build` joins the list when M2 lands.
 One-time bootstrap per instance: `docs/runbooks/bootstrap-instance.md`.
 The required status check on `main` is the job named `ci`.

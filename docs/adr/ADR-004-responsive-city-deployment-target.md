@@ -23,15 +23,17 @@ cannot list IAM or CloudFormation resources.
    `deployRoleArn`, `domain`). Nothing else in the repository names an account or
    region; CDK and the deploy workflow read the record. Release 1 commits one instance,
    `dev`.
-2. **GitHub deploys through OIDC, never with stored keys.** An `infra` stack
-   `FederalMcpsCiCd` references the account's existing OIDC provider and creates
+2. **GitHub deploys through OIDC, never with stored keys.** *(Mechanism superseded by
+   ADR-005: the Terraform module `github-oidc-deploy-role`; permissions are what
+   `terraform apply` needs rather than `sts:AssumeRole` on `cdk-*`.)* A trust stack references the account's existing OIDC provider and creates
    `federal-mcps-github-deploy`, assumable only by this repository's `main` branch using
    the ID-qualified subject `repo:sgarcese@2701478/federal-mcps@1361995308:ref:refs/heads/main`
    (immutable across renames). Its only permission is `sts:AssumeRole` on
    `arn:aws:iam::564762345093:role/cdk-*`, plus the read-only calls the post-deploy
    verification step needs, scoped to `FederalMcps*` stacks and functions.
-3. **One human bootstrap, then CI only.** The CI/CD stack is deployed exactly once by a
-   person using `AWS_PROFILE=rc-deploy`, because the OIDC role must exist before GitHub
+3. **One human bootstrap, then CI only.** *(ADR-005 adds the state bucket to this
+   step.)* The trust configuration is applied exactly once by a person using
+   `AWS_PROFILE=rc-deploy`, because the OIDC role must exist before GitHub
    can assume it. That bootstrap is the single documented exception to "no deploys from
    the CLI" in `CLAUDE.md`; every other deploy is a merge to `main`.
 4. **Deploy workflow shape** mirrors the sibling pattern: `push` to `main`, docs-only
