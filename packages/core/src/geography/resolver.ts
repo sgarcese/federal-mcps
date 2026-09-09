@@ -157,6 +157,13 @@ export function getLineage(catalog: GeographyCatalog, geoid: string): LineageEdg
   return catalog.lineageFrom(geoid);
 }
 
+/** Which programs publish for a place's level, and whether this place has each code. */
+export function getAvailability(catalog: GeographyCatalog, geoid: string): Availability[] {
+  const e = catalog.getEntity(geoid);
+  if (!e) return [];
+  return availabilityFor(catalog, e.sumlevel, catalog.agencyCodesOf(e.geoid));
+}
+
 // --- internals ---------------------------------------------------------------
 
 interface Scored {

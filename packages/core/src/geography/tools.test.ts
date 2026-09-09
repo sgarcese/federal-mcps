@@ -32,7 +32,13 @@ function geoServer(): ServerDefinition {
     tools: geographyTools({
       agency: "geo",
       catalog: () => catalog,
-      include: ["resolve_place", "get_containment", "get_overlap", "get_lineage"],
+      include: [
+        "resolve_place",
+        "get_containment",
+        "get_overlap",
+        "get_lineage",
+        "list_availability",
+      ],
     }),
     resources: [geographyGuideResource()],
     describeSource: () => ({
@@ -109,6 +115,20 @@ describe("geographyTools", () => {
     const client = await connect(geoServer());
     const read = await client.readResource({ uri: GEOGRAPHY_GUIDE_URI });
     expect(read.contents[0]?.text).toMatch(/does not nest|structured flags|ZCTA is not a ZIP/);
+    await client.close();
+  });
+
+  it("list_availability reports which programs publish for a place's level", async () => {
+    const client = await connect(geoServer());
+    const res = await client.callTool({
+      name: "geo_list_availability",
+      arguments: { geoid: "08031" },
+    });
+    const env = res.structuredContent as {
+      data: { availability: { agency: string; program: string; hasCode: boolean }[] };
+    };
+    const laus = env.data.availability.find((a) => a.agency === "bls" && a.program === "LAUS");
+    expect(laus?.hasCode).toBe(true);
     await client.close();
   });
 });
