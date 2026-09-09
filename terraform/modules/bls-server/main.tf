@@ -1,8 +1,8 @@
 # The BLS server module (#9, ADR-004 §5-6, ADR-005 §1): Lambda + HTTP API +
-# custom domain for one agency server, configured through environment variables (ADR-006). Follows the style of
-# jsonencode locals for IAM policies so
-# `terraform test` can assert on them under a mocked provider, and the
-# account's rc-<service>-<env> naming the deploy role's permissions are scoped to.
+# custom domain for one agency server, configured through environment variables
+# (ADR-006). The execution role is provisioned by an administrator and read here
+# (ADR-007), because the deploy identity cannot create IAM roles. Resources are
+# named rc-<service>-<env> (ADR-006 §2).
 
 terraform {
   required_version = ">= 1.10"
@@ -33,55 +33,18 @@ resource "aws_cloudwatch_log_group" "api" {
   retention_in_days = var.log_retention_days
 }
 
-locals {
-  exec_trust_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "LambdaAssume"
-      Effect    = "Allow"
-      Action    = "sts:AssumeRole"
-      Principal = { Service = "lambda.amazonaws.com" }
-    }]
-  })
-
-  # Exactly logs on its own log group and X-Ray — nothing else.
-  exec_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "WriteOwnLogGroup"
-        Effect = "Allow"
-        Action = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:CreateLogGroup"]
-        Resource = [
-          aws_cloudwatch_log_group.lambda.arn,
-          "${aws_cloudwatch_log_group.lambda.arn}:*",
-        ]
-      },
-      {
-        Sid      = "XRayTracing"
-        Effect   = "Allow"
-        Action   = ["xray:PutTraceSegments", "xray:PutTelemetryRecords"]
-        Resource = ["*"]
-      },
-    ]
-  })
-}
-
-resource "aws_iam_role" "exec" {
-  name               = "${local.function_name}-role"
-  description        = "Execution role for the ${local.function_name} Lambda"
-  assume_role_policy = local.exec_trust_policy
-}
-
-resource "aws_iam_role_policy" "exec" {
-  name   = "${local.function_name}-role"
-  role   = aws_iam_role.exec.id
-  policy = local.exec_policy
+# The execution role is provisioned once by an administrator, not by this module:
+# the deploy identity (rc-deploy) cannot create IAM roles in this account (ADR-007).
+# `scripts/admin-create-exec-role.sh` creates `<function_name>-role` with the trust
+# and inline policy (logs on this Lambda's log group + X-Ray) and grants rc-deploy
+# iam:PassRole on it. Terraform only reads and attaches it.
+data "aws_iam_role" "exec" {
+  name = "${local.function_name}-role"
 }
 
 resource "aws_lambda_function" "bls" {
   function_name = local.function_name
-  role          = aws_iam_role.exec.arn
+  role          = data.aws_iam_role.exec.arn
 
   runtime       = "nodejs22.x"
   architectures = ["arm64"]
@@ -109,7 +72,7 @@ resource "aws_lambda_function" "bls" {
     environment = var.environment_tag
   }
 
-  depends_on = [aws_cloudwatch_log_group.lambda, aws_iam_role_policy.exec]
+  depends_on = [aws_cloudwatch_log_group.lambda]
 }
 
 # --- HTTP API ------------------------------------------------------------

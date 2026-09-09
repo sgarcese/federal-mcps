@@ -15,6 +15,18 @@ bucket already exists, and `rc-deploy` can create everything a server needs
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
+## One-time: the execution role (administrator)
+
+The deploy identity cannot create IAM roles (ADR-007), so an administrator creates the
+Lambda's execution role once per instance and lets `rc-deploy` pass it:
+
+```sh
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev
+```
+
+That creates `rc-bls-mcp-dev-role` (trust Lambda, inline logs + X-Ray) and grants
+`rc-deploy` `iam:PassRole` on it. Idempotent; re-running only updates the policies.
+
 ## Deploy
 
 ```sh
