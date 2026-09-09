@@ -14,7 +14,7 @@
  * against that server — the same technique `aws-serverless-express` used.
  * No new runtime dependency: only `node:http`.
  *
- * `BLS_SECRET_ARN` is not read here — it is exposed to the process
+ * `BLS_API_KEY` is not read here — it is exposed to the process
  * environment by Terraform (terraform/modules/bls-server) and will be read
  * lazily by the upstream BLS client once it exists (M3). This adapter only
  * warns at cold start if it is missing, so a misconfigured deployment fails
@@ -26,8 +26,8 @@ import { createHttpHandler } from "@federal-mcps/core";
 import { createBlsServer } from "./index.js";
 
 // biome-ignore lint/complexity/useLiteralKeys: tsconfig's noPropertyAccessFromIndexSignature requires bracket access here.
-if (!process.env["BLS_SECRET_ARN"]) {
-  console.warn("BLS_SECRET_ARN is not set; upstream BLS calls will fail once implemented.");
+if (!process.env["BLS_API_KEY"]) {
+  console.warn("BLS_API_KEY is not set; upstream BLS calls will fail once implemented.");
 }
 
 // Built once per container: one McpServer, one loopback Node HTTP server

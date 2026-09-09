@@ -10,10 +10,9 @@ terraform {
   required_version = ">= 1.10"
 
   backend "s3" {
-    # Bucket and region cannot be expressions here; they are passed at init by
-    # `scripts/tf-backend-config.mjs` from instances.json, so they are still not
-    # written anywhere but the fleet record. See backend.tf for the shape.
-    key          = "instances/dev/terraform.tfstate"
+    # Bucket, key and region cannot be expressions here; they are passed at init
+    # by `scripts/tf-backend-config.mjs` from instances.json (ADR-006 §1), so they
+    # are still not written anywhere but the fleet record. See backend.tf.
     encrypt      = true
     use_lockfile = true
   }
@@ -41,11 +40,20 @@ provider "aws" {
 module "github_oidc_deploy_role" {
   source = "../../modules/github-oidc-deploy-role"
 
-  account_id     = local.instance.account
-  region         = local.instance.region
-  role_name      = local.deploy_role_name
-  state_bucket   = local.state_bucket
-  hosted_zone_id = local.instance.domain.hostedZoneId
+  account_id       = local.instance.account
+  region           = local.instance.region
+  role_name        = local.deploy_role_name
+  state_bucket     = local.state_bucket
+  state_key_prefix = "rc/federal-mcps/"
+  hosted_zone_id   = local.instance.domain.hostedZoneId
+}
+
+# ADR-006 §3: the agency key is a sensitive variable, supplied as TF_VAR_bls_api_key
+# (CI: from a repository secret; bootstrap: from .env). Never a default, never in git.
+variable "bls_api_key" {
+  description = "BLS Public Data API key, set on the Lambda as BLS_API_KEY."
+  type        = string
+  sensitive   = true
 }
 
 # The zip is a real build artifact (packages/server-bls/dist/lambda.zip, from
@@ -62,9 +70,10 @@ variable "bls_lambda_zip_path" {
 module "bls_server" {
   source = "../../modules/bls-server"
 
+  service_name    = local.instance.naming.blsService
   lambda_zip_path = var.bls_lambda_zip_path
   domain_name     = local.instance.domain.blsDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
-  secret_name     = local.instance.secrets.bls
+  bls_api_key     = var.bls_api_key
   environment_tag = local.instance.environmentTag
 }

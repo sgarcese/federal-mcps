@@ -23,7 +23,8 @@ const REQUIRED_STRINGS = [
  * @typedef {{ name: string; description: string; account: string; region: string;
  *   environmentTag: string; deployRoleArn: string;
  *   domain: { blsDomainName: string; hostedZoneId: string; hostedZoneName: string };
- *   secrets: { bls: string } }} InstanceRecord
+ *   terraform: { stateBucket: string; stateKey: string };
+ *   naming: { blsService: string } }} InstanceRecord
  */
 
 /**
@@ -50,13 +51,22 @@ function assertRecord(value, index) {
       throw new Error(`instances.json: entry ${index} domain is missing string field "${key}"`);
     }
   }
-  const secrets = record.secrets;
+  const terraform = record.terraform;
+  if (typeof terraform !== "object" || terraform === null) {
+    throw new Error(`instances.json: entry ${index} is missing object field "terraform"`);
+  }
+  for (const key of ["stateBucket", "stateKey"]) {
+    if (typeof (/** @type {Record<string, unknown>} */ (terraform)[key]) !== "string") {
+      throw new Error(`instances.json: entry ${index} terraform is missing string field "${key}"`);
+    }
+  }
+  const naming = record.naming;
   if (
-    typeof secrets !== "object" ||
-    secrets === null ||
-    typeof (/** @type {Record<string, unknown>} */ (secrets).bls) !== "string"
+    typeof naming !== "object" ||
+    naming === null ||
+    typeof (/** @type {Record<string, unknown>} */ (naming).blsService) !== "string"
   ) {
-    throw new Error(`instances.json: entry ${index} secrets is missing string field "bls"`);
+    throw new Error(`instances.json: entry ${index} naming is missing string field "blsService"`);
   }
   return /** @type {InstanceRecord} */ (record);
 }
@@ -88,9 +98,9 @@ export function selectInstance(name = process.env.FEDERAL_MCPS_INSTANCE ?? "dev"
   return found;
 }
 
-/** The Terraform state bucket for an instance (ADR-005 §1). */
+/** The pre-existing Terraform state bucket for an instance (ADR-006 §1). */
 export function stateBucket(instance) {
-  return `federal-mcps-tfstate-${instance.account}`;
+  return instance.terraform.stateBucket;
 }
 
 /**
@@ -102,10 +112,11 @@ export function deployConcurrencyGroup(instance) {
   return `deploy-${instance.name}`;
 }
 
-/** `-backend-config` flags for `terraform init` in the instance root. */
+/** `-backend-config` flags for `terraform init` in the instance root (ADR-006 §1). */
 export function backendConfigFlags(instance) {
   return [
     `-backend-config=bucket=${stateBucket(instance)}`,
+    `-backend-config=key=${instance.terraform.stateKey}`,
     `-backend-config=region=${instance.region}`,
   ];
 }

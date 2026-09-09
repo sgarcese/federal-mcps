@@ -1,7 +1,13 @@
-variable "function_name" {
-  description = "Lambda function name; also names the execution role (<function_name>-exec) and log groups."
+variable "service_name" {
+  description = "Service name in the account's rc-<service> pattern (ADR-006 §2); the function is <service_name>-<environment_tag>."
   type        = string
-  default     = "federal-mcps-bls"
+  default     = "rc-bls-mcp"
+}
+
+variable "bls_api_key" {
+  description = "BLS Public Data API key, set on the Lambda as BLS_API_KEY (ADR-006 §3)."
+  type        = string
+  sensitive   = true
 }
 
 variable "lambda_zip_path" {
@@ -16,11 +22,6 @@ variable "domain_name" {
 
 variable "hosted_zone_id" {
   description = "Route 53 hosted zone to create validation and alias records in (instances.json → domain.hostedZoneId)."
-  type        = string
-}
-
-variable "secret_name" {
-  description = "Name of the pre-existing Secrets Manager secret the Lambda may read (instances.json → secrets.bls)."
   type        = string
 }
 

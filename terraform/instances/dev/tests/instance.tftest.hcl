@@ -8,13 +8,6 @@ mock_provider "aws" {
     }
   }
 
-  override_data {
-    target = module.bls_server.data.aws_secretsmanager_secret.bls
-    values = {
-      arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:federal-mcps/dev/bls-AbCdEf"
-    }
-  }
-
   # bls-server's aws_iam_role.exec.arn feeds aws_lambda_function.role, which
   # the AWS provider validates as an ARN client-side even under a mocked
   # provider (terraform/modules/bls-server/tests/bls-server.tftest.hcl has
@@ -24,7 +17,7 @@ mock_provider "aws" {
     target          = module.bls_server.aws_iam_role.exec
     override_during = plan
     values = {
-      arn = "arn:aws:iam::123456789012:role/federal-mcps-bls-exec"
+      arn = "arn:aws:iam::123456789012:role/rc-bls-mcp-dev-role"
     }
   }
 
@@ -54,6 +47,7 @@ variables {
   # don't depend on `npm run bundle` having run first (CI creates the real
   # placeholder for `terraform validate`; see .github/workflows/ci.yml).
   bls_lambda_zip_path = "../../modules/bls-server/tests/placeholder.zip"
+  bls_api_key         = "test-key-value"
 }
 
 run "fleet_record_drives_the_root" {
@@ -75,12 +69,21 @@ run "fleet_record_drives_the_root" {
   }
 
   assert {
-    condition     = output.state_bucket == "federal-mcps-tfstate-${local.instance.account}"
-    error_message = "state bucket name must derive from the record's account"
+    condition     = output.state_bucket == local.instance.terraform.stateBucket
+    error_message = "state bucket must be the fleet record's pre-existing rc-tfstate bucket"
   }
 
   assert {
     condition     = module.github_oidc_deploy_role.github_subject == "repo:sgarcese@2701478/federal-mcps@1361995308:ref:refs/heads/main"
     error_message = "the root must not override the pinned subject"
+  }
+}
+
+run "bls_server_follows_the_rc_naming_pattern" {
+  command = plan
+
+  assert {
+    condition     = module.bls_server.function_name == "${local.instance.naming.blsService}-${local.instance.environmentTag}"
+    error_message = "the BLS function must be named <naming.blsService>-<environmentTag>"
   }
 }
