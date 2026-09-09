@@ -7,9 +7,11 @@
 #   resolved record.
 # - The one-time bootstrap runbook (docs/runbooks/bootstrap-instance.md) must
 #   already have been run by a person with AWS_PROFILE=rc-deploy for the
-#   target instance: it creates the Terraform state bucket and the OIDC deploy
-#   role this workflow assumes. Without that, the "Terraform init" and
-#   "Configure AWS credentials" steps below fail.
+#   target instance: it creates the OIDC deploy role this workflow assumes in
+#   the account's pre-existing rc-tfstate bucket (ADR-006). Without that, the
+#   "Configure AWS credentials" step below fails.
+# - The BLS API key reaches Terraform as TF_VAR_bls_api_key from the repository
+#   secret BLS_API_KEY (ADR-006 §3); it is never written to the repository.
 # - Docs-only merges are skipped by the path filter below, since they change
 #   nothing this workflow deploys.
 # - The last step verifies the merge actually deployed: it reads the live
@@ -106,9 +108,13 @@ jobs:
         run: terraform -chdir=terraform/instances/dev init -input=false $BACKEND_FLAGS
 
       - name: Terraform plan
+        env:
+          TF_VAR_bls_api_key: ${{ secrets.BLS_API_KEY }}
         run: terraform -chdir=terraform/instances/dev plan -input=false -out=tfplan
 
       - name: Terraform apply
+        env:
+          TF_VAR_bls_api_key: ${{ secrets.BLS_API_KEY }}
         run: terraform -chdir=terraform/instances/dev apply -input=false tfplan
 
       - name: Verify the deployed server
