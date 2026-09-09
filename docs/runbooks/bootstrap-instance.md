@@ -32,7 +32,7 @@ The backend flags come from the fleet record (`terraform.stateBucket`,
 `terraform.stateKey`). The key variable is required by the root even for a targeted
 apply of the role; sourcing `.env` supplies it without typing it. The `deploy_role_arn`
 output must equal the record's `deployRoleArn`
-(`arn:aws:iam::<account>:role/rc-federal-mcps-github-deploy`). The role's trust
+(`arn:aws:iam::<account>:role/rc-federal-mcps-github-deploy-role`). The role's trust
 references the account's GitHub OIDC provider by its deterministic ARN without reading
 it (#37). If the provider does not exist, the first CI run fails at "Configure AWS
 credentials"; an administrator creates it once (URL
@@ -61,7 +61,7 @@ the bootstrap do not produce failed deploy runs.
 
 ## Done
 
-CI now assumes `rc-federal-mcps-github-deploy` on every merge to `main` and runs
+CI now assumes `rc-federal-mcps-github-deploy-role` on every merge to `main` and runs
 `terraform apply` for the whole instance root. Re-running this runbook is safe; every
 step is idempotent. To rotate the key: update `.env`, rerun step 3, and merge anything
 to `main` (or re-run the last deploy).

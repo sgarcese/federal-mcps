@@ -13,7 +13,7 @@ run "trust_policy_is_pinned_to_this_repo_main_branch" {
   command = plan
 
   assert {
-    condition     = aws_iam_role.deploy.name == "rc-federal-mcps-github-deploy"
+    condition     = aws_iam_role.deploy.name == "rc-federal-mcps-github-deploy-role"
     error_message = "role name must match the instance record's deployRoleArn"
   }
 
