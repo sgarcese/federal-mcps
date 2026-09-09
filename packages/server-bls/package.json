@@ -18,10 +18,15 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "dev:http": "tsx src/http-dev.ts"
+    "dev:http": "tsx src/http-dev.ts",
+    "bundle": "esbuild src/lambda.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/lambda/lambda.mjs --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" && cd dist/lambda && python3 -m zipfile -c ../lambda.zip lambda.mjs"
   },
   "dependencies": {
     "@federal-mcps/core": "0.0.0",
     "@modelcontextprotocol/sdk": "1.30.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.163",
+    "esbuild": "0.28.2"
   }
 }
