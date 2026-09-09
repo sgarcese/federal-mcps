@@ -56,23 +56,19 @@ export function anthropicModel(options: AnthropicModelOptions = {}): Model {
           messages,
           ...(toolDefs.length > 0 ? { tools: toolDefs } : {}),
         });
-        // biome-ignore lint/suspicious/noExplicitAny: provider content blocks.
-        const toolUses = res.content.filter((b: any) => b.type === "tool_use");
+        // biome-ignore lint/suspicious/noExplicitAny: the SDK response content is untyped here.
+        const blocks = res.content as any[];
+        const toolUses = blocks.filter((b) => b.type === "tool_use");
         if (res.stop_reason !== "tool_use" || toolUses.length === 0) {
-          return (
-            res.content
-              // biome-ignore lint/suspicious/noExplicitAny: provider content blocks.
-              .filter((b: any) => b.type === "text")
-              // biome-ignore lint/suspicious/noExplicitAny: provider content blocks.
-              .map((b: any) => b.text)
-              .join("\n")
-              .trim()
-          );
+          return blocks
+            .filter((b) => b.type === "text")
+            .map((b) => b.text)
+            .join("\n")
+            .trim();
         }
         messages.push({ role: "assistant", content: res.content });
         const results = await Promise.all(
-          // biome-ignore lint/suspicious/noExplicitAny: provider content blocks.
-          toolUses.map(async (u: any) => ({
+          toolUses.map(async (u) => ({
             type: "tool_result" as const,
             tool_use_id: u.id,
             content: await exec(u.name, (u.input ?? {}) as Record<string, unknown>),

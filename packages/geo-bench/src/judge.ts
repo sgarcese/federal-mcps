@@ -52,10 +52,11 @@ export function anthropicJudge(options: { model?: string; apiKey?: string } = {}
           },
         ],
       });
-      // biome-ignore lint/suspicious/noExplicitAny: provider content blocks.
-      const text = res.content
-        .filter((b: any) => b.type === "text")
-        .map((b: any) => b.text)
+      // biome-ignore lint/suspicious/noExplicitAny: the SDK response content is untyped here.
+      const blocks = res.content as any[];
+      const text = blocks
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
         .join("");
       const m = text.match(/"score"\s*:\s*(0(?:\.5)?|0\.5|1(?:\.0)?)/);
       const parsed = m ? Number.parseFloat(m[1] as string) : 0;
