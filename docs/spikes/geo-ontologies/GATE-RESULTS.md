@@ -73,10 +73,25 @@ category the resolver most directly targets, and the lift is total.
 tool-win category — not the full 55-item benchmark. (2) The tool output was injected into
 the model's prompt, because the geography MCP is not registered for Claude Code subagents;
 this is a faithful stand-in (the model saw exactly what `geo_get_overlap` returns), not an
-autonomous MCP tool call. (3) The catalog holding this data is not yet built into
-`geography-build` — the outputs were computed directly from the validated Census file. A
-full, autonomous run (all relational categories, the model calling the MCP itself, over a
-built catalog) is the follow-up below.
+autonomous MCP tool call. A full, autonomous run (all relational categories, the model
+calling the MCP itself) is the follow-up below.
+
+**The gate catalog now exists (#71).** The tool arm no longer depends on injecting
+file-derived output: `geo-bench build-catalog <out.sqlite>` builds a small **2010-vintage**
+catalog from a committed slice of the Census ZCTA-to-Tract Relationship File (Suffolk 25025 +
+Philadelphia 42101 + the benchmark ZCTAs). A unit test (`bench-catalog.test.ts`) proves the
+resolver over that catalog reproduces the benchmark's own truths — A01 = 17, A02 = 9,
+A03 = 69.86%, A04 = 25025000802 @ 33.76%, A05 spans two counties, A06 = 237/586. The
+production catalog stays 2020-vintage; this 2010 catalog is gate-only, because the benchmark's
+`weighted_overlap` items are locked to the 2010 file.
+
+To run the with-tools arm against it end to end:
+
+```sh
+npm run geo-bench -w @federal-mcps/geo-bench -- build-catalog bench.sqlite
+GEO_CATALOG_PATH=bench.sqlite ANTHROPIC_API_KEY=sk-... \
+  npm run geo-bench -w @federal-mcps/geo-bench -- run out.json
+```
 
 | Date | Model | Scope | Without | With | Lift | Verdict |
 |---|---|---|---|---|---|---|
@@ -85,14 +100,12 @@ built catalog) is the follow-up below.
 
 ### Follow-up to a full autonomous run
 
-Two things unblock the complete gate, both tracked as geography-build/eval work:
-1. **Catalog coverage** — load the real ZCTA↔tract overlaps (and 2010→2020 tract lineage,
-   and the Connecticut planning-region succession for the temporal items) into
-   `geography-build`, at least for the benchmark metros. Today the build ships a 12-row
-   Geocorr sample, so the tool arm can only be run by injecting file-derived output as above.
+The catalog piece is now done (above). What remains for a fully autonomous run:
+1. **Coverage beyond `weighted_overlap`** — extend the gate catalog with 2010→2020 tract
+   lineage and the Connecticut planning-region succession so `temporal_succession` runs too.
 2. **A model host with the MCP** — either the geo stdio server registered with an MCP host
    (Claude Code, OpenCode) so the model calls the tools itself, or an Ollama adapter in the
-   harness. Once (1) lands, `npm run geo-bench -- run/grade/report` runs it end to end.
+   harness. Then `npm run geo-bench -- run/grade/report` runs the arms end to end.
 
 ### Catalog-coverage note
 

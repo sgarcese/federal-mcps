@@ -35,3 +35,9 @@ export { anthropicModel, type Model, type ToolExecutor, type ToolSpec } from "./
 export { gradeAnswers } from "./grade.js";
 export { type Cell, type Graded, score, type ScoreReport } from "./score.js";
 export { computeDelta, type Delta, renderReport } from "./report.js";
+export {
+  BENCH_CATALOG_CSV,
+  benchCatalogRows,
+  buildBenchCatalog,
+  parseBenchOverlaps,
+} from "./bench-catalog.js";

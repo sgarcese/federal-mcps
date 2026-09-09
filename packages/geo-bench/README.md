@@ -62,3 +62,15 @@ Boston/Suffolk and Philadelphia metros: ZCTA↔tract overlaps, 2010→2020 tract
 Connecticut planning-region succession). If a metro or relation is absent from the catalog
 build, the tool arm cannot lift those items — that is a catalog-coverage finding, recorded
 in `GATE-RESULTS.md`, not a harness bug.
+
+## The 2010 gate catalog (#71)
+
+The benchmark's `weighted_overlap` items are locked to the **2010** ZCTA-to-Tract Relationship
+File, so the gate builds its own small 2010-vintage catalog (the production catalog is 2020):
+
+```sh
+npm run geo-bench -w @federal-mcps/geo-bench -- build-catalog bench.sqlite
+GEO_CATALOG_PATH=bench.sqlite npm run geo-bench -w @federal-mcps/geo-bench -- run out.json
+```
+
+`bench-catalog.test.ts` proves the resolver over this catalog reproduces A01–A06 exactly.
