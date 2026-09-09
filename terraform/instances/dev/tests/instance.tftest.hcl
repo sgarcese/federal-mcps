@@ -7,6 +7,53 @@ mock_provider "aws" {
       arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
     }
   }
+
+  override_data {
+    target = module.bls_server.data.aws_secretsmanager_secret.bls
+    values = {
+      arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:federal-mcps/dev/bls-AbCdEf"
+    }
+  }
+
+  # bls-server's aws_iam_role.exec.arn feeds aws_lambda_function.role, which
+  # the AWS provider validates as an ARN client-side even under a mocked
+  # provider (terraform/modules/bls-server/tests/bls-server.tftest.hcl has
+  # the full explanation); without this override `plan` fails for the whole
+  # root, not just bls_server's own resources.
+  override_resource {
+    target          = module.bls_server.aws_iam_role.exec
+    override_during = plan
+    values = {
+      arn = "arn:aws:iam::123456789012:role/federal-mcps-bls-exec"
+    }
+  }
+
+  # aws_acm_certificate.domain_validation_options's element count is only
+  # known to the real provider (one per SAN); aws_route53_record.cert_validation
+  # for_each's over it, which fails `plan` under the mocked provider without this.
+  override_resource {
+    target          = module.bls_server.aws_acm_certificate.bls
+    override_during = plan
+    values = {
+      arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id"
+      domain_validation_options = [
+        {
+          domain_name           = "bls-mcp.responsive.city"
+          resource_record_name  = "_acme-challenge.bls-mcp.responsive.city."
+          resource_record_type  = "CNAME"
+          resource_record_value = "example.acm-validations.aws."
+        },
+      ]
+    }
+  }
+}
+
+variables {
+  # bls-server's lambda_zip_path needs a real file for filebase64sha256;
+  # the module's own committed placeholder stands in so this root's tests
+  # don't depend on `npm run bundle` having run first (CI creates the real
+  # placeholder for `terraform validate`; see .github/workflows/ci.yml).
+  bls_lambda_zip_path = "../../modules/bls-server/tests/placeholder.zip"
 }
 
 run "fleet_record_drives_the_root" {

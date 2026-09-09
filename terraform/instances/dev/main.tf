@@ -47,3 +47,24 @@ module "github_oidc_deploy_role" {
   state_bucket   = local.state_bucket
   hosted_zone_id = local.instance.domain.hostedZoneId
 }
+
+# The zip is a real build artifact (packages/server-bls/dist/lambda.zip, from
+# `npm run bundle -w packages/server-bls`), not something Terraform produces;
+# this variable exists (rather than a literal path in the module block) so
+# the root's own test can point `filebase64sha256` at the bls-server module's
+# committed placeholder zip instead, without needing a real bundle first.
+variable "bls_lambda_zip_path" {
+  description = "Path to the BLS Lambda's esbuild bundle zip."
+  type        = string
+  default     = "../../../packages/server-bls/dist/lambda.zip"
+}
+
+module "bls_server" {
+  source = "../../modules/bls-server"
+
+  lambda_zip_path = var.bls_lambda_zip_path
+  domain_name     = local.instance.domain.blsDomainName
+  hosted_zone_id  = local.instance.domain.hostedZoneId
+  secret_name     = local.instance.secrets.bls
+  environment_tag = local.instance.environmentTag
+}
