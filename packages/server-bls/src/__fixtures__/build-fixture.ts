@@ -50,14 +50,15 @@ export function buildFixtureCatalog(): string {
   const containment: ContainmentRow[] = [
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("0899999"), parentUcgid: uc("08031"), share: 1 }, // town nests in its county
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
     { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
   ];
 
   const agencyCodes: AgencyCodeRow[] = [
-    code(uc("08031"), "LAUS", "LAUCN0803100000000"),
-    code(uc("0820000"), "LAUS", "LAUCT0820000000000"), // the city is above threshold
-    code(uc("19740"), "LAUS", "LAUMT0819740000000"),
+    code(uc("08031"), "LAUS", "CN0803100000000"),
+    code(uc("0820000"), "LAUS", "CT0820000000000"), // the city is above threshold
+    code(uc("19740"), "LAUS", "MT0819740000000"),
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
   ];
 

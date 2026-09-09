@@ -6,7 +6,14 @@
  * caller then runs it over stdio (`src/stdio.ts`, the `federal-mcps-bls` bin)
  * or Streamable HTTP (`src/http.ts`).
  */
-import { type CreateServerOptions, createServer, openBundledCatalog } from "@federal-mcps/core";
+import {
+  type CreateServerOptions,
+  createHttpClient,
+  createServer,
+  MemoryBudgetStore,
+  MemoryCacheStore,
+  openBundledCatalog,
+} from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildBlsDefinition } from "./definition.js";
 
@@ -22,8 +29,26 @@ export {
   type LausMeasure,
   type LausSeriesOptions,
 } from "./laus.js";
+export { blsIndicatorTools, type BlsIndicatorToolsOptions } from "./get-indicator.js";
 
-/** Builds the configured BLS `McpServer` over the bundled catalog, ready to run. */
+/**
+ * The daily BLS API budget (500 queries/day with a key, ADR-009 §2) and the per-container
+ * cache/budget, created once per process.
+ */
+const BLS_DAILY_BUDGET = 500;
+
+/** Builds the configured BLS `McpServer` over the bundled catalog + BLS API client, ready to run. */
 export function createBlsServer(options?: CreateServerOptions): McpServer {
-  return createServer(buildBlsDefinition(openBundledCatalog()), options);
+  const httpClient = createHttpClient({
+    source: "bls",
+    budget: new MemoryBudgetStore(BLS_DAILY_BUDGET),
+    cache: new MemoryCacheStore(),
+  });
+  const definition = buildBlsDefinition({
+    catalog: openBundledCatalog(),
+    httpClient,
+    // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
+    apiKey: () => process.env["BLS_API_KEY"],
+  });
+  return createServer(definition, options);
 }
