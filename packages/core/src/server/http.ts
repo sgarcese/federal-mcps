@@ -1,6 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import {
+  StreamableHTTPServerTransport,
+  type StreamableHTTPServerTransportOptions,
+} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
 /**
  * The remote transport (#6): stateless Streamable HTTP, JSON responses, no
@@ -28,6 +32,22 @@ export interface HttpHandlerOptions {
 }
 
 export type NodeHttpHandler = (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+
+/**
+ * Stateless JSON mode.
+ *
+ * `sessionIdGenerator` is deliberately *absent* rather than set to
+ * `undefined`: the SDK reads the property's value, and no generator is what
+ * disables session management (its own docs write this as
+ * `sessionIdGenerator: undefined`). `exactOptionalPropertyTypes` forbids the
+ * explicit `undefined`, so absence carries the meaning.
+ *
+ * `enableJsonResponse` makes each POST answer with one JSON body instead of an
+ * SSE stream — the only shape a Lambda behind an HTTP API can return.
+ */
+const STATELESS_JSON_OPTIONS: StreamableHTTPServerTransportOptions = {
+  enableJsonResponse: true,
+};
 
 /** JSON-RPC error codes used for transport-level refusals. */
 const JSONRPC_CONNECTION_CLOSED = -32000;
@@ -79,16 +99,13 @@ export function createHttpHandler(
     }
 
     const handled = queue.then(async () => {
-      const transport = new StreamableHTTPServerTransport({
-        // `undefined` is what puts the transport in stateless mode: no
-        // `mcp-session-id` header is issued and none is required.
-        sessionIdGenerator: undefined,
-        // One JSON response per POST instead of an SSE stream — the shape a
-        // Lambda behind an HTTP API can actually return.
-        enableJsonResponse: true,
-      });
+      const transport = new StreamableHTTPServerTransport(STATELESS_JSON_OPTIONS);
       try {
-        await server.connect(transport);
+        // The SDK's transport classes type `onclose`/`onerror`/`onmessage` as
+        // accessors that accept `undefined`, which `exactOptionalPropertyTypes`
+        // will not match against `Transport`'s optional properties. The runtime
+        // shape is exactly right; only the optionality annotation differs.
+        await server.connect(transport as Transport);
         await transport.handleRequest(req, res);
       } finally {
         // Closing detaches the transport from the server, leaving it ready for
