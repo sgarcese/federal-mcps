@@ -13,6 +13,9 @@
     },
     {
       "path": "packages/geography-build"
+    },
+    {
+      "path": "packages/geo-bench"
     }
   ]
 }
