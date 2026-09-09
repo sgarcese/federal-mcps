@@ -15,17 +15,21 @@ bucket already exists, and `rc-deploy` can create everything a server needs
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
-## One-time: the execution role (administrator)
+## One-time: the execution roles (administrator)
 
-The deploy identity cannot create IAM roles (ADR-007), so an administrator creates the
-Lambda's execution role once per instance and lets `rc-deploy` pass it:
+The deploy identity cannot create IAM roles (ADR-007), so an administrator creates each
+Lambda's execution role once and lets `rc-deploy` pass it. There is one server per role,
+so run the script once per server — the instance hosts both the BLS and geography
+servers (ADR-008):
 
 ```sh
-AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev bls
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev geo
 ```
 
-That creates `rc-bls-mcp-dev-role` (trust Lambda, inline logs + X-Ray) and grants
-`rc-deploy` `iam:PassRole` on it. Idempotent; re-running only updates the policies.
+That creates `rc-bls-mcp-dev-role` and `rc-geo-mcp-dev-role` (each trust Lambda, inline
+logs + X-Ray) and grants `rc-deploy` `iam:PassRole` on each. Idempotent; re-running only
+updates the policies. The server argument defaults to `bls` if omitted.
 
 ## Deploy
 
@@ -34,11 +38,17 @@ export AWS_PROFILE=rc-deploy
 scripts/deploy.sh dev
 ```
 
-The script confirms the identity, builds and bundles the Lambda, runs
+The script confirms the identity, builds and bundles both Lambdas, runs
 `terraform init/plan/apply` against `terraform/instances/dev` (backend flags from the
-fleet record), then verifies the live endpoint with an MCP `initialize` and `tools/list`
-and prints `deployed <sha> to <url>`. That printed line is the per-SHA deploy record
-(`CLAUDE.md`, amended by ADR-007).
+fleet record), then verifies each live endpoint with an MCP `initialize` and
+`tools/list` and prints `deployed <sha> to <url>` once per server. Those printed lines
+are the per-SHA deploy record (`CLAUDE.md`, amended by ADR-007).
+
+The geography server bakes its catalog into its zip (ADR-008 §7). The script builds the
+catalog artifact (`npm run geography:build`, which downloads Census/OMB reference files)
+only if none is present under `packages/geography-build/dist/`; delete that directory, or
+set `GEO_CATALOG_ARTIFACT` to a specific `.sqlite`, to refresh it. The BLS server needs
+the `BLS_API_KEY`; the geography server needs no key — its data is local.
 
 The BLS key is passed as `TF_VAR_bls_api_key` from `.env` and set on the Lambda as the
 `BLS_API_KEY` environment variable (ADR-006 §3). It is stored in Terraform state, in the

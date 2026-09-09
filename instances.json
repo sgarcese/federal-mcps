@@ -16,6 +16,7 @@
       "environmentTag": "dev",
       "domain": {
         "blsDomainName": "bls-mcp.responsive.city",
+        "geoDomainName": "geo-mcp.responsive.city",
         "hostedZoneId": "Z02890412WHZ405FIOT0Y",
         "hostedZoneName": "responsive.city"
       },
@@ -24,7 +25,8 @@
         "stateKey": "rc/federal-mcps/dev/terraform.tfstate"
       },
       "naming": {
-        "blsService": "rc-bls-mcp"
+        "blsService": "rc-bls-mcp",
+        "geoService": "rc-geo-mcp"
       }
     }
   ]

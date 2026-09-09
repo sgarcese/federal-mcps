@@ -23,6 +23,20 @@ describe("instance record loader", () => {
     expect(loadInstances().map((i) => i.name)).toContain("dev");
   });
 
+  it("carries the geo server's name and domain alongside the bls server's (#58)", () => {
+    // Shape only — the exact literals live in the terraform tests (excluded from the
+    // scan below), so this file never embeds a value the fleet record alone should own.
+    const dev = selectInstance();
+    for (const service of [dev.naming.blsService, dev.naming.geoService]) {
+      expect(service).toMatch(/^rc-[a-z-]+$/);
+    }
+    for (const domain of [dev.domain.blsDomainName, dev.domain.geoDomainName]) {
+      expect(domain.endsWith(`.${dev.domain.hostedZoneName}`)).toBe(true);
+    }
+    expect(dev.naming.geoService).not.toBe(dev.naming.blsService);
+    expect(dev.domain.geoDomainName).not.toBe(dev.domain.blsDomainName);
+  });
+
   it("throws a clear error naming known instances for an unknown name", () => {
     expect(() => selectInstance("nope")).toThrow(/Unknown federal-mcps instance "nope".*dev/);
   });
@@ -40,7 +54,12 @@ describe("instance record loader", () => {
 
 describe("the fleet record is the only place an account, zone or domain is written", () => {
   const dev = selectInstance();
-  const literals = [dev.account, dev.domain.hostedZoneId, dev.domain.blsDomainName];
+  const literals = [
+    dev.account,
+    dev.domain.hostedZoneId,
+    dev.domain.blsDomainName,
+    dev.domain.geoDomainName,
+  ];
   const scanned = [
     ...walk(join(repoRoot, "terraform")),
     ...walk(join(repoRoot, "scripts")),

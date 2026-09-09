@@ -18,7 +18,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "dev:http": "tsx src/http-dev.ts"
+    "dev:http": "tsx src/http-dev.ts",
+    "bundle": "node scripts/bundle.mjs"
   },
   "dependencies": {
     "@federal-mcps/core": "0.0.0",
@@ -26,7 +27,9 @@
   },
   "devDependencies": {
     "@federal-mcps/geography-build": "0.0.0",
+    "@types/aws-lambda": "8.10.163",
     "@types/better-sqlite3": "9.6.0",
-    "better-sqlite3": "13.0.3"
+    "better-sqlite3": "13.0.3",
+    "esbuild": "0.28.2"
   }
 }

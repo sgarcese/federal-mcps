@@ -11,6 +11,13 @@ mock_provider "aws" {
     }
   }
 
+  override_data {
+    target = module.geo_server.data.aws_iam_role.exec
+    values = {
+      arn = "arn:aws:iam::564762345093:role/rc-geo-mcp-dev-role"
+    }
+  }
+
   # aws_acm_certificate.domain_validation_options's element count is only
   # known to the real provider (one per SAN); aws_route53_record.cert_validation
   # for_each's over it, which fails `plan` under the mocked provider without this.
@@ -29,6 +36,22 @@ mock_provider "aws" {
       ]
     }
   }
+
+  override_resource {
+    target          = module.geo_server.aws_acm_certificate.geo
+    override_during = plan
+    values = {
+      arn = "arn:aws:acm:us-east-1:564762345093:certificate/test-cert-id-geo"
+      domain_validation_options = [
+        {
+          domain_name           = "geo-mcp.responsive.city"
+          resource_record_name  = "_acme-challenge.geo-mcp.responsive.city."
+          resource_record_type  = "CNAME"
+          resource_record_value = "example.acm-validations.aws."
+        },
+      ]
+    }
+  }
 }
 
 variables {
@@ -37,6 +60,7 @@ variables {
   # don't depend on `npm run bundle` having run first (CI creates the real
   # placeholder for `terraform validate`; see .github/workflows/ci.yml).
   bls_lambda_zip_path = "../../modules/bls-server/tests/placeholder.zip"
+  geo_lambda_zip_path = "../../modules/geo-server/tests/placeholder.zip"
   bls_api_key         = "test-key-value"
 }
 
@@ -60,5 +84,26 @@ run "bls_server_follows_the_rc_naming_pattern" {
   assert {
     condition     = module.bls_server.function_name == "${local.instance.naming.blsService}-${local.instance.environmentTag}"
     error_message = "the BLS function must be named <naming.blsService>-<environmentTag>"
+  }
+}
+
+run "geo_server_follows_the_rc_naming_pattern_and_records_its_domain" {
+  command = plan
+
+  assert {
+    condition     = module.geo_server.function_name == "${local.instance.naming.geoService}-${local.instance.environmentTag}"
+    error_message = "the geo function must be named <naming.geoService>-<environmentTag>"
+  }
+
+  # The exact geo hostname is pinned here (a .tftest.hcl, excluded from the literal
+  # scan) rather than in a scanned source file.
+  assert {
+    condition     = local.instance.naming.geoService == "rc-geo-mcp"
+    error_message = "the geo service must be rc-geo-mcp"
+  }
+
+  assert {
+    condition     = output.geo_custom_domain_url == "https://geo-mcp.responsive.city/mcp"
+    error_message = "geo_custom_domain_url must be https://<domain.geoDomainName>/mcp"
   }
 }
