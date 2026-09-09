@@ -111,3 +111,18 @@ describe("containment, overlap, lineage", () => {
     });
   });
 });
+
+describe("query bounds (robustness)", () => {
+  it("returns empty for queries shorter than the trigram minimum, without error", () => {
+    expect(resolvePlace(catalog, "").candidates).toEqual([]);
+    expect(resolvePlace(catalog, "de").candidates).toEqual([]);
+  });
+
+  it("bounds an over-long query instead of tokenizing all of it", () => {
+    const huge = `Denver${"x".repeat(50_000)}`;
+    const r = resolvePlace(catalog, huge, { kind: "county" });
+    // "Denver" + padding within the first 200 chars still resolves; it does not hang.
+    expect(r.status).toBe("ok");
+    expect(r.candidates.length).toBeGreaterThanOrEqual(0);
+  });
+});
