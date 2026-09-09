@@ -1,5 +1,11 @@
-import { type GeographyCatalog, geographyTools, type ServerDefinition } from "@federal-mcps/core";
+import {
+  type GeographyCatalog,
+  geographyTools,
+  type HttpClient,
+  type ServerDefinition,
+} from "@federal-mcps/core";
 import { describeSource } from "./describe-source.js";
+import { blsIndicatorTools } from "./get-indicator.js";
 import { BLS_SERVER_VERSION } from "./version.js";
 
 /**
@@ -71,13 +77,32 @@ never writes or modifies anything.
  * green (the tool is `fromCore`). Data-fetching tools arrive from M3
  * (docs/architecture.md, "Release 1: BLS only").
  */
-export function buildBlsDefinition(catalog: GeographyCatalog): ServerDefinition {
+export interface BlsDefinitionDeps {
+  catalog: GeographyCatalog;
+  /** The core HTTP client for the BLS API (bls_get_indicator, #82). */
+  httpClient: HttpClient;
+  /** The BLS registration key, when configured (production only). */
+  apiKey?: () => string | undefined;
+  /** Injectable clock (retrieval date, default period). */
+  now?: () => Date;
+}
+
+export function buildBlsDefinition(deps: BlsDefinitionDeps): ServerDefinition {
+  const catalog = () => deps.catalog;
   return {
     name: "federal-mcps-bls",
     version: BLS_SERVER_VERSION,
     agency: "bls",
     instructions: BLS_INSTRUCTIONS,
-    tools: geographyTools({ agency: "bls", catalog: () => catalog, include: ["resolve_place"] }),
+    tools: [
+      ...geographyTools({ agency: "bls", catalog, include: ["resolve_place"] }),
+      ...blsIndicatorTools({
+        catalog,
+        httpClient: () => deps.httpClient,
+        ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
+        ...(deps.now ? { now: deps.now } : {}),
+      }),
+    ],
     describeSource,
   };
 }
