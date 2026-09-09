@@ -3,6 +3,10 @@
 **Status:** accepted (2026-09-08) · **Spike:** [`geography-catalog`](../spikes/geography-catalog.md) ·
 **Affects:** `packages/core/src/geography`, `packages/geography-build`, every server
 
+> **Amended by ADR-008 (2026-09-09):** §1 (bundled-only) now also ships a hosted
+> `server-geo`; §3 (single vintage) gains a tract-lineage table; the resolver's caveats
+> become structured flags. The catalog design below otherwise stands.
+
 ## Context
 
 No published reference reconciles the geographic nomenclatures of federal statistical
