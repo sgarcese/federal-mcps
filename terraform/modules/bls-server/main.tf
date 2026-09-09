@@ -60,6 +60,9 @@ resource "aws_lambda_function" "bls" {
     variables = {
       MCP_TRANSPORT = "http"
       BLS_API_KEY   = var.bls_api_key
+      # The BLS server resolves places off the bundled geography catalog (#59, ADR-008 §7),
+      # baked into this Lambda's zip like server-geo's. Not a secret.
+      GEO_CATALOG_PATH = var.catalog_path
     }
   }
 

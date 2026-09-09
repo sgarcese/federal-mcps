@@ -1,6 +1,8 @@
-import type { APIGatewayProxyEventV2 } from "aws-lambda";
-import { describe, expect, it } from "vitest";
-import { handler } from "./lambda.js";
+import { rmSync } from "node:fs";
+import { dirname } from "node:path";
+import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 
 const MCP_ACCEPT = "application/json, text/event-stream";
 
@@ -48,19 +50,35 @@ const INITIALIZE_PARAMS = {
   clientInfo: { name: "vitest", version: "0.0.0" },
 };
 
-describe("lambda handler", () => {
+// The adapter opens the catalog at import (createBlsServer runs at module top level),
+// so GEO_CATALOG_PATH must be set to a real fixture *before* the module is imported.
+let catalogPath: string;
+let handler: (event: APIGatewayProxyEventV2) => Promise<APIGatewayProxyResultV2>;
+
+beforeAll(async () => {
+  catalogPath = buildFixtureCatalog();
+  process.env.GEO_CATALOG_PATH = catalogPath;
+  ({ handler } = await import("./lambda.js"));
+});
+afterAll(() => {
+  delete process.env.GEO_CATALOG_PATH;
+  rmSync(dirname(catalogPath), { recursive: true, force: true });
+});
+
+describe("bls lambda handler", () => {
   it("answers initialize with 200 and the bls server name", async () => {
     const result = await handler(rpcEvent("initialize", INITIALIZE_PARAMS));
     expect(result.statusCode).toBe(200);
-    const body = JSON.parse(result.body ?? "{}");
+    const body = JSON.parse((result.body as string) ?? "{}");
     expect(body.result.serverInfo.name).toBe("federal-mcps-bls");
   });
 
-  it("lists bls_describe_source on tools/list", async () => {
+  it("lists bls_resolve_place and bls_describe_source on tools/list", async () => {
     await handler(rpcEvent("initialize", INITIALIZE_PARAMS));
     const result = await handler(rpcEvent("tools/list"));
-    const body = JSON.parse(result.body ?? "{}");
+    const body = JSON.parse((result.body as string) ?? "{}");
     const names = body.result.tools.map((tool: { name: string }) => tool.name);
+    expect(names).toContain("bls_resolve_place");
     expect(names).toContain("bls_describe_source");
   });
 

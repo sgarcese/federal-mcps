@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc -b",
     "dev:http": "tsx src/http-dev.ts",
-    "bundle": "node scripts/bundle.mjs"
+    "bundle": "node ../../scripts/bundle-lambda.mjs"
   },
   "dependencies": {
     "@federal-mcps/core": "0.0.0",

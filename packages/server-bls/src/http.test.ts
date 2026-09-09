@@ -1,7 +1,11 @@
+import { rmSync } from "node:fs";
 import { createServer as createNodeHttpServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { EnvelopeSchema } from "@federal-mcps/core";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { dirname } from "node:path";
+import { EnvelopeSchema, GeographyCatalog } from "@federal-mcps/core";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+import { setCatalogForTest } from "./index.js";
 import { createBlsHttpHandler, MCP_PATH } from "./http.js";
 
 const MCP_ACCEPT = "application/json, text/event-stream";
@@ -13,6 +17,18 @@ const INITIALIZE_PARAMS = {
 
 let httpServer: Server;
 let baseUrl: string;
+let catalogPath: string;
+let catalog: GeographyCatalog;
+
+beforeAll(() => {
+  catalogPath = buildFixtureCatalog();
+  catalog = new GeographyCatalog(catalogPath);
+  setCatalogForTest(catalog); // createBlsHttpHandler builds a server over this
+});
+afterAll(() => {
+  catalog.close();
+  rmSync(dirname(catalogPath), { recursive: true, force: true });
+});
 
 function rpc(
   method: string,
@@ -60,7 +76,8 @@ describe("createBlsHttpHandler", () => {
     await rpc("initialize", INITIALIZE_PARAMS);
     const list = await (await rpc("tools/list")).json();
     const names = list.result.tools.map((tool: { name: string }) => tool.name);
-    expect(names).toEqual(["bls_describe_source"]);
+    expect(names).toContain("bls_resolve_place");
+    expect(names).toContain("bls_describe_source");
 
     const call = await (
       await rpc("tools/call", { name: "bls_describe_source", arguments: {} })
