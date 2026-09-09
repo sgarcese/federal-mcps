@@ -31,6 +31,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   hostname per server.
 - [ADR-005](adr/ADR-005-terraform.md) — Terraform replaces CDK; S3 state bucket in the
   bootstrap; native `terraform test`; loader script shared by CI and tests.
+- [ADR-006](adr/ADR-006-responsive-city-naming-state-and-secrets.md) — the account's
+  actual pattern: `rc-*` names, the shared `rc-tfstate` bucket, agency keys as sensitive
+  Terraform variables; no administrator step.
 
 ## Runbooks
 
