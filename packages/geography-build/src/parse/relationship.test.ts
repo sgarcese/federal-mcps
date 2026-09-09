@@ -24,7 +24,9 @@ function zctaTractFixture19104(): string {
     );
   }
   // A second ZCTA, 19103, should not be counted for the 19104 query.
-  rows.push(`2|19103|ZCTA5 19103|5000000|0|G6350|B5|S|2|42101003700|Census Tract 37|1000000|0|G5020|S|500000|0`);
+  rows.push(
+    `2|19103|ZCTA5 19103|5000000|0|G6350|B5|S|2|42101003700|Census Tract 37|1000000|0|G5020|S|500000|0`,
+  );
   return rows.join("\n");
 }
 
@@ -144,7 +146,13 @@ describe("parseTractLineage", () => {
       "42101036900|1000000|42101036900|1000000",
     ].join("\n");
     expect(parseTractLineage(text)).toEqual([
-      { fromGeoid: "42101036900", toGeoid: "42101036900", fromVintage: 2010, toVintage: 2020, share: 1 },
+      {
+        fromGeoid: "42101036900",
+        toGeoid: "42101036900",
+        fromVintage: 2010,
+        toVintage: 2020,
+        share: 1,
+      },
     ]);
   });
 });

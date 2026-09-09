@@ -16,5 +16,15 @@ export {
   parseOewsArea,
 } from "./parse/bls-area.js";
 export { parseGazetteer, stripLsad } from "./parse/gazetteer.js";
+export { parseGeocorr } from "./parse/geocorr.js";
+export {
+  parseCdCounty,
+  parseCdPlace,
+  parsePlaceCounty,
+  parseTractLineage,
+  parseZctaCounty,
+  parseZctaPlace,
+  parseZctaTract,
+} from "./parse/relationship.js";
 export { COUNTY_CHANGES, CPI_AREA_TO_CBSA, PUBLISHES_AT } from "./data/static.js";
 export type * from "./types.js";
