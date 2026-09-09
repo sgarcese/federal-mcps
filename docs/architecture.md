@@ -63,7 +63,7 @@ additive.
 |---|---|---|---|
 | 1 | Repo shape | One monorepo: `packages/core`, `packages/geography-build`, one `packages/server-<agency>` each, `packages/server-composite`, `infra/` | Keeps catalog, HTTP client and conventions from drifting; one CI. |
 | 2 | Language / SDK | TypeScript, official `@modelcontextprotocol/sdk`, Node 22, vitest, Biome | Both usable BLS donor codebases and the Census Bureau's official server are TypeScript. Consumers talk MCP over HTTP or stdio, so the server language constrains nobody downstream. FastMCP 3 (Python, as OpenContext uses) is the fallback. |
-| 3 | Deployment | Remote Streamable HTTP, stateless JSON-response mode, one AWS Lambda per server behind an HTTP API (CDK); stdio entry point for local dev. Target: Responsive City account via the fleet record in `instances.json` (ADR-004) | Stateless and cheap for public data with no sessions and no SSE; anyone can self-host the same container or run it locally over stdio. Cloudflare Workers is faster to first deploy; the code stays portable to either. |
+| 3 | Deployment | Remote Streamable HTTP, stateless JSON-response mode, one AWS Lambda per server behind an HTTP API, defined in Terraform (ADR-005); stdio entry point for local dev. Target: Responsive City account via the fleet record in `instances.json` (ADR-004) | Stateless and cheap for public data with no sessions and no SSE; anyone can self-host the same container or run it locally over stdio. Cloudflare Workers is faster to first deploy; the code stays portable to either. |
 | 4 | Auth | None for end users; agency API keys in Secrets Manager; optional per-client usage plans | Public data. Anthropic directory accepts unauthenticated public-data connectors. Organizations that need caller identity or audit can front the server with their own gateway. |
 | 5 | Tool pattern | One tool per action, 8–12 per server, family verb set | Surface is small once organized by place and indicator. Raw-ID `get_raw` is the escape hatch. |
 | 6 | Geography catalog | Build-time SQLite shipped with each server, generated from Census/OMB/agency code tables | Read-only, versioned, no runtime database; removes the Census server's Postgres dependency for a Lambda. |
@@ -86,7 +86,8 @@ federal-mcps/
     server-census/        adapted from the official Census Bureau server
     server-cdc-places/    CDC PLACES via data.cdc.gov (Socrata SODA)
     server-composite/     one endpoint mounting several servers, shared resolve_place
-  infra/                  CDK: one Lambda + route per server, secrets, usage plans
+  terraform/              bootstrap/, modules/, instances/<name>/ (ADR-005)
+  scripts/                fleet-record loader, backend-config helper, infra gates
   docs/                   this document, adr/, spikes/, stories/, archive/
   .github/workflows/      lint, test, geography-build, deploy
 ```
@@ -198,9 +199,9 @@ multi-vintage geography.
 
 Per ADR-004: `instances.json` is the fleet record; Release 1 has one instance, `dev`, in
 the Responsive City account (`123456789012`, `us-east-1`). GitHub Actions assumes
-`federal-mcps-github-deploy` through the account's OIDC provider on push to `main`;
-that role and the trust are created by the `FederalMcpsCiCd` stack, deployed once by a
-person with `AWS_PROFILE=rc-deploy`. Each server has its own hostname following the account's
+`federal-mcps-github-deploy` through the account's OIDC provider on push to `main` and
+runs `terraform apply` in `terraform/instances/dev`. The state bucket and that role are
+created once by a person with `AWS_PROFILE=rc-deploy` (runbook), per ADR-005. Each server has its own hostname following the account's
 `<service>.responsive.city` pattern: `bls-mcp.responsive.city/mcp` in Release 1. Every deploy is verified per merge SHA by a
 post-deploy `initialize` + `tools/list` against the live URL.
 
@@ -219,4 +220,4 @@ the `CLAUDE.md` merge discipline is the only enforcement:
 
 ## Decision log
 
-Questions 1–4, 6 and 8 were ruled on 2026-09-08 and are encoded in ADR-001 (shape, Census strategy, independence), ADR-002 (language, deployment, auth, testing, license) and ADR-003 (geography). Question 5 (milestone split) was ruled: six milestones as listed. Question 7 (Census) is encoded in ADR-001 but no Census code lands in Release 1.
+Questions 1–4, 6 and 8 were ruled on 2026-09-08 and are encoded in ADR-001 (shape, Census strategy, independence), ADR-002 (language, deployment, auth, testing, license), ADR-003 (geography), ADR-004 (target account and trust) and ADR-005 (Terraform, superseding the CDK parts of ADR-002 and ADR-004). Question 5 (milestone split) was ruled: six milestones as listed. Question 7 (Census) is encoded in ADR-001 but no Census code lands in Release 1.

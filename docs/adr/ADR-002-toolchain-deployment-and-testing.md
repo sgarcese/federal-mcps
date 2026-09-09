@@ -17,8 +17,8 @@ accepted the recommended defaults on 2026-09-08.
 2. **Transports.** Every server builds to two entry points from one definition: stdio
    for local use, and Streamable HTTP in stateless JSON-response mode (no sessions, no
    SSE) for remote use.
-3. **Hosting.** One AWS Lambda per server behind an HTTP API, defined in CDK
-   (TypeScript), deployed only from CI on merge to `main` via an OIDC role. The same
+3. **Hosting.** *(Tooling superseded by ADR-005: Terraform, not CDK.)* One AWS Lambda
+   per server behind an HTTP API, deployed only from CI on merge to `main` via an OIDC role. The same
    build must also run as a plain container and as a local process, so hosting stays
    portable (Cloudflare Workers is the named alternative). The target account, trust
    mechanics, domain and bootstrap are in ADR-004.
