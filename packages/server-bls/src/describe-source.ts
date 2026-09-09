@@ -14,6 +14,13 @@ import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
  * `docs/spikes/geography-catalog.md` ("Gotchas the build must handle").
  */
 
+/**
+ * The BLS Public Data API v2 timeseries endpoint. Declared here (a source-declaration file)
+ * because agency hostnames live only where the source is described (contract rule
+ * static-no-agency-hostname); the fetch layer imports it and calls it through the core client.
+ */
+export const BLS_TIMESERIES_ENDPOINT = "https://api.bls.gov/publicAPI/v2/timeseries/data/";
+
 const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "LAUS",

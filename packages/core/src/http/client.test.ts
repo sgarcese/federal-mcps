@@ -327,3 +327,48 @@ describe("fixtures", () => {
     expect(err.path).toContain("bls");
   });
 });
+
+describe("postJson", () => {
+  it("POSTs the JSON body with a content-type and parses the JSON response", async () => {
+    const { client, fetchFn } = makeClient();
+    fetchFn.mockResolvedValueOnce(jsonResponse({ status: "REQUEST_SUCCEEDED" }));
+
+    const result = await client.postJson<{ status: string }>("https://api.bls.gov/x", {
+      seriesid: ["LAUCN080310000000003"],
+    });
+
+    expect(result.value).toEqual({ status: "REQUEST_SUCCEEDED" });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    const [, init] = fetchFn.mock.calls[0];
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({ seriesid: ["LAUCN080310000000003"] });
+    expect(init.headers["content-type"]).toBe("application/json");
+  });
+
+  it("consumes budget and caches keyed by the body (same URL, different bodies miss separately)", async () => {
+    const budget = new MemoryBudgetStore(500);
+    const { client, fetchFn } = makeClient({ budget });
+    fetchFn.mockImplementation(async () => jsonResponse({ ok: true }));
+
+    const a1 = await client.postJson(
+      "https://api.bls.gov/x",
+      { seriesid: ["A"] },
+      { freshTtlSeconds: 60 },
+    );
+    const a2 = await client.postJson(
+      "https://api.bls.gov/x",
+      { seriesid: ["A"] },
+      { freshTtlSeconds: 60 },
+    );
+    const b1 = await client.postJson(
+      "https://api.bls.gov/x",
+      { seriesid: ["B"] },
+      { freshTtlSeconds: 60 },
+    );
+
+    expect(a1.cache).toEqual({ hit: false });
+    expect(a2.cache).toMatchObject({ hit: true }); // same body → cache hit, no second fetch
+    expect(b1.cache).toEqual({ hit: false }); // different body → separate entry, real fetch
+    expect(fetchFn).toHaveBeenCalledTimes(2); // A once, B once; A's repeat served from cache
+  });
+});
