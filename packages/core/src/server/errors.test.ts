@@ -47,13 +47,28 @@ describe("toToolError", () => {
 
   it("reports timeouts, network failures and missing fixtures against their URL", () => {
     expect(
-      textOf(toToolError(new TimeoutError({ source: "bls", url: "https://x/y", timeoutMs: 5000 }), context)),
+      textOf(
+        toToolError(
+          new TimeoutError({ source: "bls", url: "https://x/y", timeoutMs: 5000 }),
+          context,
+        ),
+      ),
     ).toBe("bls: request timed out after 5000ms (https://x/y)");
     expect(
-      textOf(toToolError(new NetworkError({ source: "bls", url: "https://x/y", cause: new Error("ECONNRESET") }), context)),
+      textOf(
+        toToolError(
+          new NetworkError({ source: "bls", url: "https://x/y", cause: new Error("ECONNRESET") }),
+          context,
+        ),
+      ),
     ).toBe("bls: network error reaching the agency (https://x/y)");
     expect(
-      textOf(toToolError(new MissingFixtureError({ source: "bls", url: "https://x/y", path: "f.json" }), context)),
+      textOf(
+        toToolError(
+          new MissingFixtureError({ source: "bls", url: "https://x/y", path: "f.json" }),
+          context,
+        ),
+      ),
     ).toBe("bls: no recorded fixture for this request (https://x/y)");
   });
 
