@@ -1,11 +1,22 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolHandlerResult } from "../server/definition.js";
 import type { GeographyCatalog } from "./catalog.js";
-import { getContainment, getLineage, getOverlap, resolvePlace } from "./resolver.js";
+import {
+  getAvailability,
+  getContainment,
+  getLineage,
+  getOverlap,
+  resolvePlace,
+} from "./resolver.js";
 import type { PlaceCandidate } from "./types.js";
 
 /** Which geography tools a server mounts. Agency servers take just `resolve_place`. */
-export type GeographyToolName = "resolve_place" | "get_containment" | "get_overlap" | "get_lineage";
+export type GeographyToolName =
+  | "resolve_place"
+  | "get_containment"
+  | "get_overlap"
+  | "get_lineage"
+  | "list_availability";
 
 export interface GeographyToolsOptions {
   /** Agency prefix for the tool names ("bls" → `bls_resolve_place`, "geo" → `geo_…`). */
@@ -102,6 +113,22 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
       examples: [{ title: "tract lineage", input: { geoid: "25025010104" } }],
       handler: async (args): Promise<ToolHandlerResult> => ({
         data: { lineage: getLineage(options.catalog(), input.parse(args).geoid) },
+        source: SOURCE,
+      }),
+    });
+  }
+
+  if (include.includes("list_availability")) {
+    const input = z.object({ geoid: z.string().describe("A Census GEOID.") });
+    tools.push({
+      name: p("list_availability"),
+      fromCore: true,
+      description:
+        "Which programs publish data for a place's summary level, and whether this exact place has a code (else data falls back, e.g. to its county).",
+      input,
+      examples: [{ title: "availability for Denver County", input: { geoid: "08031" } }],
+      handler: async (args): Promise<ToolHandlerResult> => ({
+        data: { availability: getAvailability(options.catalog(), input.parse(args).geoid) },
         source: SOURCE,
       }),
     });
