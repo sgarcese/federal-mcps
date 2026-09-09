@@ -6,16 +6,22 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "federal-mcps-bls": "./bin/federal-mcps-bls.mjs"
+  },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "dev:http": "tsx src/http-dev.ts"
   },
   "dependencies": {
-    "@federal-mcps/core": "0.0.0"
+    "@federal-mcps/core": "0.0.0",
+    "@modelcontextprotocol/sdk": "1.30.0"
   }
 }
