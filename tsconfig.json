@@ -2,8 +2,11 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "files": [],
   "references": [
-    { "path": "packages/core" },
-    { "path": "packages/server-bls" },
-    { "path": "infra" }
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/server-bls"
+    }
   ]
 }

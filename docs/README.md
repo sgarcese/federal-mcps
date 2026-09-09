@@ -26,7 +26,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   catalog and a single resolver with ambiguity-stops semantics.
 - [ADR-004](adr/ADR-004-responsive-city-deployment-target.md) — Responsive City
   account, fleet record, GitHub OIDC role bootstrapped once with `rc-deploy`, one API
-  domain with a path per server.
+  hostname per server.
+- [ADR-005](adr/ADR-005-terraform.md) — Terraform replaces CDK; S3 state bucket in the
+  bootstrap; native `terraform test`; loader script shared by CI and tests.
 
 ## Runbooks
 
