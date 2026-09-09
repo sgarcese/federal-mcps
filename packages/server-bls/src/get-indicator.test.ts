@@ -75,3 +75,57 @@ describe("bls_get_indicator", () => {
     expect((res.data as { status: string }).status).toBe("not_found");
   });
 });
+
+function listTool(client = scriptedBlsClient()) {
+  return blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW })[1];
+}
+function rawTool(client = scriptedBlsClient()) {
+  return blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW })[2];
+}
+const call = (t: ReturnType<typeof listTool>, args: Record<string, unknown>) =>
+  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
+  t.handler(args as any, {} as any);
+
+describe("bls_list_indicators", () => {
+  it("lists the four LAUS indicators with descriptions", async () => {
+    const res = await call(listTool(), {});
+    const data = res.data as { indicators: { indicator: string; description: string }[] };
+    expect(data.indicators.map((i) => i.indicator)).toEqual([
+      "unemployment_rate",
+      "unemployment",
+      "employment",
+      "labor_force",
+    ]);
+    expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
+  });
+
+  it("reports a county publishes LAUS at its own level", async () => {
+    const res = await call(listTool(), { place: "Denver", kind: "county" });
+    const data = res.data as { publishedAtLevel: boolean };
+    expect(data.publishedAtLevel).toBe(true);
+    expect(res.place?.geoid).toBe("08031");
+  });
+
+  it("flags a below-threshold city as falling back to its county", async () => {
+    const res = await call(listTool(), { place: "Smallburg", kind: "city" });
+    const data = res.data as { publishedAtLevel: boolean; fallback?: { name: string } };
+    expect(data.publishedAtLevel).toBe(false);
+    expect(data.fallback?.name).toBe("Denver County");
+    expect(res.limitations?.join(" ")).toMatch(/fall back to Denver County/);
+  });
+});
+
+describe("bls_get_raw", () => {
+  it("returns the unprocessed BLS response for valid series ids, with the ids in the source", async () => {
+    const res = await call(rawTool(), { ids: ["LAUCN080310000000003"] });
+    const data = res.data as { ids: string[]; responses: { status: string }[] };
+    expect(data.ids).toEqual(["LAUCN080310000000003"]);
+    expect(data.responses[0]?.status).toBe("REQUEST_SUCCEEDED");
+    expect(res.source.ids).toEqual(["LAUCN080310000000003"]);
+    expect(res.source.citation).toMatch(/LAUCN080310000000003/);
+  });
+
+  it("rejects ids that are not LAUS series ids", async () => {
+    await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(/not LAUS series ids/);
+  });
+});
