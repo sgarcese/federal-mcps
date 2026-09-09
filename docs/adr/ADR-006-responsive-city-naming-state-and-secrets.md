@@ -32,8 +32,10 @@ Terraform state in the private bucket rather than in Secrets Manager.
    (`terraform.stateBucket`, `terraform.stateKey`) and passed at `terraform init`. No
    bootstrap bucket; `terraform/bootstrap/` is removed.
 2. **Names:** the BLS server is `rc-bls-mcp-<env>` (function, `-role`, `-api`, log
-   groups); the CI role is `rc-federal-mcps-github-deploy`; every future server follows
-   `rc-<service>-mcp-<env>`. The deploy role's own permissions are scoped to `rc-*`.
+   groups); the CI role is `rc-federal-mcps-github-deploy-role`; every future server follows
+   `rc-<service>-mcp-<env>`. IAM roles must end in `-role`: a probe showed `rc-deploy` may
+   create `rc-*-role` names and nothing else (#40). The deploy role's own permissions are
+   scoped to `rc-*`.
 3. **Secrets:** agency keys are `sensitive` Terraform variables set on the Lambda as
    environment variables (`BLS_API_KEY`). CI supplies them as `TF_VAR_bls_api_key`
    from a GitHub repository secret; the person running the bootstrap supplies it from
