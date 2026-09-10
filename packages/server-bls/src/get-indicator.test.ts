@@ -53,6 +53,21 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("payroll_employment");
   });
 
+  it("dispatches CPI cpi_all_items for a published metro to its CU series (Denver)", async () => {
+    const res = await run({ place: "Denver", kind: "metro", indicator: "cpi_all_items" });
+    expect(res.source.ids).toEqual(["CUURS48BSA0"]);
+    expect(res.source.program).toBe("CPI");
+    expect(res.place?.geoid).toBe("19740");
+    expect(res.limitations ?? []).toEqual([]); // Denver is published — no "no local CPI" caveat
+  });
+
+  it("falls back to the U.S. city average with a caveat where CPI is not published", async () => {
+    const res = await run({ place: "Denver", kind: "county", indicator: "cpi_all_items" });
+    expect(res.source.ids).toEqual(["CUUR0000SA0"]);
+    expect(res.source.program).toBe("CPI");
+    expect(res.limitations?.join(" ")).toMatch(/not published for Denver County/i);
+  });
+
   it("dispatches OEWS occupational_wage to the statewide OE series (Colorado)", async () => {
     const res = await run({ place: "Colorado", indicator: "occupational_wage" });
     expect(res.source.ids).toEqual(["OEUS080000000000000000004"]);
@@ -116,6 +131,7 @@ describe("bls_list_indicators", () => {
       "employment",
       "labor_force",
       "payroll_employment",
+      "cpi_all_items",
       "occupational_wage",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
