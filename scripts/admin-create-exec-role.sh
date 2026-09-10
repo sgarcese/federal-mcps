@@ -35,7 +35,9 @@ read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
     const i = selectInstance();
     const service = process.env.SERVER === "geo" ? i.naming.geoService : i.naming.blsService;
     const deployRole = "rc-deploy"; // the role scripts/deploy.sh assumes
-    process.stdout.write([i.account, i.region, service, i.environmentTag, deployRole].join(" "));
+    // Trailing newline is required: `read` returns non-zero on EOF without one,
+    // which `set -euo pipefail` would turn into a silent exit before any output (#90).
+    process.stdout.write(`${[i.account, i.region, service, i.environmentTag, deployRole].join(" ")}\n`);
   '
 )
 
