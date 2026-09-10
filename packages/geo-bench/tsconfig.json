@@ -7,5 +7,9 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/__fixtures__/**"],
-  "references": [{ "path": "../core" }, { "path": "../server-geo" }]
+  "references": [
+    { "path": "../core" },
+    { "path": "../geography-build" },
+    { "path": "../server-geo" }
+  ]
 }
