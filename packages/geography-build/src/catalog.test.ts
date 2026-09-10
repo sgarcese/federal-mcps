@@ -126,6 +126,23 @@ describe("buildCatalog", () => {
     db.close();
   });
 
+  it("ships the file in DELETE journal mode, not WAL, so a read-only open needs no sidecars (#94)", () => {
+    // A WAL database can only be opened where SQLite can create its -wal/-shm sidecars,
+    // which fails on a read-only filesystem like Lambda's /var/task — even for a readonly
+    // open. The built artifact must therefore be a rollback-journal (DELETE) database.
+    tmp = mkdtempSync(join(tmpdir(), "geo-cat-"));
+    const path = join(tmp, "geo.sqlite");
+    const w = new BetterSqlite3(path);
+    buildCatalog(w, denver, { vintage: "2025" });
+    w.close();
+
+    const db = openCatalog(path);
+    const mode = (db.pragma("journal_mode", { simple: true }) as string).toLowerCase();
+    db.close();
+    expect(mode).toBe("delete");
+    expect(mode).not.toBe("wal");
+  });
+
   it("keeps a county and a ZCTA that share a GEOID distinct, keyed by UCGID (#73)", () => {
     const db = new BetterSqlite3(":memory:");
     const collide: CatalogRows = {
