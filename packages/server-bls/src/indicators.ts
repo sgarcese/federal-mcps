@@ -1,5 +1,6 @@
 import { cesIndicatorDefinitions } from "./ces-indicators.js";
 import { cpiIndicatorDefinitions } from "./cpi-indicators.js";
+import { joltsIndicatorDefinitions } from "./jt-indicators.js";
 import { lausIndicatorDefinitions } from "./laus-indicators.js";
 import { oewsIndicatorDefinitions } from "./oe-indicators.js";
 import type { IndicatorDefinition } from "./registry.js";
@@ -15,4 +16,5 @@ export const blsIndicatorDefinitions: IndicatorDefinition[] = [
   ...cesIndicatorDefinitions,
   ...cpiIndicatorDefinitions,
   ...oewsIndicatorDefinitions,
+  ...joltsIndicatorDefinitions,
 ];

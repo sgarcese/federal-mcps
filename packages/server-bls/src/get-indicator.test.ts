@@ -78,6 +78,15 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("occupational_wage");
   });
 
+  it("dispatches JOLTS job_openings to the statewide JT series (Colorado)", async () => {
+    const res = await run({ place: "Colorado", indicator: "job_openings" });
+    expect(res.source.ids).toEqual(["JTU000000080000000JOL"]);
+    expect(res.source.program).toBe("JOLTS");
+    expect(res.place?.geoid).toBe("08");
+    const data = res.data as { measure: string; latest: { value: number } | null };
+    expect(data.measure).toBe("job_openings");
+  });
+
   it("builds the right series id per indicator and seasonal flag", async () => {
     const emp = await run({ place: "Denver", kind: "county", indicator: "employment" });
     expect(emp.source.ids).toEqual(["LAUCN080310000000005"]); // measure 05 = employment
@@ -133,6 +142,10 @@ describe("bls_list_indicators", () => {
       "payroll_employment",
       "cpi_all_items",
       "occupational_wage",
+      "job_openings",
+      "hires",
+      "quits",
+      "layoffs",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
