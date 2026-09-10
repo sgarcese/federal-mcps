@@ -31,14 +31,22 @@ export {
   type LausSeriesOptions,
 } from "./laus.js";
 export { blsIndicatorTools, type BlsIndicatorToolsOptions } from "./get-indicator.js";
+export { blsIndicatorDefinitions } from "./indicators.js";
+export { lausIndicatorDefinitions } from "./laus-indicators.js";
 export {
-  fetchLausObservations,
-  fetchLausRaw,
-  LAUS_ENDPOINT,
-  type LausFetchOptions,
-  type LausObservation,
-  type LausSeriesResult,
-} from "./laus-fetch.js";
+  createIndicatorRegistry,
+  type IndicatorDefinition,
+  type IndicatorFallback,
+  type IndicatorRegistry,
+} from "./registry.js";
+export {
+  fetchSeriesObservations,
+  fetchSeriesRaw,
+  BLS_SERIES_ENDPOINT,
+  type SeriesFetchOptions,
+  type SeriesObservation,
+  type SeriesResult,
+} from "./series-fetch.js";
 
 /**
  * The daily BLS API budget (500 queries/day with a key, ADR-009 §2) and the per-container

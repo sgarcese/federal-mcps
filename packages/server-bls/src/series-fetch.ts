@@ -2,18 +2,19 @@ import type { HttpClient, RequestOptions } from "@federal-mcps/core";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 
 /**
- * Fetch LAUS observations from the BLS Public Data API v2 through the core HTTP client
+ * Fetch observations for any BLS program's series from the BLS Public Data API v2 through the
+ * core HTTP client
  * (retry/backoff, timeout, budget counter, two-tier cache, fixtures — #5). No direct
  * `fetch` (CLAUDE.md). The registration key (ADR-006) rides in the POST body and is sent
  * only in production; fixtures are recorded unregistered, so no key ever enters a committed
  * fixture and the cache/fixture identity is keyless.
  */
-export const LAUS_ENDPOINT = BLS_TIMESERIES_ENDPOINT;
+export const BLS_SERIES_ENDPOINT = BLS_TIMESERIES_ENDPOINT;
 
 /** BLS API limits: 50 series/query with a key (unregistered is lower). */
 const MAX_SERIES_PER_REQUEST = 50;
 
-export interface LausFetchOptions {
+export interface SeriesFetchOptions {
   startYear?: number;
   endYear?: number;
   /** BLS registration key. Omitted → unregistered limits; used only in production, never in fixtures. */
@@ -23,7 +24,7 @@ export interface LausFetchOptions {
 }
 
 /** One observation for a series: a period's value with its footnote codes. */
-export interface LausObservation {
+export interface SeriesObservation {
   year: string;
   /** Period code, e.g. "M06" (June) or "M13" (annual average). */
   period: string;
@@ -33,9 +34,9 @@ export interface LausObservation {
   footnotes: { code: string; text: string }[];
 }
 
-export interface LausSeriesResult {
+export interface SeriesResult {
   seriesId: string;
-  observations: LausObservation[];
+  observations: SeriesObservation[];
 }
 
 /** The raw BLS v2 response shape, trimmed to what we read. */
@@ -62,7 +63,7 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return out;
 }
 
-function parseSeries(res: BlsApiResponse): LausSeriesResult[] {
+function parseSeries(res: BlsApiResponse): SeriesResult[] {
   if (res.status !== "REQUEST_SUCCEEDED") {
     const detail = res.message?.join("; ") || res.status;
     throw new Error(`BLS API did not succeed: ${detail}`);
@@ -82,15 +83,15 @@ function parseSeries(res: BlsApiResponse): LausSeriesResult[] {
 }
 
 /**
- * Fetch observations for one or more LAUS series ids, batching into ≤50-series requests.
- * Returns one result per series id (in request order across batches).
+ * Fetch observations for one or more BLS series ids (any program), batching into ≤50-series
+ * requests. Returns one result per series id (in request order across batches).
  */
 /** POST each ≤50-series batch and return the raw BLS responses (one per batch). Shared by the
- *  parsed fetch and `fetchLausRaw`. Keyless body unless a production key is supplied. */
-async function fetchLausBatches(
+ *  parsed fetch and `fetchSeriesRaw`. Keyless body unless a production key is supplied. */
+async function fetchSeriesBatches(
   client: HttpClient,
   seriesIds: readonly string[],
-  options: LausFetchOptions,
+  options: SeriesFetchOptions,
 ): Promise<BlsApiResponse[]> {
   const responses: BlsApiResponse[] = [];
   for (const batch of chunk(seriesIds, MAX_SERIES_PER_REQUEST)) {
@@ -102,32 +103,32 @@ async function fetchLausBatches(
     };
     const reqOptions: RequestOptions =
       options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
-    const { value } = await client.postJson<BlsApiResponse>(LAUS_ENDPOINT, body, reqOptions);
+    const { value } = await client.postJson<BlsApiResponse>(BLS_SERIES_ENDPOINT, body, reqOptions);
     responses.push(value);
   }
   return responses;
 }
 
-export async function fetchLausObservations(
+export async function fetchSeriesObservations(
   client: HttpClient,
   seriesIds: readonly string[],
-  options: LausFetchOptions = {},
-): Promise<LausSeriesResult[]> {
-  const results: LausSeriesResult[] = [];
-  for (const response of await fetchLausBatches(client, seriesIds, options)) {
+  options: SeriesFetchOptions = {},
+): Promise<SeriesResult[]> {
+  const results: SeriesResult[] = [];
+  for (const response of await fetchSeriesBatches(client, seriesIds, options)) {
     results.push(...parseSeries(response));
   }
   return results;
 }
 
 /**
- * Fetch the *unprocessed* BLS response for the given series ids (the `bls_get_raw` escape
- * hatch). Returns one raw response object per ≤50-series batch, for transparency/debugging.
+ * Fetch the *unprocessed* BLS response for the given series ids, any program (the `bls_get_raw`
+ * escape hatch). Returns one raw response object per ≤50-series batch, for transparency/debugging.
  */
-export async function fetchLausRaw(
+export async function fetchSeriesRaw(
   client: HttpClient,
   seriesIds: readonly string[],
-  options: LausFetchOptions = {},
+  options: SeriesFetchOptions = {},
 ): Promise<unknown[]> {
-  return fetchLausBatches(client, seriesIds, options);
+  return fetchSeriesBatches(client, seriesIds, options);
 }

@@ -3,24 +3,19 @@ import {
   footnoteFlagsFromCode,
   type Footnote,
   type GeographyCatalog,
-  getContainment,
   type HttpClient,
-  type PlaceCandidate,
   placeRef,
   resolvePlace,
   type ToolDefinition,
   type ToolHandlerResult,
-  ucgidOf,
 } from "@federal-mcps/core";
 import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
-import { fetchLausObservations, fetchLausRaw, type LausObservation } from "./laus-fetch.js";
-import {
-  buildLausSeriesId,
-  isLausSeriesId,
-  LAUS_MEASURE_DESCRIPTIONS,
-  LAUS_MEASURES,
-} from "./laus.js";
+import { lausCodeOf, lausCountyLookup } from "./laus-indicators.js";
+import { isLausSeriesId } from "./laus.js";
+import { blsIndicatorDefinitions } from "./indicators.js";
+import { createIndicatorRegistry } from "./registry.js";
+import { fetchSeriesObservations, fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
   /** How the handler gets a read-only catalog (cached upstream). */
@@ -39,32 +34,8 @@ const SOURCE = {
   url: BLS_TIMESERIES_ENDPOINT,
 };
 
-/** The LAUS `agency_code` (the 15-char la.area code) for a resolved place, if it has one. */
-function lausCodeOf(place: {
-  agencyCodes: { agency: string; program: string; code: string }[];
-}): string | undefined {
-  return place.agencyCodes.find((c) => c.agency === "bls" && c.program === "LAUS")?.code;
-}
-
-/** The county that contains `place` (for the below-threshold fallback), with its LAUS code. */
-function countyFallback(
-  catalog: GeographyCatalog,
-  place: PlaceCandidate,
-): { geoid: string; name: string; code: string } | undefined {
-  const counties = getContainment(catalog, place.ucgid)
-    .filter((e) => e.kind.sumlevel === "050")
-    .sort((a, b) => b.share - a.share);
-  for (const county of counties) {
-    const code = catalog
-      .agencyCodesOf(ucgidOf("050", county.geoid))
-      .find((c) => c.agency === "bls" && c.program === "LAUS")?.code;
-    if (code) return { geoid: county.geoid, name: county.name, code };
-  }
-  return undefined;
-}
-
 /** Dedupe the footnote codes across a series' observations into structured Footnotes. */
-function collectFootnotes(observations: readonly LausObservation[]): Footnote[] {
+function collectFootnotes(observations: readonly SeriesObservation[]): Footnote[] {
   const byCode = new Map<string, Footnote>();
   for (const obs of observations) {
     for (const f of obs.footnotes) {
@@ -77,19 +48,21 @@ function collectFootnotes(observations: readonly LausObservation[]): Footnote[] 
 }
 
 /**
- * `bls_get_indicator`: resolve a place, build its LAUS series id, fetch the observations, and
- * return the shared provenance envelope with the value(s), footnote flags, the resolved place
- * and a citation (ADR-009 §5–§7). A city below the LAUS 25,000 threshold falls back to its
- * county with an explicit caveat — never a silent substitution or a fabricated city number.
+ * `bls_get_indicator`: resolve a place, look the indicator up in the program registry (ADR-010 §1),
+ * build its series id, fetch the observations, and return the shared provenance envelope with the
+ * value(s), footnote flags, the resolved place and a citation (ADR-009 §5–§7). A city below the
+ * LAUS 25,000 threshold falls back to its county with an explicit caveat — never a silent
+ * substitution or a fabricated city number.
  */
 export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefinition[] {
   const now = options.now ?? (() => new Date());
+  const registry = createIndicatorRegistry(blsIndicatorDefinitions);
   const input = z.object({
     place: z.string().describe("A place name, e.g. 'Denver', 'Denver County', 'Cook County IL'."),
     indicator: z
-      .enum(LAUS_MEASURES as [string, ...string[]])
+      .enum(registry.names() as [string, ...string[]])
       .default("unemployment_rate")
-      .describe("Which LAUS indicator: unemployment_rate, unemployment, employment, labor_force."),
+      .describe("Which indicator to return; see bls_list_indicators for the vocabulary."),
     kind: z
       .string()
       .optional()
@@ -114,7 +87,12 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
   const handler = async (args: unknown): Promise<ToolHandlerResult> => {
     const p = input.parse(args);
     const catalog = options.catalog();
-    const measure = p.indicator as (typeof LAUS_MEASURES)[number];
+    const measure = p.indicator;
+    // The enum guarantees a registered indicator, but guard so the type narrows.
+    const def = registry.get(measure);
+    if (!def) throw new Error(`unknown indicator "${measure}".`);
+    const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
+
     const resolved = resolvePlace(catalog, p.place, {
       ...(p.kind === undefined ? {} : { kind: p.kind }),
       ...(p.state === undefined ? {} : { state: p.state }),
@@ -123,7 +101,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     if (resolved.status === "ambiguous") {
       return {
         data: { status: "ambiguous", candidates: resolved.candidates },
-        source: { ...SOURCE, ids: [], citation: "" },
+        source: { ...sourceBase, ids: [], citation: "" },
         limitations: [resolved.explanation],
       };
     }
@@ -131,52 +109,55 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     if (!top) {
       return {
         data: { status: "not_found", query: p.place },
-        source: { ...SOURCE, ids: [], citation: "" },
+        source: { ...sourceBase, ids: [], citation: "" },
         limitations: [`No place matched "${p.place}".`],
       };
     }
 
-    // The place we report and the LAUS code to fetch — the county on a below-threshold fallback.
+    // The place we report and the agency code to fetch — a fallback substitute (e.g. the county on
+    // a below-threshold LAUS city) when the resolved place has no direct series.
     let reportedGeoid = top.geoid;
     let reportedSumlevel = top.kind.sumlevel;
     let reportedName = top.name;
     let reportedParents = top.parents;
-    let lausCode = lausCodeOf(top);
+    let agencyCode = def.agencyCodeOf(top);
     let fallbackCaveat: string | undefined;
 
-    if (!lausCode && top.flags.includes("below_threshold")) {
-      const county = countyFallback(catalog, top);
-      if (county) {
-        reportedGeoid = county.geoid;
-        reportedSumlevel = "050";
-        reportedName = county.name;
+    if (!agencyCode && def.fallback) {
+      const fb = def.fallback(catalog, top);
+      if (fb) {
+        reportedGeoid = fb.geoid;
+        reportedSumlevel = fb.sumlevel;
+        reportedName = fb.name;
         reportedParents = [];
-        lausCode = county.code;
-        fallbackCaveat = `Covers ${county.name}, not just ${top.name}: ${top.name} is below the LAUS 25,000 city threshold, so no city-level series exists.`;
+        agencyCode = fb.code;
+        fallbackCaveat = fb.caveat;
       }
     }
 
-    if (!lausCode) {
+    if (!agencyCode) {
       return {
         data: { status: "unavailable", measure },
-        source: { ...SOURCE, ids: [], citation: "" },
+        source: { ...sourceBase, ids: [], citation: "" },
         place: placeRef({
           geoid: top.geoid,
           sumlevel: top.kind.sumlevel,
           label: top.kind.label,
           name: top.name,
         }),
-        limitations: [`LAUS publishes no series for ${top.name} and no fallback county was found.`],
+        limitations: [
+          `${def.program} publishes no series for ${top.name} and no fallback was found.`,
+        ],
       };
     }
 
     const currentYear = now().getFullYear();
     const startYear = p.startYear ?? currentYear - 1;
     const endYear = p.endYear ?? currentYear;
-    const seasonallyAdjusted = p.seasonallyAdjusted ?? false;
-    const seriesId = buildLausSeriesId(lausCode, measure, { seasonallyAdjusted });
+    const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
+    const seriesId = def.buildSeriesId(agencyCode, { seasonallyAdjusted });
 
-    const [series] = await fetchLausObservations(options.httpClient(), [seriesId], {
+    const [series] = await fetchSeriesObservations(options.httpClient(), [seriesId], {
       startYear,
       endYear,
       ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
@@ -185,7 +166,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
     const citation = buildCitation(
-      { agency: "bls", program: "LAUS", ids: [seriesId], url: SOURCE.url },
+      { agency: "bls", program: def.program, ids: [seriesId], url: sourceBase.url },
       now(),
     );
 
@@ -196,7 +177,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         latest: latest ? { period: `${latest.year}-${latest.period}`, value: latest.value } : null,
         observations,
       },
-      source: { ...SOURCE, ids: [seriesId], citation },
+      source: { ...sourceBase, ids: [seriesId], citation },
       place: placeRef({
         geoid: reportedGeoid,
         sumlevel: reportedSumlevel,
@@ -234,7 +215,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     {
       name: "bls_list_indicators",
       description:
-        "List the LAUS indicators (unemployment rate, unemployment, employment, labor force); given a place, also report whether LAUS publishes at that place's level or falls back to its county.",
+        "List the BLS indicators available (unemployment rate, unemployment, employment, labor force); given a place, also report whether the program publishes at that place's level or falls back to its county.",
       input: z.object({
         place: z
           .string()
@@ -247,7 +228,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         state: z.string().optional().describe("Restrict to a state: 2-letter USPS code or FIPS."),
       }),
       examples: [
-        { title: "LAUS indicators for Denver County", input: { place: "Denver", kind: "county" } },
+        { title: "indicators for Denver County", input: { place: "Denver", kind: "county" } },
       ],
       handler: async (args): Promise<ToolHandlerResult> => {
         const listInput = z.object({
@@ -256,9 +237,9 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           state: z.string().optional(),
         });
         const q = listInput.parse(args);
-        const indicators = LAUS_MEASURES.map((indicator) => ({
-          indicator,
-          description: LAUS_MEASURE_DESCRIPTIONS[indicator],
+        const indicators = registry.list().map((def) => ({
+          indicator: def.name,
+          description: def.description,
         }));
         const baseSource = { ...SOURCE, ids: [], citation: "" };
         if (!q.place) return { data: { indicators }, source: baseSource };
@@ -278,7 +259,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         if (!top)
           return { data: { indicators, status: "not_found", query: q.place }, source: baseSource };
         const hasOwnCode = lausCodeOf(top) !== undefined;
-        const county = hasOwnCode ? undefined : countyFallback(options.catalog(), top);
+        const county = hasOwnCode ? undefined : lausCountyLookup(options.catalog(), top);
         return {
           data: {
             indicators,
@@ -325,7 +306,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
             `not LAUS series ids: ${bad.join(", ")}. Build them from resolve_place + the indicator.`,
           );
         }
-        const responses = await fetchLausRaw(options.httpClient(), q.ids, {
+        const responses = await fetchSeriesRaw(options.httpClient(), q.ids, {
           ...(q.startYear === undefined ? {} : { startYear: q.startYear }),
           ...(q.endYear === undefined ? {} : { endYear: q.endYear }),
           ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),

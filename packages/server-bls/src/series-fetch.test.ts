@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { createHttpClient, MemoryBudgetStore, MemoryCacheStore } from "@federal-mcps/core";
 import { describe, expect, it, vi } from "vitest";
-import { fetchLausObservations, LAUS_ENDPOINT } from "./laus-fetch.js";
+import { fetchSeriesObservations, BLS_SERIES_ENDPOINT } from "./series-fetch.js";
 
 const FIXTURE_DIR = fileURLToPath(new URL("../fixtures", import.meta.url));
 
@@ -32,9 +32,9 @@ function scriptedClient(handler: () => Response) {
   return { client, fetchFn };
 }
 
-describe("fetchLausObservations (recorded fixture)", () => {
+describe("fetchSeriesObservations (recorded fixture)", () => {
   it("replays real Denver County and LA County unemployment-rate series offline", async () => {
-    const out = await fetchLausObservations(
+    const out = await fetchSeriesObservations(
       replayClient(),
       ["LAUCN080310000000003", "LAUCN060370000000003"],
       { startYear: 2023, endYear: 2024 },
@@ -48,7 +48,7 @@ describe("fetchLausObservations (recorded fixture)", () => {
   });
 });
 
-describe("fetchLausObservations parsing and batching", () => {
+describe("fetchSeriesObservations parsing and batching", () => {
   const ok = (series: unknown[]) =>
     new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series } }), {
       status: 200,
@@ -73,7 +73,7 @@ describe("fetchLausObservations parsing and batching", () => {
         },
       ]),
     );
-    const [s] = await fetchLausObservations(client, ["LAUCN080310000000003"]);
+    const [s] = await fetchSeriesObservations(client, ["LAUCN080310000000003"]);
     expect(s?.observations[0]).toMatchObject({
       value: 3.9,
       footnotes: [{ code: "P", text: "preliminary" }],
@@ -85,9 +85,9 @@ describe("fetchLausObservations parsing and batching", () => {
   it("batches more than 50 series into separate requests", async () => {
     const { client, fetchFn } = scriptedClient(() => ok([]));
     const ids = Array.from({ length: 120 }, (_, i) => `LAUCN${String(i).padStart(13, "0")}03`);
-    await fetchLausObservations(client, ids);
+    await fetchSeriesObservations(client, ids);
     expect(fetchFn).toHaveBeenCalledTimes(3); // 50 + 50 + 20
-    expect(fetchFn.mock.calls[0]?.[0]).toBe(LAUS_ENDPOINT);
+    expect(fetchFn.mock.calls[0]?.[0]).toBe(BLS_SERIES_ENDPOINT);
   });
 
   it("throws with the API message when the request is not processed", async () => {
@@ -101,7 +101,7 @@ describe("fetchLausObservations parsing and batching", () => {
           },
         ),
     );
-    await expect(fetchLausObservations(client, ["LAUCN080310000000003"])).rejects.toThrow(
+    await expect(fetchSeriesObservations(client, ["LAUCN080310000000003"])).rejects.toThrow(
       /daily threshold reached/,
     );
   });
@@ -109,7 +109,7 @@ describe("fetchLausObservations parsing and batching", () => {
 
 // Live smoke: hits the real BLS API. Runs only with LIVE_TESTS=1 (never a merge gate,
 // CLAUDE.md). Uses BLS_API_KEY when present, else the unregistered path.
-describe.runIf(process.env.LIVE_TESTS === "1")("fetchLausObservations LIVE", () => {
+describe.runIf(process.env.LIVE_TESTS === "1")("fetchSeriesObservations LIVE", () => {
   it("fetches a real Denver County unemployment rate", async () => {
     const client = createHttpClient({
       source: "bls",
@@ -119,7 +119,7 @@ describe.runIf(process.env.LIVE_TESTS === "1")("fetchLausObservations LIVE", () 
     });
     const year = new Date().getFullYear();
     const opts = process.env.BLS_API_KEY ? { apiKey: process.env.BLS_API_KEY } : {};
-    const [denver] = await fetchLausObservations(client, ["LAUCN080310000000003"], {
+    const [denver] = await fetchSeriesObservations(client, ["LAUCN080310000000003"], {
       startYear: year - 1,
       endYear: year,
       ...opts,
