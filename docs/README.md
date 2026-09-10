@@ -43,6 +43,12 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [ADR-008](adr/ADR-008-geography-catalog-v2.md) — geography catalog v2: weighted overlap
   and tract lineage as data, structured flags not prose, a hosted `server-geo`, and
   UGEO-Bench as the M2 exit gate (amends ADR-003).
+- [ADR-009](adr/ADR-009-labor-market-core-laus.md) — M3 labor market core: LAUS data tools
+  over the family verbs, built series ids, the below-threshold county fallback, and the
+  BLS timeseries API (LABSTAT mirror deferred to #51).
+- [ADR-010](adr/ADR-010-m4-wages-prices-openings.md) — M4 wages/prices/openings: CES, OEWS,
+  CPI and JOLTS as headline indicators behind a program registry, `bls_compare_places`, and
+  CPI's nearest-published-area handling.
 
 ## Runbooks
 
