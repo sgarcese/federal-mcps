@@ -4,6 +4,7 @@ import {
   type Footnote,
   type GeographyCatalog,
   type HttpClient,
+  type PlaceCandidate,
   placeRef,
   resolvePlace,
   type ToolDefinition,
@@ -14,7 +15,7 @@ import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 import { lausCodeOf, lausCountyLookup } from "./laus-indicators.js";
 import { isLausSeriesId } from "./laus.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
-import { createIndicatorRegistry } from "./registry.js";
+import { createIndicatorRegistry, type IndicatorDefinition } from "./registry.js";
 import { fetchSeriesObservations, fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
@@ -45,6 +46,52 @@ function collectFootnotes(observations: readonly SeriesObservation[]): Footnote[
     }
   }
   return [...byCode.values()];
+}
+
+/**
+ * Resolve one place for an indicator to the agency code its series is built from — the shared
+ * step behind `bls_compare_places` (and mirroring `bls_get_indicator`). Applies the program's
+ * below-coverage fallback (e.g. LAUS city → county), so an `ok` result may carry a caveat. Never
+ * fabricates: an ambiguous, unmatched or uncovered place is reported as such, not silently coerced.
+ */
+type SeriesResolution =
+  | { status: "ok"; place: PlaceCandidate; code: string; caveat?: string }
+  | { status: "ambiguous"; explanation: string; candidates: PlaceCandidate[] }
+  | { status: "not_found" }
+  | { status: "unavailable"; place: PlaceCandidate };
+
+function resolveSeries(
+  catalog: GeographyCatalog,
+  def: IndicatorDefinition,
+  name: string,
+  opts: { kind?: string; state?: string },
+): SeriesResolution {
+  const resolved = resolvePlace(catalog, name, {
+    ...(opts.kind === undefined ? {} : { kind: opts.kind }),
+    ...(opts.state === undefined ? {} : { state: opts.state }),
+  });
+  if (resolved.status === "ambiguous") {
+    return {
+      status: "ambiguous",
+      explanation: resolved.explanation,
+      candidates: resolved.candidates,
+    };
+  }
+  const top = resolved.candidates[0];
+  if (!top) return { status: "not_found" };
+  let code = def.agencyCodeOf(top);
+  let caveat: string | undefined;
+  if (!code && def.fallback) {
+    const fb = def.fallback(catalog, top);
+    if (fb) {
+      code = fb.code;
+      caveat = fb.caveat;
+    }
+  }
+  if (!code) return { status: "unavailable", place: top };
+  return caveat === undefined
+    ? { status: "ok", place: top, code }
+    : { status: "ok", place: top, code, caveat };
 }
 
 /**
@@ -211,6 +258,161 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         },
       ],
       handler,
+    },
+    {
+      name: "bls_compare_places",
+      description:
+        "Compare one indicator across several places, aligned on the latest period they all share. Each place is resolved and labelled; a place below coverage (e.g. a small city on LAUS) is flagged with its fallback, and an ambiguous or unmatched place is reported in its row rather than dropped.",
+      input: z.object({
+        indicator: z
+          .enum(registry.names() as [string, ...string[]])
+          .default("unemployment_rate")
+          .describe("Which indicator to compare; see bls_list_indicators for the vocabulary."),
+        places: z
+          .array(z.string())
+          .min(2)
+          .max(20)
+          .describe("The places to compare, e.g. ['Colorado', 'Utah', 'Nevada']. 2 to 20."),
+        kind: z
+          .string()
+          .optional()
+          .describe("Restrict every place to a kind: 'county', 'city', 'metro', 'state'."),
+        state: z.string().optional().describe("Restrict to a state: 2-letter USPS code or FIPS."),
+        startYear: z.number().int().optional().describe("First year (default: the prior year)."),
+        endYear: z.number().int().optional().describe("Last year (default: the current year)."),
+        seasonallyAdjusted: z
+          .boolean()
+          .optional()
+          .describe(
+            "Seasonally adjusted (default false; only states and a few metros publish it).",
+          ),
+      }),
+      examples: [
+        {
+          title: "Compare unemployment across three states",
+          input: { indicator: "unemployment_rate", places: ["Colorado", "Utah", "Nevada"] },
+        },
+      ],
+      handler: async (args): Promise<ToolHandlerResult> => {
+        const compareInput = z.object({
+          indicator: z.enum(registry.names() as [string, ...string[]]).default("unemployment_rate"),
+          places: z.array(z.string()).min(2).max(20),
+          kind: z.string().optional(),
+          state: z.string().optional(),
+          startYear: z.number().int().optional(),
+          endYear: z.number().int().optional(),
+          seasonallyAdjusted: z.boolean().optional(),
+        });
+        const p = compareInput.parse(args);
+        const catalog = options.catalog();
+        const def = registry.get(p.indicator);
+        if (!def) throw new Error(`unknown indicator "${p.indicator}".`);
+        const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
+        const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
+
+        // Resolve each place, then build a series id for the ones that have coverage.
+        const resolutions = p.places.map((name) => ({
+          name,
+          resolution: resolveSeries(catalog, def, name, {
+            ...(p.kind === undefined ? {} : { kind: p.kind }),
+            ...(p.state === undefined ? {} : { state: p.state }),
+          }),
+        }));
+        const seriesIdByName = new Map<string, string>();
+        for (const { name, resolution } of resolutions) {
+          if (resolution.status === "ok") {
+            seriesIdByName.set(name, def.buildSeriesId(resolution.code, { seasonallyAdjusted }));
+          }
+        }
+        const ids = [...new Set(seriesIdByName.values())];
+
+        const currentYear = now().getFullYear();
+        const series = ids.length
+          ? await fetchSeriesObservations(options.httpClient(), ids, {
+              startYear: p.startYear ?? currentYear - 1,
+              endYear: p.endYear ?? currentYear,
+              ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
+            })
+          : [];
+        const byId = new Map(series.map((s) => [s.seriesId, s]));
+
+        // Align on the latest period every series with data shares.
+        const periodKey = (o: SeriesObservation) => `${o.year}-${o.period}`;
+        const withData = series.filter((s) => s.observations.length > 0);
+        let alignedPeriod: string | null = null;
+        if (withData.length > 0) {
+          const sets = withData.map((s) => new Set(s.observations.map(periodKey)));
+          const [first, ...rest] = sets;
+          const common = [...(first ?? [])].filter((k) => rest.every((set) => set.has(k)));
+          alignedPeriod = common.length > 0 ? (common.sort().at(-1) ?? null) : null;
+        }
+
+        const rows = resolutions.map(({ name, resolution }) => {
+          if (resolution.status === "ambiguous") {
+            return {
+              query: name,
+              status: "ambiguous" as const,
+              value: null,
+              candidates: resolution.candidates.slice(0, 5).map((c) => ({
+                name: c.name,
+                geoid: c.geoid,
+                kind: c.kind.label,
+              })),
+            };
+          }
+          if (resolution.status === "not_found") {
+            return { query: name, status: "not_found" as const, value: null };
+          }
+          if (resolution.status === "unavailable") {
+            return {
+              query: name,
+              status: "unavailable" as const,
+              value: null,
+              place: placeRef({
+                geoid: resolution.place.geoid,
+                sumlevel: resolution.place.kind.sumlevel,
+                label: resolution.place.kind.label,
+                name: resolution.place.name,
+              }),
+            };
+          }
+          const id = seriesIdByName.get(name);
+          const obs = alignedPeriod
+            ? byId.get(id ?? "")?.observations.find((o) => periodKey(o) === alignedPeriod)
+            : undefined;
+          return {
+            query: name,
+            status: (resolution.caveat ? "fallback" : "ok") as "ok" | "fallback",
+            seriesId: id,
+            period: obs ? periodKey(obs) : null,
+            value: obs?.value ?? null,
+            place: placeRef({
+              geoid: resolution.place.geoid,
+              sumlevel: resolution.place.kind.sumlevel,
+              label: resolution.place.kind.label,
+              name: resolution.place.name,
+            }),
+            ...(resolution.caveat ? { caveat: resolution.caveat } : {}),
+          };
+        });
+
+        const footnotes = collectFootnotes(series.flatMap((s) => s.observations));
+        return {
+          data: { indicator: p.indicator, seasonallyAdjusted, period: alignedPeriod, rows },
+          source: {
+            ...sourceBase,
+            ids,
+            citation:
+              ids.length > 0
+                ? buildCitation(
+                    { agency: "bls", program: def.program, ids, url: sourceBase.url },
+                    now(),
+                  )
+                : "",
+          },
+          ...(footnotes.length > 0 ? { footnotes } : {}),
+        };
+      },
     },
     {
       name: "bls_list_indicators",

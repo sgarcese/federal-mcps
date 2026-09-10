@@ -30,6 +30,7 @@ describe("BLS ServerDefinition", () => {
     expect(tools.map((t) => t.name)).toEqual([
       "bls_resolve_place",
       "bls_get_indicator",
+      "bls_compare_places",
       "bls_list_indicators",
       "bls_get_raw",
     ]);
