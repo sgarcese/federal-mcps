@@ -5,15 +5,11 @@ describe("buildOeSeriesId", () => {
   it("builds the statewide annual-mean-wage series id (Colorado, NSA) — a known-good published id", () => {
     // Verified against the live BLS API: Colorado all-occupations annual mean wage, 2025 = $77,190.
     expect(buildOeSeriesId("08")).toBe("OEUS080000000000000000004");
-    expect(buildOeSeriesId("08", { seasonallyAdjusted: false })).toBe(
-      "OEUS080000000000000000004",
-    );
+    expect(buildOeSeriesId("08", { seasonallyAdjusted: false })).toBe("OEUS080000000000000000004");
   });
 
   it("stays unadjusted (U) even when seasonallyAdjusted is requested — OEWS is annual, unadjusted", () => {
-    expect(buildOeSeriesId("08", { seasonallyAdjusted: true })).toBe(
-      "OEUS080000000000000000004",
-    );
+    expect(buildOeSeriesId("08", { seasonallyAdjusted: true })).toBe("OEUS080000000000000000004");
   });
 
   it("is always 25 characters and passes isOeSeriesId", () => {

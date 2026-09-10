@@ -57,9 +57,7 @@ describe("bls_get_indicator", () => {
     const res = await run({ place: "Colorado", indicator: "occupational_wage" });
     expect(res.source.ids).toEqual(["OEUS080000000000000000004"]);
     expect(res.source.program).toBe("OEWS");
-    expect(res.source.citation).toMatch(
-      /Bureau of Labor Statistics.*OEUS080000000000000000004/,
-    );
+    expect(res.source.citation).toMatch(/Bureau of Labor Statistics.*OEUS080000000000000000004/);
     expect(res.place?.geoid).toBe("08");
     const data = res.data as { measure: string; latest: { value: number } | null };
     expect(data.measure).toBe("occupational_wage");
