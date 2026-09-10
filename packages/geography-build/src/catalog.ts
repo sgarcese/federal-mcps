@@ -65,6 +65,15 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
     );
   });
   run();
+
+  // Ship the artifact in a rollback journal mode, not WAL. `createSchema` sets WAL for
+  // fast bulk inserts, but a WAL database can only be opened where SQLite can create its
+  // -wal/-shm sidecars — which fails on a read-only filesystem like Lambda's /var/task,
+  // even for a `readonly` open (#94, ADR-008 §7). Checkpoint and convert to DELETE (a
+  // persistent header change) so a read-only open needs no sidecar files. A no-op for
+  // `:memory:` databases.
+  db.pragma("wal_checkpoint(TRUNCATE)");
+  db.pragma("journal_mode = DELETE");
 }
 
 /** Opens a catalog file read-only for serving (better-sqlite3, ADR-008 §6). */
