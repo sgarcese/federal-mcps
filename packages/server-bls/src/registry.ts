@@ -38,8 +38,12 @@ export interface IndicatorDefinition {
   description: string;
   /** Default seasonal adjustment for this program (ADR-010 §5). */
   defaultSeasonallyAdjusted: boolean;
-  /** The program's agency code on a resolved place, if it publishes at that place's level. */
-  agencyCodeOf(place: PlaceAgencyCodes): string | undefined;
+  /**
+   * The program's agency code on a resolved place, if it publishes at that place's level. Receives
+   * the full candidate so a program can derive a code from the place's geography (e.g. CES uses a
+   * state's FIPS geoid), not only read it off `agencyCodes`.
+   */
+  agencyCodeOf(place: PlaceCandidate): string | undefined;
   /** Build the series id from the agency code and request options. */
   buildSeriesId(code: string, options: { seasonallyAdjusted: boolean }): string;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
