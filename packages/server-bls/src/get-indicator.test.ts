@@ -53,6 +53,16 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("payroll_employment");
   });
 
+  it("dispatches JOLTS job_openings to the statewide JT series (Colorado)", async () => {
+    const res = await run({ place: "Colorado", indicator: "job_openings" });
+    expect(res.source.ids).toEqual(["JTU000000080000000JOL"]);
+    expect(res.source.program).toBe("JOLTS");
+    expect(res.source.citation).toMatch(/Bureau of Labor Statistics.*JTU000000080000000JOL/);
+    expect(res.place?.geoid).toBe("08");
+    const data = res.data as { measure: string; latest: { value: number } | null };
+    expect(data.measure).toBe("job_openings");
+  });
+
   it("builds the right series id per indicator and seasonal flag", async () => {
     const emp = await run({ place: "Denver", kind: "county", indicator: "employment" });
     expect(emp.source.ids).toEqual(["LAUCN080310000000005"]); // measure 05 = employment
@@ -97,7 +107,7 @@ const call = (t: ReturnType<typeof listTool>, args: Record<string, unknown>) =>
   t.handler(args as any, {} as any);
 
 describe("bls_list_indicators", () => {
-  it("lists the registered indicators with descriptions (LAUS + CES payroll)", async () => {
+  it("lists the registered indicators with descriptions (LAUS + CES payroll + JOLTS)", async () => {
     const res = await call(listTool(), {});
     const data = res.data as { indicators: { indicator: string; description: string }[] };
     expect(data.indicators.map((i) => i.indicator)).toEqual([
@@ -106,6 +116,10 @@ describe("bls_list_indicators", () => {
       "employment",
       "labor_force",
       "payroll_employment",
+      "job_openings",
+      "hires",
+      "quits",
+      "layoffs",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
