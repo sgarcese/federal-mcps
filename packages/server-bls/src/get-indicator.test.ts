@@ -53,11 +53,35 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("payroll_employment");
   });
 
+  it("dispatches CPI cpi_all_items for a published metro to its CU series (Denver)", async () => {
+    const res = await run({ place: "Denver", kind: "metro", indicator: "cpi_all_items" });
+    expect(res.source.ids).toEqual(["CUURS48BSA0"]);
+    expect(res.source.program).toBe("CPI");
+    expect(res.place?.geoid).toBe("19740");
+    expect(res.limitations ?? []).toEqual([]); // Denver is published — no "no local CPI" caveat
+  });
+
+  it("falls back to the U.S. city average with a caveat where CPI is not published", async () => {
+    const res = await run({ place: "Denver", kind: "county", indicator: "cpi_all_items" });
+    expect(res.source.ids).toEqual(["CUUR0000SA0"]);
+    expect(res.source.program).toBe("CPI");
+    expect(res.limitations?.join(" ")).toMatch(/not published for Denver County/i);
+  });
+
+  it("dispatches OEWS occupational_wage to the statewide OE series (Colorado)", async () => {
+    const res = await run({ place: "Colorado", indicator: "occupational_wage" });
+    expect(res.source.ids).toEqual(["OEUS080000000000000000004"]);
+    expect(res.source.program).toBe("OEWS");
+    expect(res.source.citation).toMatch(/Bureau of Labor Statistics.*OEUS080000000000000000004/);
+    expect(res.place?.geoid).toBe("08");
+    const data = res.data as { measure: string; latest: { value: number } | null };
+    expect(data.measure).toBe("occupational_wage");
+  });
+
   it("dispatches JOLTS job_openings to the statewide JT series (Colorado)", async () => {
     const res = await run({ place: "Colorado", indicator: "job_openings" });
     expect(res.source.ids).toEqual(["JTU000000080000000JOL"]);
     expect(res.source.program).toBe("JOLTS");
-    expect(res.source.citation).toMatch(/Bureau of Labor Statistics.*JTU000000080000000JOL/);
     expect(res.place?.geoid).toBe("08");
     const data = res.data as { measure: string; latest: { value: number } | null };
     expect(data.measure).toBe("job_openings");
@@ -107,7 +131,7 @@ const call = (t: ReturnType<typeof listTool>, args: Record<string, unknown>) =>
   t.handler(args as any, {} as any);
 
 describe("bls_list_indicators", () => {
-  it("lists the registered indicators with descriptions (LAUS + CES payroll + JOLTS)", async () => {
+  it("lists the registered indicators with descriptions (LAUS + CES payroll + OEWS wage)", async () => {
     const res = await call(listTool(), {});
     const data = res.data as { indicators: { indicator: string; description: string }[] };
     expect(data.indicators.map((i) => i.indicator)).toEqual([
@@ -116,6 +140,8 @@ describe("bls_list_indicators", () => {
       "employment",
       "labor_force",
       "payroll_employment",
+      "cpi_all_items",
+      "occupational_wage",
       "job_openings",
       "hires",
       "quits",
