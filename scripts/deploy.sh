@@ -80,10 +80,53 @@ verify_server() {
     echo "::error:: $expect_tool not found in tools/list from $url"; exit 1; }
 }
 
+# Actually CALL a catalog-backed tool and assert it returns real data. tools/list only
+# proves a tool is registered; it does not open the bundled geography catalog. A catalog
+# that cannot open (e.g. a WAL database on Lambda's read-only filesystem, #94) or a
+# missing exec role lists its tools fine and errors only on call — so this is what turns
+# such a break into a failed deploy instead of a green one. We call `resolve_place`
+# (catalog-only) rather than `get_indicator`, so the check exercises the deploy without
+# consuming the BLS API quota or coupling to upstream BLS availability.
+verify_tool_call() {
+  local url="$1" tool="$2" args="$3" expect="$4"
+  local body response
+  body="$(printf '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"%s","arguments":%s}}' "$tool" "$args")"
+  response="$(curl --fail-with-body --retry 5 --retry-delay 10 --retry-all-errors -sS -X POST "$url" \
+    -H "content-type: application/json" -H "accept: application/json, text/event-stream" \
+    -d "$body")"
+
+  # Parse with node (it also unwraps the SSE `data:` framing the server may use). Fails on
+  # a JSON-RPC error, an `isError` tool result, the "unable to open database file" catalog
+  # symptom, or a missing expected token.
+  EXPECT="$expect" TOOL="$tool" URL="$url" node --input-type=module -e '
+    let raw = "";
+    process.stdin.on("data", (c) => { raw += c; });
+    process.stdin.on("end", () => {
+      const fail = (m) => { console.error(`::error:: ${process.env.TOOL} on ${process.env.URL}: ${m}`); process.exit(1); };
+      const lines = raw.split(/\r?\n/).map((l) => l.replace(/^data:\s*/, "").trim()).filter(Boolean);
+      let obj;
+      for (const l of lines) { try { obj = JSON.parse(l); } catch { /* skip non-JSON SSE lines */ } }
+      if (!obj) fail("no JSON-RPC response parsed");
+      if (obj.error) fail(`JSON-RPC error: ${JSON.stringify(obj.error)}`);
+      const result = obj.result || {};
+      const text = JSON.stringify(result);
+      if (result.isError === true || /unable to open database file/i.test(text)) {
+        fail(`tool returned an error: ${text.slice(0, 200)}`);
+      }
+      if (!text.toLowerCase().includes(process.env.EXPECT.toLowerCase())) {
+        fail(`expected ${JSON.stringify(process.env.EXPECT)} in the result, got: ${text.slice(0, 200)}`);
+      }
+    });
+  ' <<<"$response"
+}
+
 bls_url="$(terraform -chdir="$ROOT" output -raw bls_custom_domain_url)"
 geo_url="$(terraform -chdir="$ROOT" output -raw geo_custom_domain_url)"
 verify_server "$bls_url" bls_describe_source
 verify_server "$geo_url" geo_describe_source
+# Prove the bundled catalog actually opens on each server (not just that tools are listed).
+verify_tool_call "$bls_url" bls_resolve_place '{"query":"Denver"}' "Denver"
+verify_tool_call "$geo_url" geo_resolve_place '{"query":"Denver"}' "Denver"
 
 sha="$(git rev-parse HEAD)"
 echo "deployed $sha to $bls_url"

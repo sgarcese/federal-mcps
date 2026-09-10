@@ -56,12 +56,14 @@ private `rc-tfstate` bucket, and never written to the repo.
 
 ## Verify the deploy actually works (not just responds)
 
-`deploy.sh`'s built-in check does an MCP `initialize` + `tools/list` and calls
-`describe_source`. That proves the Lambda booted and lists its tools — but **none of
-those open the geography catalog**, so a broken catalog or a missing role still prints
-`deployed <sha> to <url>` and looks green. After a deploy — especially the first one that
-depends on the catalog — call a **catalog-backed** tool against each live endpoint and
-confirm you get data, not an error:
+`deploy.sh`'s built-in check does an MCP `initialize` + `tools/list`, and then **calls a
+catalog-backed tool** — `bls_resolve_place` and `geo_resolve_place` with `{"query":
+"Denver"}` — failing the deploy unless each returns real data (#97). That closes the gap
+where a catalog that cannot open (e.g. a WAL database on Lambda's read-only filesystem,
+#94) or a missing exec role would list its tools fine and error only on call, so the
+deploy printed `deployed <sha> to <url>` and looked green. `resolve_place` is catalog-only,
+so the check exercises the deploy without spending BLS API quota. If you still want to
+confirm a live number by hand, or check a server independently, call the tools yourself:
 
 ```sh
 BLS=https://bls-mcp.responsive.city/mcp
