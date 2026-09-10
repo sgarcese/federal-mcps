@@ -120,11 +120,21 @@ describe("bls_get_indicator", () => {
   });
 });
 
+function toolNamed(name: string, client = scriptedBlsClient()) {
+  const t = blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW }).find(
+    (x) => x.name === name,
+  );
+  if (!t) throw new Error(`no tool named ${name}`);
+  return t;
+}
 function listTool(client = scriptedBlsClient()) {
-  return blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW })[1];
+  return toolNamed("bls_list_indicators", client);
 }
 function rawTool(client = scriptedBlsClient()) {
-  return blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW })[2];
+  return toolNamed("bls_get_raw", client);
+}
+function compareTool(client = scriptedBlsClient()) {
+  return toolNamed("bls_compare_places", client);
 }
 const call = (t: ReturnType<typeof listTool>, args: Record<string, unknown>) =>
   // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
@@ -178,5 +188,49 @@ describe("bls_get_raw", () => {
 
   it("rejects ids that are not LAUS series ids", async () => {
     await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(/not LAUS series ids/);
+  });
+});
+
+describe("bls_compare_places", () => {
+  it("compares one indicator across places, aligned on the latest common period", async () => {
+    const res = await call(compareTool(), {
+      indicator: "unemployment_rate",
+      places: ["Denver County", "Fairfield County"],
+    });
+    const data = res.data as {
+      indicator: string;
+      period: string | null;
+      rows: { query: string; status: string; value: number | null; seriesId?: string }[];
+    };
+    expect(data.indicator).toBe("unemployment_rate");
+    expect(data.period).toBe("2024-M12");
+    expect(data.rows).toHaveLength(2);
+    expect(data.rows.every((r) => r.status === "ok" && r.value === 3.9)).toBe(true);
+    expect(res.source.ids).toEqual(["LAUCN080310000000003", "LAUCN090010000000003"]);
+    expect(res.source.citation).toMatch(/Bureau of Labor Statistics/);
+  });
+
+  it("labels a below-threshold fallback and keeps an unmatched place as a row, never dropped", async () => {
+    const res = await call(compareTool(), {
+      indicator: "unemployment_rate",
+      places: ["Smallburg", "Nowheresville"],
+    });
+    const data = res.data as {
+      rows: { query: string; status: string; value: number | null; caveat?: string }[];
+    };
+    expect(data.rows).toHaveLength(2);
+    const smallburg = data.rows.find((r) => r.query === "Smallburg");
+    expect(smallburg?.status).toBe("fallback");
+    expect(smallburg?.value).toBe(3.9);
+    expect(smallburg?.caveat).toMatch(/below the LAUS 25,000 city threshold/);
+    const missing = data.rows.find((r) => r.query === "Nowheresville");
+    expect(missing?.status).toBe("not_found");
+    expect(missing?.value).toBeNull();
+  });
+
+  it("rejects fewer than 2 or more than 20 places", async () => {
+    await expect(call(compareTool(), { places: ["Denver County"] })).rejects.toThrow();
+    const many = Array.from({ length: 21 }, (_, i) => `Place ${i}`);
+    await expect(call(compareTool(), { places: many })).rejects.toThrow();
   });
 });

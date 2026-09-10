@@ -60,6 +60,8 @@ export function buildFixtureCatalog(): string {
     code(uc("0820000"), "LAUS", "CT0820000000000"), // the city is above threshold
     code(uc("19740"), "LAUS", "MT0819740000000"),
     code(uc("19740"), "CPI", "S48B"), // Denver is one of the ~23 published CPI metros
+    code(uc("09001"), "LAUS", "CN0900100000000"), // Fairfield County CT, for compare_places
+
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
   ];
 
