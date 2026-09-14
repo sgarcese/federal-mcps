@@ -15,7 +15,7 @@
     "geo-bench": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.124.0",
+    "@anthropic-ai/sdk": "^0.125.0",
     "@federal-mcps/core": "0.0.0",
     "@federal-mcps/geography-build": "0.0.0",
     "@federal-mcps/server-geo": "0.0.0",
