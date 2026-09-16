@@ -48,9 +48,16 @@ describe("parseLausArea", () => {
 });
 
 describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
-  it("CES maps a CBSA area code and skips statewide 00000", () => {
-    const sm = ["area_code\tarea_name", "19740\tDenver", "00000\tStatewide"].join("\n");
-    expect(parseCesArea(sm).map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
+  it("CES emits a state+area code for a single-state metro, skips statewide and multi-state", () => {
+    const sm = [
+      "area_code\tarea_name",
+      "19740\tDenver-Aurora-Lakewood, CO",
+      "16980\tChicago-Naperville-Elgin, IL-IN-WI",
+      "00000\tStatewide",
+    ].join("\n");
+    const rows = parseCesArea(sm);
+    expect(rows.map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
+    expect(rows[0]?.code).toBe("0819740"); // state 08 + area 19740, the SM series key
   });
 
   it("OEWS maps a 7-digit zero-padded CBSA", () => {

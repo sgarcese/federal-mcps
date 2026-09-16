@@ -34,7 +34,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "SM",
     name: "Current Employment Statistics, State & Area",
-    granularity: "state (metro/CBSA planned, #110), total nonfarm",
+    granularity: "state and single-state metro (CBSA), total nonfarm",
     cadence: "monthly",
     status: "available",
   },

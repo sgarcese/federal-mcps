@@ -1,35 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { cesIndicatorDefinitions, cesStateCode } from "./ces-indicators.js";
+import { cesCodeOf, cesIndicatorDefinitions } from "./ces-indicators.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
 
-// Minimal PlaceCandidate stand-ins: cesStateCode reads only kind.sumlevel and geoid.
-// biome-ignore lint/suspicious/noExplicitAny: only the two fields cesStateCode reads matter here.
-const place = (sumlevel: string, geoid: string): any => ({ geoid, kind: { sumlevel } });
+// Minimal PlaceCandidate stand-ins.
+// biome-ignore lint/suspicious/noExplicitAny: only the read fields matter here.
+const state = (geoid: string): any => ({ geoid, kind: { sumlevel: "040" }, agencyCodes: [] });
+// biome-ignore lint/suspicious/noExplicitAny: only the read fields matter here.
+const metro = (geoid: string, codes: unknown[] = []): any => ({
+  geoid,
+  kind: { sumlevel: "310" },
+  agencyCodes: codes,
+});
+// biome-ignore lint/suspicious/noExplicitAny: only the read fields matter here.
+const county = (geoid: string): any => ({ geoid, kind: { sumlevel: "050" }, agencyCodes: [] });
 
-describe("cesStateCode", () => {
-  it("returns a state's FIPS geoid", () => {
-    expect(cesStateCode(place("040", "08"))).toBe("08");
+describe("cesCodeOf", () => {
+  it("returns a statewide 7-char key for a state (FIPS + 00000)", () => {
+    expect(cesCodeOf(state("08"))).toBe("0800000");
   });
 
-  it("returns undefined for non-state places (metro, county, city) — no fabrication", () => {
-    expect(cesStateCode(place("310", "19740"))).toBeUndefined();
-    expect(cesStateCode(place("050", "08031"))).toBeUndefined();
-    expect(cesStateCode(place("160", "0820000"))).toBeUndefined();
+  it("returns the catalog state+area key for a metro that carries an SM code", () => {
+    expect(cesCodeOf(metro("19740", [{ agency: "bls", program: "SM", code: "0819740" }]))).toBe(
+      "0819740",
+    );
+  });
+
+  it("returns undefined for a metro with no SM code (e.g. multi-state), or a county/city", () => {
+    expect(cesCodeOf(metro("16980", []))).toBeUndefined();
+    expect(cesCodeOf(county("08031"))).toBeUndefined();
   });
 });
 
 describe("cesIndicatorDefinitions", () => {
+  const def = cesIndicatorDefinitions.find((d) => d.name === "payroll_employment");
+
   it("registers payroll_employment over the SM program, NSA by default", () => {
-    const def = cesIndicatorDefinitions.find((d) => d.name === "payroll_employment");
-    expect(def).toBeDefined();
     expect(def?.program).toBe("SM");
     expect(def?.defaultSeasonallyAdjusted).toBe(false);
     expect(def?.description.length).toBeGreaterThan(0);
   });
 
-  it("builds the statewide SM series id from a state code", () => {
-    const def = cesIndicatorDefinitions.find((d) => d.name === "payroll_employment");
-    expect(def?.buildSeriesId("08", { seasonallyAdjusted: false })).toBe("SMU08000000000000001");
+  it("builds the SM series id from a state+area key", () => {
+    expect(def?.buildSeriesId("0800000", { seasonallyAdjusted: false })).toBe(
+      "SMU08000000000000001",
+    );
+    expect(def?.buildSeriesId("0819740", { seasonallyAdjusted: false })).toBe(
+      "SMU08197400000000001",
+    );
   });
 
   it("is included in the aggregate blsIndicatorDefinitions seam", () => {
