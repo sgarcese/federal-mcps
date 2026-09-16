@@ -9,8 +9,8 @@ import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
  * fetches from it.
  *
  * Coverage and cadence come from `docs/architecture.md` ("Server one: BLS").
- * LAUS is `available` as of M3 (unemployment by place via `bls_get_indicator`,
- * ADR-009); the other five programs are still `planned`.
+ * LAUS (M3, ADR-009) and CES/OEWS/CPI/JOLTS (M4, ADR-010) are `available` through
+ * `bls_get_indicator`; QCEW is still `planned` (M5, its own CSV client).
  * The threshold, CPI-coverage and QCEW-format caveats come from
  * `docs/spikes/geography-catalog.md` ("Gotchas the build must handle").
  */
@@ -34,9 +34,9 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "SM",
     name: "Current Employment Statistics, State & Area",
-    granularity: "state, metro (CBSA), by supersector",
+    granularity: "state (metro/CBSA planned, #110), total nonfarm",
     cadence: "monthly",
-    status: "planned",
+    status: "available",
   },
   {
     code: "QCEW",
@@ -48,9 +48,9 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "OEWS",
     name: "Occupational Employment and Wage Statistics",
-    granularity: "state, metro (CBSA), by SOC occupation; percentiles, mean, employment",
+    granularity: "state (metro/CBSA planned), all-occupations mean annual wage",
     cadence: "annual",
-    status: "planned",
+    status: "available",
   },
   {
     code: "CPI",
@@ -59,24 +59,26 @@ const PROGRAMS: readonly ProgramDescription[] = [
       "U.S. city average, census region, census division, and about 23 named metro areas",
     cadence:
       "monthly nationally; many of the ~23 metro-area indexes publish bimonthly or semiannually",
-    status: "planned",
+    status: "available",
   },
   {
     code: "JOLTS",
     name: "Job Openings and Labor Turnover Survey",
     granularity: "state; openings, hires, quits, layoffs and discharges",
     cadence: "monthly",
-    status: "planned",
+    status: "available",
   },
 ];
 
 const CAVEATS: readonly string[] = [
-  "Unemployment data is available now for LAUS: bls_get_indicator returns the unemployment rate, " +
-    "unemployment, employment or labor force for a resolved place (bls_list_indicators lists the " +
-    "measures; bls_get_raw returns the unprocessed BLS response). Place resolution (bls_resolve_place) " +
-    "maps a name to candidates with identifiers, BLS area codes, which programs publish at the place's " +
-    "level, and structured flags (e.g. below_threshold with the county fallback). Data-fetching tools " +
-    "for the other programs below (CES, QCEW, OEWS, CPI, JOLTS) are still planned.",
+  "bls_get_indicator returns a statistic for a resolved place across five programs now: LAUS " +
+    "(unemployment rate, unemployment, employment, labor force), CES State & Area (payroll " +
+    "employment), OEWS (occupational wage), CPI (all items) and JOLTS (job openings, hires, quits, " +
+    "layoffs). bls_list_indicators lists the vocabulary and which programs publish at a place's level; " +
+    "bls_compare_places compares one indicator across places; bls_get_raw returns the unprocessed BLS " +
+    "response. Place resolution (bls_resolve_place) maps a name to candidates with identifiers, BLS " +
+    "area codes and structured flags (e.g. below_threshold with the county fallback). QCEW is the one " +
+    "program below still planned (M5, its own CSV client).",
   "LAUS publishes a city-level series only for incorporated places with population 25,000 or more " +
     "(about 1,700 places), plus New England towns via county-subdivision codes; smaller places have no " +
     "city series and must fall back to their county.",
