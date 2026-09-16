@@ -56,7 +56,7 @@ unemployment, employment and labor force (LAUS); payroll employment (CES); occup
 wage (OEWS); the all-items price index (CPI); and job openings, hires, quits and layoffs
 (JOLTS). It applies each program's coverage fallback — a below-25,000 city reads its
 county, a place with no local CPI reads the U.S. city average — always flagged, never
-fabricated. CES and OEWS are state-level for now (metro series arriving); JOLTS is
+fabricated. OEWS is state-level for now; CES also serves single-state metros; JOLTS is
 state-level below national. \`bls_list_indicators\` names every indicator, its program, and
 whether that program publishes at a place's level; \`bls_compare_places\` compares one
 indicator across places, aligned on the latest period they share; \`bls_get_raw\` returns

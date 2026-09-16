@@ -1,6 +1,6 @@
 import { ucgidOf } from "@federal-mcps/core";
 import type { AgencyCodeRow } from "../types.js";
-import { CPI_AREA_TO_CBSA } from "../data/static.js";
+import { CPI_AREA_TO_CBSA, US_STATE_POSTAL_TO_FIPS } from "../data/static.js";
 
 /**
  * Decodes a BLS LAUS `la.area` code into the Census GEOID it names and that GEOID's
@@ -65,18 +65,36 @@ export function parseLausArea(text: string): AgencyCodeRow[] {
  * file alone carries no state), otherwise a CBSA or metro-division code → CBSA GEOID.
  */
 export function parseCesArea(text: string): AgencyCodeRow[] {
-  return parseBlsAreaFile(text, (areaCode) => {
+  return parseBlsAreaFileWithTitle(text, (areaCode, title) => {
     const code = areaCode.trim();
     if (!/^\d{5}$/.test(code) || code === "00000") return null;
+    // A CES metro series needs the state (SM · state · area · …); CBSAs are stateless, so read the
+    // single state from the sm.area title (e.g. "Denver-Aurora-Lakewood, CO"). Multi-state metros
+    // (CES publishes them per state) and untitled rows are skipped — never a fabricated state.
+    const stateFips = singleStateFipsFromTitle(title);
+    if (!stateFips) return null;
     return {
       ucgid: ucgidOf("310", code),
       agency: "bls",
       program: "SM",
-      code,
+      code: `${stateFips}${code}`, // 7-char state+area, the SM series' geography key
       codeVintage: 2023,
       note: null,
     };
   });
+}
+
+/** The single state FIPS a CES area title names, or null if multi-state or unrecognized. */
+function singleStateFipsFromTitle(title: string): string | null {
+  const afterComma = title.slice(title.lastIndexOf(",") + 1).trim();
+  const postals = (afterComma.split(/\s+/)[0] ?? "").split("-");
+  const fips = new Set<string>();
+  for (const p of postals) {
+    const f = US_STATE_POSTAL_TO_FIPS[p];
+    if (!f) return null; // an unrecognized token means we can't trust the parse
+    fips.add(f);
+  }
+  return fips.size === 1 ? ([...fips][0] ?? null) : null;
 }
 
 /**
@@ -136,6 +154,31 @@ function parseBlsAreaFile(
     const areaCode = line.split("\t")[col]?.trim();
     if (!areaCode) continue;
     const row = map(areaCode);
+    if (row) out.push(row);
+  }
+  return out;
+}
+
+/** Like `parseBlsAreaFile`, but also passes the row's title column (`area_text`/`area_name`). */
+function parseBlsAreaFileWithTitle(
+  text: string,
+  map: (areaCode: string, title: string) => AgencyCodeRow | null,
+): AgencyCodeRow[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const header = lines.shift();
+  if (!header) return [];
+  const cols = header.split("\t").map((c) => c.trim().toLowerCase());
+  const areaIdx = cols.indexOf("area_code");
+  const areaCol = areaIdx >= 0 ? areaIdx : 1;
+  const titleIdx =
+    cols.indexOf("area_text") >= 0 ? cols.indexOf("area_text") : cols.indexOf("area_name");
+  const out: AgencyCodeRow[] = [];
+  for (const line of lines) {
+    const parts = line.split("\t");
+    const areaCode = parts[areaCol]?.trim();
+    if (!areaCode) continue;
+    const title = (titleIdx >= 0 ? parts[titleIdx] : "")?.trim() ?? "";
+    const row = map(areaCode, title);
     if (row) out.push(row);
   }
   return out;
