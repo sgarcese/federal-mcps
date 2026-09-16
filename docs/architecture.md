@@ -143,9 +143,9 @@ each program is an *indicator* behind `get_indicator`, never a tool of its own.
 |---|---|---|
 | `bls_resolve_place` | available | core resolver with BLS area codes and coverage flags attached |
 | `bls_list_indicators` | available | the measures a program publishes, and whether it publishes at a place's level |
-| `bls_get_indicator` | LAUS available; other programs later | one indicator, one place, over time; below the 25k threshold falls back to the county with a caveat |
-| `bls_compare_places` | later | one indicator across places, aligned on period; a thin wrapper over `get_indicator` |
-| `bls_get_raw` | available (LAUS) | raw series IDs, ≤50, auto-chunked past 20 years |
+| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS) | one indicator, one place, over time; a place below a program's coverage falls back (LAUS→county, CPI→U.S. city average) with a caveat |
+| `bls_compare_places` | available | one indicator across ≤20 places, aligned on the latest shared period; a thin wrapper over `get_indicator` |
+| `bls_get_raw` | available | raw series IDs, ≤50, auto-chunked past 20 years |
 | `bls_describe_source` | available | coverage, cadence, caveats, citation format |
 
 Program coverage behind these verbs (from `bls_describe_source`):
@@ -153,10 +153,10 @@ Program coverage behind these verbs (from `bls_describe_source`):
 | Program | Status | Local granularity | Measures |
 |---|---|---|---|
 | LAUS | available (M3) | state, MSA, county, city ≥25k | unemployment rate, unemployment, employment, labor force |
-| CES State & Area | M4 | state, MSA | payroll employment by supersector |
-| OEWS | M4 | state, MSA | wages by SOC occupation; percentiles, mean, employment |
-| CPI | M4 | region, division, ~23 metros | prices; most cities have no local CPI — say so |
-| JOLTS | M4 | state | openings, hires, quits, layoffs |
+| CES State & Area | available (M4) | state (metro/CBSA arriving, #110) | total nonfarm payroll employment |
+| OEWS | available (M4) | state (metro arriving) | all-occupations mean annual wage |
+| CPI | available (M4) | ~23 metros + U.S. city average | all items; no local CPI → U.S. city average, flagged |
+| JOLTS | available (M4) | state | openings, hires, quits, layoffs |
 | QCEW | M5 | county, MSA, state | employment and wages by NAICS and ownership; CSV client, not the timeseries API |
 
 Internals: pure series-ID builders per program with a unit test each against a
@@ -199,7 +199,7 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 | **M1 Foundation** | Monorepo; `packages/core` server shell with stdio and Streamable HTTP; core HTTP client (retry, backoff, budget counter, cache); provenance envelope; contract-test harness; CI (lint, typecheck, test, contract); CDK stack that deploys one Lambda from CI | A hello-world server with `describe_source` passes contract tests and deploys on merge; the same build runs over stdio in Claude Code |
 | **M2 Geography catalog** | geography-build pipeline; SQLite catalog with weighted-overlap shares and 2010→2020 tract lineage; `resolvePlace` with ambiguity status, county fallback and structured flags; `geography://guide`; a hosted `server-geo` (`geo-mcp.responsive.city`); `bls_resolve_place` via `core.geographyTools()` (ADR-008) | UGEO-Bench runs in-repo and a small model shows a demonstrable lift with the geography tools; "Denver" resolves to city/county/metro/CSA with every BLS code and structured flags; `server-geo` live |
 | **M3 Labor market core** | LAUS only (ADR-009): series-ID builder, `bls_get_indicator`, `bls_list_indicators`, `bls_get_raw` (raw, batched, chunked), LAUS flipped to `available` in `bls_describe_source`; recorded fixtures; quota enforcement end to end | Unemployment questions for any state, metro, county or ≥25k city answer from fixtures in tests and from the live API in the smoke job, with the below-threshold county fallback; preliminary flags surface in the envelope |
-| **M4 Wages, prices, openings** | CES State & Area, OEWS, CPI, JOLTS builders and indicators behind `bls_get_indicator`; `bls_compare_places`; CPI area→CBSA hand map with "no local CPI" handling | All timeseries-API programs pass contract and smoke; comparing five metros on one indicator returns period-aligned rows |
+| **M4 Wages, prices, openings** | A program registry generalizing `bls_get_indicator` off LAUS; CES, OEWS, CPI and JOLTS builders + indicators; `bls_compare_places`; CPI's ~23-metro codes with a U.S.-city-average fallback. State-level for CES/OEWS (metro CES is #110) | Payroll, wage, price and job-openings questions answer through the family verbs; comparing places on one indicator returns period-aligned rows; only QCEW remains planned |
 | **M5 QCEW** | CSV slice client over `data.bls.gov/cew/data/api`, typed parsing, annual and quarterly, ownership and NAICS filters, exposed as QCEW indicators behind `bls_get_indicator`; long-TTL cache | County employment and wages by industry for any county, MSA or state, with suppression codes carried as caveats |
 | **M6 Release hardening** | Optional LABSTAT observation mirror for LAUS and SM; eval set of real policy questions run against the deployed server; README, install docs for Claude, Claude Code and one third-party host; Anthropic directory submission; tagged v1.0.0 | Eval set passes at an agreed threshold; a new user installs and gets a cited answer without reading source |
 

@@ -160,19 +160,38 @@ describe("bls_list_indicators", () => {
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
 
-  it("reports a county publishes LAUS at its own level", async () => {
+  type IndicatorAvailability = {
+    indicator: string;
+    program: string;
+    publishedAtLevel: boolean;
+    fallbackTo?: string;
+  };
+
+  it("reports per-indicator availability at a county: LAUS at its own level, CPI via fallback", async () => {
     const res = await call(listTool(), { place: "Denver", kind: "county" });
-    const data = res.data as { publishedAtLevel: boolean };
-    expect(data.publishedAtLevel).toBe(true);
+    const data = res.data as { indicators: IndicatorAvailability[] };
+    const laus = data.indicators.find((i) => i.indicator === "unemployment_rate");
+    expect(laus).toMatchObject({ program: "LAUS", publishedAtLevel: true });
+    // CPI does not publish for a county, so it reports its U.S. city average fallback.
+    const cpi = data.indicators.find((i) => i.indicator === "cpi_all_items");
+    expect(cpi).toMatchObject({ program: "CPI", publishedAtLevel: false });
+    expect(cpi?.fallbackTo).toBe("U.S. city average");
     expect(res.place?.geoid).toBe("08031");
   });
 
-  it("flags a below-threshold city as falling back to its county", async () => {
+  it("flags a below-threshold city's LAUS indicator as falling back to its county", async () => {
     const res = await call(listTool(), { place: "Smallburg", kind: "city" });
-    const data = res.data as { publishedAtLevel: boolean; fallback?: { name: string } };
-    expect(data.publishedAtLevel).toBe(false);
-    expect(data.fallback?.name).toBe("Denver County");
-    expect(res.limitations?.join(" ")).toMatch(/fall back to Denver County/);
+    const data = res.data as { indicators: IndicatorAvailability[] };
+    const laus = data.indicators.find((i) => i.indicator === "unemployment_rate");
+    expect(laus?.publishedAtLevel).toBe(false);
+    expect(laus?.fallbackTo).toBe("Denver County");
+  });
+
+  it("carries the program on each indicator when no place is given", async () => {
+    const res = await call(listTool(), {});
+    const data = res.data as { indicators: { indicator: string; program: string }[] };
+    const programs = new Set(data.indicators.map((i) => i.program));
+    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS"]));
   });
 });
 

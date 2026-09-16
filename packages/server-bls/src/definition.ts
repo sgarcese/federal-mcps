@@ -51,20 +51,18 @@ publish at its level, its BLS area codes, and structured flags — including
 \`below_threshold\` when a place is under the LAUS 25,000 cutoff, with its county as the
 fallback. Resolve the place first, then read a number.
 
-Unemployment is available now. \`bls_get_indicator\` returns a LAUS measure —
-unemployment rate, unemployment, employment or labor force — for a resolved place over
-time, applying the county fallback below the 25,000 threshold; \`bls_list_indicators\`
-lists those measures and whether LAUS publishes at a place's level; \`bls_get_raw\`
-returns the unprocessed BLS response for exact series ids.
-
-\`bls_describe_source\` reports what this server covers and what is planned: Local Area
-Unemployment Statistics (LAUS, unemployment) is available; Current Employment Statistics
-State & Area (CES S&A, payroll employment), the Quarterly Census of Employment and Wages
-(QCEW, employment and wages by industry), Occupational Employment and Wage Statistics
-(OEWS, wages by occupation), the Consumer Price Index (CPI), and the Job Openings and
-Labor Turnover Survey (JOLTS) are planned — their data tools arrive in later milestones.
-Call \`bls_describe_source\` when you are unsure what this server can answer, rather than
-assuming a tool exists.
+\`bls_get_indicator\` returns a statistic for a resolved place across five programs:
+unemployment, employment and labor force (LAUS); payroll employment (CES); occupational
+wage (OEWS); the all-items price index (CPI); and job openings, hires, quits and layoffs
+(JOLTS). It applies each program's coverage fallback — a below-25,000 city reads its
+county, a place with no local CPI reads the U.S. city average — always flagged, never
+fabricated. CES and OEWS are state-level for now (metro series arriving); JOLTS is
+state-level below national. \`bls_list_indicators\` names every indicator, its program, and
+whether that program publishes at a place's level; \`bls_compare_places\` compares one
+indicator across places, aligned on the latest period they share; \`bls_get_raw\` returns
+the unprocessed BLS response for exact series ids. \`bls_describe_source\` reports each
+program's coverage; the one program still planned is QCEW (employment and wages by
+industry), on a separate feed. Call it when unsure what this server can answer.
 
 Every result this server family returns — now and once data tools land — carries a
 provenance block: the resolved place, the BLS program and series id, the retrieval date,

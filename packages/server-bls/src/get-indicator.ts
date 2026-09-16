@@ -12,7 +12,6 @@ import {
 } from "@federal-mcps/core";
 import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
-import { lausCodeOf, lausCountyLookup } from "./laus-indicators.js";
 import { isLausSeriesId } from "./laus.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
 import { createIndicatorRegistry, type IndicatorDefinition } from "./registry.js";
@@ -417,7 +416,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     {
       name: "bls_list_indicators",
       description:
-        "List the BLS indicators available (unemployment rate, unemployment, employment, labor force); given a place, also report whether the program publishes at that place's level or falls back to its county.",
+        "List every indicator this server reports (across LAUS, CES, OEWS, CPI and JOLTS) with its program and description. Given a place, each indicator also reports whether its program publishes at that place's level, and the fallback it would use otherwise (e.g. a small city's county, or the U.S. city average for CPI).",
       input: z.object({
         place: z
           .string()
@@ -439,35 +438,55 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           state: z.string().optional(),
         });
         const q = listInput.parse(args);
-        const indicators = registry.list().map((def) => ({
-          indicator: def.name,
-          description: def.description,
-        }));
+        const catalog = options.catalog();
         const baseSource = { ...SOURCE, ids: [], citation: "" };
-        if (!q.place) return { data: { indicators }, source: baseSource };
+        const catalogEntry = (def: IndicatorDefinition) => ({
+          indicator: def.name,
+          program: def.program,
+          description: def.description,
+        });
+        if (!q.place) {
+          return { data: { indicators: registry.list().map(catalogEntry) }, source: baseSource };
+        }
 
-        const resolved = resolvePlace(options.catalog(), q.place, {
+        const resolved = resolvePlace(catalog, q.place, {
           ...(q.kind === undefined ? {} : { kind: q.kind }),
           ...(q.state === undefined ? {} : { state: q.state }),
         });
         if (resolved.status === "ambiguous") {
           return {
-            data: { indicators, status: "ambiguous", candidates: resolved.candidates },
+            data: {
+              indicators: registry.list().map(catalogEntry),
+              status: "ambiguous",
+              candidates: resolved.candidates,
+            },
             source: baseSource,
             limitations: [resolved.explanation],
           };
         }
         const top = resolved.candidates[0];
-        if (!top)
-          return { data: { indicators, status: "not_found", query: q.place }, source: baseSource };
-        const hasOwnCode = lausCodeOf(top) !== undefined;
-        const county = hasOwnCode ? undefined : lausCountyLookup(options.catalog(), top);
+        if (!top) {
+          return {
+            data: {
+              indicators: registry.list().map(catalogEntry),
+              status: "not_found",
+              query: q.place,
+            },
+            source: baseSource,
+          };
+        }
+        // Per-indicator availability at this place, across every program (ADR-010 §7).
+        const indicators = registry.list().map((def) => {
+          const publishedAtLevel = def.agencyCodeOf(top) !== undefined;
+          const fb = publishedAtLevel ? undefined : def.fallback?.(catalog, top);
+          return {
+            ...catalogEntry(def),
+            publishedAtLevel,
+            ...(fb ? { fallbackTo: fb.name } : {}),
+          };
+        });
         return {
-          data: {
-            indicators,
-            publishedAtLevel: hasOwnCode,
-            ...(county ? { fallback: { level: "county", name: county.name } } : {}),
-          },
+          data: { indicators },
           source: baseSource,
           place: placeRef({
             geoid: top.geoid,
@@ -475,13 +494,6 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
             label: top.kind.label,
             name: top.name,
           }),
-          ...(county
-            ? {
-                limitations: [
-                  `${top.name} has no LAUS series; values fall back to ${county.name}.`,
-                ],
-              }
-            : {}),
         };
       },
     },
