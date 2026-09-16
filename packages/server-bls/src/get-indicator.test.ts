@@ -53,6 +53,13 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("payroll_employment");
   });
 
+  it("dispatches CES payroll_employment to a single-state metro's SM series (Denver, #110)", async () => {
+    const res = await run({ place: "Denver", kind: "metro", indicator: "payroll_employment" });
+    expect(res.source.ids).toEqual(["SMU08197400000000001"]); // state 08 + CBSA 19740
+    expect(res.source.program).toBe("SM");
+    expect(res.place?.geoid).toBe("19740");
+  });
+
   it("dispatches CPI cpi_all_items for a published metro to its CU series (Denver)", async () => {
     const res = await run({ place: "Denver", kind: "metro", indicator: "cpi_all_items" });
     expect(res.source.ids).toEqual(["CUURS48BSA0"]);
