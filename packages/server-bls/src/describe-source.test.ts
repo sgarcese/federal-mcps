@@ -9,15 +9,15 @@ describe("BLS describeSource()", () => {
     expect(d.homepage).toBe("https://www.bls.gov");
   });
 
-  it("lists all six architecture-doc programs; LAUS is available (M3), the rest planned", () => {
+  it("lists all six architecture-doc programs; LAUS+CES+OEWS+CPI+JOLTS available, QCEW planned", () => {
     const d = describeSource();
     const codes = d.programs.map((p) => p.code).sort();
     expect(codes).toEqual(["CPI", "JOLTS", "LAUS", "OEWS", "QCEW", "SM"].sort());
     const byCode = Object.fromEntries(d.programs.map((p) => [p.code, p]));
-    expect(byCode.LAUS?.status).toBe("available");
-    for (const code of ["CPI", "JOLTS", "OEWS", "QCEW", "SM"]) {
-      expect(byCode[code]?.status).toBe("planned");
+    for (const code of ["LAUS", "SM", "OEWS", "CPI", "JOLTS"]) {
+      expect(byCode[code]?.status).toBe("available");
     }
+    expect(byCode.QCEW?.status).toBe("planned");
     for (const program of d.programs) {
       expect(program.granularity.length).toBeGreaterThan(0);
       expect(program.cadence.length).toBeGreaterThan(0);
