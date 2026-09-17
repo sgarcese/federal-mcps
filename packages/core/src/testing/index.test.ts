@@ -16,11 +16,14 @@ describe("@federal-mcps/core/testing", () => {
 
   it("is reachable from the package's ./testing subpath", async () => {
     const { readFile } = await import("node:fs/promises");
-    const manifest: { exports: Record<string, { types: string; default: string }> } = JSON.parse(
-      await readFile(new URL("../../package.json", import.meta.url), "utf8"),
-    );
+    const manifest: {
+      exports: Record<string, { types: string; development: string; default: string }>;
+    } = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8"));
+    // `development` lets a child process spawned under `tsx --conditions development` (the
+    // stdio tests) resolve to source on a fresh checkout with no build (#39).
     expect(manifest.exports["./testing"]).toEqual({
       types: "./dist/testing/index.d.ts",
+      development: "./src/testing/index.ts",
       default: "./dist/testing/index.js",
     });
   });
