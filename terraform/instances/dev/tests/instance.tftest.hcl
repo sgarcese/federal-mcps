@@ -7,14 +7,14 @@ mock_provider "aws" {
   override_data {
     target = module.bls_server.data.aws_iam_role.exec
     values = {
-      arn = "arn:aws:iam::564762345093:role/rc-bls-mcp-dev-role"
+      arn = "arn:aws:iam::123456789012:role/rc-bls-mcp-dev-role"
     }
   }
 
   override_data {
     target = module.geo_server.data.aws_iam_role.exec
     values = {
-      arn = "arn:aws:iam::564762345093:role/rc-geo-mcp-dev-role"
+      arn = "arn:aws:iam::123456789012:role/rc-geo-mcp-dev-role"
     }
   }
 
@@ -25,7 +25,7 @@ mock_provider "aws" {
     target          = module.bls_server.aws_acm_certificate.bls
     override_during = plan
     values = {
-      arn = "arn:aws:acm:us-east-1:564762345093:certificate/test-cert-id"
+      arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id"
       domain_validation_options = [
         {
           domain_name           = "bls-mcp.responsive.city"
@@ -41,7 +41,7 @@ mock_provider "aws" {
     target          = module.geo_server.aws_acm_certificate.geo
     override_during = plan
     values = {
-      arn = "arn:aws:acm:us-east-1:564762345093:certificate/test-cert-id-geo"
+      arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-geo"
       domain_validation_options = [
         {
           domain_name           = "geo-mcp.responsive.city"

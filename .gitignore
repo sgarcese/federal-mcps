@@ -76,3 +76,6 @@ tmp/
 
 # --- agent worktrees (CLAUDE.md agent delegation) ---
 .claude/worktrees/
+
+# Fleet record: real values are per-deployer; commit instances.example.json instead (ADR-004).
+/instances.json

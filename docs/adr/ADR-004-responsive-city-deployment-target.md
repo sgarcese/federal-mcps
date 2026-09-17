@@ -12,7 +12,8 @@ account and the trust mechanics open. The owner ruled on 2026-09-08 that the pro
 deploys to the Responsive City AWS account using the same pattern as their other
 deployments there, bootstrapped through the `rc-deploy` profile.
 
-Facts verified read-only from that profile: account `564762345093`, region `us-east-1`,
+Facts verified read-only from that profile: the AWS account (recorded in the gitignored
+`instances.json`, ADR-006 §1), region `us-east-1`,
 a `responsive.city` public hosted zone (`Z02890412WHZ405FIOT0Y`), an existing CDK
 bootstrap (`CDKToolkit` stack present), and a GitHub OIDC provider already registered in
 the account (referenced, not created, by sibling deployments). The `rc-deploy` role is
@@ -32,7 +33,7 @@ cannot list IAM or CloudFormation resources.
    `federal-mcps-github-deploy`, assumable only by this repository's `main` branch using
    the ID-qualified subject `repo:sgarcese@2701478/federal-mcps@1361995308:ref:refs/heads/main`
    (immutable across renames). Its only permission is `sts:AssumeRole` on
-   `arn:aws:iam::564762345093:role/cdk-*`, plus the read-only calls the post-deploy
+   `arn:aws:iam::<aws-account-id>:role/cdk-*`, plus the read-only calls the post-deploy
    verification step needs, scoped to `FederalMcps*` stacks and functions.
 3. **One human bootstrap, then CI only.** *(ADR-005 adds the state bucket to this
    step.)* The trust configuration is applied exactly once by a person using

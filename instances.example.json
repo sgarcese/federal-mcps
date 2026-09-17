@@ -1,17 +1,15 @@
 {
   "$comment": [
-    "The fleet record (ADR-004): one entry per deployed instance of federal-mcps.",
-    "Nothing else in the repository names an AWS account or region. Consumers:",
-    "infra/ (CDK reads the instance selected by FEDERAL_MCPS_INSTANCE, default dev)",
-    "and .github/workflows/deploy.yml (role, region, concurrency).",
-    "Adding a stage or a dedicated deployment is adding a record here and running the",
-    "one-time bootstrap runbook in that account with rc-deploy (ADR-006)."
+    "EXAMPLE fleet record (ADR-004). Copy to instances.json (gitignored) and fill in your own",
+    "AWS account, region, domain and Terraform state bucket. The real instances.json is never",
+    "committed; instance.mjs and terraform/instances/dev/locals.tf fall back to this example when",
+    "it is absent (so CI \u2014 which uses -backend=false + a mocked provider \u2014 runs on placeholders)."
   ],
   "instances": [
     {
       "name": "dev",
       "description": "federal-mcps dev in the Responsive City account",
-      "account": "564762345093",
+      "account": "123456789012",
       "region": "us-east-1",
       "environmentTag": "dev",
       "domain": {
@@ -21,7 +19,7 @@
         "hostedZoneName": "responsive.city"
       },
       "terraform": {
-        "stateBucket": "rc-tfstate-564762345093",
+        "stateBucket": "rc-tfstate-123456789012",
         "stateKey": "rc/federal-mcps/dev/terraform.tfstate"
       },
       "naming": {
