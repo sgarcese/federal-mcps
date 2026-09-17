@@ -14,8 +14,8 @@ import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 import { isLausSeriesId } from "./laus.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
-import { createIndicatorRegistry, type IndicatorDefinition } from "./registry.js";
-import { fetchSeriesObservations, fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
+import { createIndicatorRegistry, fetchStrategyOf, type IndicatorDefinition } from "./registry.js";
+import { fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
   /** How the handler gets a read-only catalog (cached upstream). */
@@ -203,7 +203,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
     const seriesId = def.buildSeriesId(agencyCode, { seasonallyAdjusted });
 
-    const [series] = await fetchSeriesObservations(options.httpClient(), [seriesId], {
+    const [series] = await fetchStrategyOf(def)(options.httpClient(), [seriesId], {
       startYear,
       endYear,
       ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
@@ -327,7 +327,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
 
         const currentYear = now().getFullYear();
         const series = ids.length
-          ? await fetchSeriesObservations(options.httpClient(), ids, {
+          ? await fetchStrategyOf(def)(options.httpClient(), ids, {
               startYear: p.startYear ?? currentYear - 1,
               endYear: p.endYear ?? currentYear,
               ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),

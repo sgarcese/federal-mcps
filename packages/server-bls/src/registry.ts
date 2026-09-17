@@ -1,4 +1,5 @@
 import type { GeographyCatalog, PlaceCandidate } from "@federal-mcps/core";
+import { type IndicatorFetch, timeseriesFetch } from "./series-fetch.js";
 
 /**
  * The BLS indicator registry (ADR-010 §1). `bls_get_indicator` used to hardcode LAUS; the
@@ -48,6 +49,18 @@ export interface IndicatorDefinition {
   buildSeriesId(code: string, options: { seasonallyAdjusted: boolean }): string;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
+  /**
+   * How this indicator fetches observations for its series keys (ADR-011 §2). Omit for the
+   * timeseries default (LAUS/CES/OEWS/CPI/JOLTS — the BLS Public Data API); a non-timeseries
+   * program supplies its own (QCEW's CSV slices, #124), so `bls_get_indicator`/`bls_compare_places`
+   * dispatch through the capability rather than assuming the timeseries API.
+   */
+  fetch?: IndicatorFetch;
+}
+
+/** The fetch capability for a definition: its own if it has one, else the timeseries default. */
+export function fetchStrategyOf(def: IndicatorDefinition): IndicatorFetch {
+  return def.fetch ?? timeseriesFetch;
 }
 
 /** A read-only lookup over a set of indicator definitions, keyed by name. */
