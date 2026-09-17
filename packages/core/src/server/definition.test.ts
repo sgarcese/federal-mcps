@@ -15,6 +15,7 @@ const echoInput = z.object({ text: z.string() });
 
 const echo: ToolDefinition<typeof echoInput, { text: string }> = {
   name: "demo_get_raw",
+  title: "Get raw series",
   description: "Echoes text back, wrapped in the family envelope.",
   input: echoInput,
   examples: [{ title: "hello", input: { text: "hello" } }],

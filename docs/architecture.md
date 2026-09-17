@@ -110,9 +110,10 @@ so BLS packs 50 series per call and Census packs variables per call.
 the caller can confirm), `source` (agency, dataset, series/variable IDs, URL),
 `retrievedAt`, `vintage`, `footnotes`, `limitations`, `cache`.
 
-**Server shell.** `createServer(definition)` registers tools with `readOnlyHint: true`,
-attaches the envelope, wires both transports, adds `describe_source` and prompts. The
-contract suite asserts naming, annotations and envelope shape.
+**Server shell.** `createServer(definition)` registers tools with a human-readable `title`
+and `readOnlyHint: true`, attaches the envelope, wires both transports, adds
+`describe_source` and prompts. The contract suite asserts naming, titles, annotations and
+envelope shape.
 
 ### Family verbs
 

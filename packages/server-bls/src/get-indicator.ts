@@ -247,8 +247,9 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
   return [
     {
       name: "bls_get_indicator",
+      title: "Get indicator",
       description:
-        "Get a BLS Local Area Unemployment Statistics value for a place: unemployment rate, unemployment, employment, or labor force, with footnote flags and a citation. A city below the 25,000 LAUS threshold returns its county's value, flagged.",
+        "Get one BLS indicator for a place, with footnote flags and a citation: unemployment, employment and labor force (LAUS); payroll employment (CES); occupational wage (OEWS); the all-items price index (CPI); job openings, hires, quits and layoffs (JOLTS); covered employment and average weekly wage (QCEW). Coverage gaps fall back and are flagged: a city below the 25,000 LAUS threshold returns its county's value; a place with no local CPI returns the U.S. city average.",
       input,
       examples: [
         {
@@ -260,6 +261,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     },
     {
       name: "bls_compare_places",
+      title: "Compare places",
       description:
         "Compare one indicator across several places, aligned on the latest period they all share. Each place is resolved and labelled; a place below coverage (e.g. a small city on LAUS) is flagged with its fallback, and an ambiguous or unmatched place is reported in its row rather than dropped.",
       input: z.object({
@@ -415,8 +417,9 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     },
     {
       name: "bls_list_indicators",
+      title: "List indicators",
       description:
-        "List every indicator this server reports (across LAUS, CES, OEWS, CPI and JOLTS) with its program and description. Given a place, each indicator also reports whether its program publishes at that place's level, and the fallback it would use otherwise (e.g. a small city's county, or the U.S. city average for CPI).",
+        "List every indicator this server reports (across LAUS, CES, OEWS, CPI, JOLTS and QCEW) with its program and description. Given a place, each indicator also reports whether its program publishes at that place's level, and the fallback it would use otherwise (e.g. a small city's county, or the U.S. city average for CPI).",
       input: z.object({
         place: z
           .string()
@@ -499,10 +502,14 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     },
     {
       name: "bls_get_raw",
+      title: "Get raw series",
       description:
-        "Return the unprocessed BLS API response for one or more LAUS series ids — the escape hatch for exact series (build ids via resolve_place + the indicator, or list them from a prior result).",
+        "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI or JOLTS series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block.",
       input: z.object({
-        ids: z.array(z.string()).min(1).describe("LAUS series ids, e.g. ['LAUCN080310000000003']."),
+        ids: z
+          .array(z.string())
+          .min(1)
+          .describe("BLS timeseries ids, e.g. ['LAUCN080310000000003']."),
         startYear: z.number().int().optional().describe("First year (optional)."),
         endYear: z.number().int().optional().describe("Last year (optional)."),
       }),

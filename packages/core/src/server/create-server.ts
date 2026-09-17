@@ -111,6 +111,7 @@ function registerDefinitionTool(
   server.registerTool(
     tool.name,
     {
+      title: tool.title,
       description: tool.description,
       // The tool's own Zod schema is handed to the SDK whole: it publishes the
       // JSON Schema on `tools/list` AND validates arguments before the handler
@@ -150,6 +151,7 @@ function registerDescribeSource(
   server.registerTool(
     name,
     {
+      title: "Describe source",
       description:
         "Coverage, release cadence, caveats and citation format for this source. " +
         "Read this before interpreting any number from this server.",

@@ -67,3 +67,24 @@ export const toolDescriptionRule: ContractRule = {
     return violations;
   },
 };
+
+/**
+ * Every tool must carry a non-blank human-readable `title` (the directory review criteria
+ * require it alongside the read-only/destructive hints, #138).
+ */
+export const toolTitleRule: ContractRule = {
+  ids: ["tool-title"],
+  run: ({ definition }) => {
+    const violations: Violation[] = [];
+    for (const tool of definition.tools) {
+      if ((tool.title ?? "").trim() === "") {
+        violations.push({
+          rule: "tool-title",
+          tool: tool.name,
+          message: "title is blank; hosts and the connector directory show it next to the name",
+        });
+      }
+    }
+    return violations;
+  },
+};

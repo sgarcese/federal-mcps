@@ -77,6 +77,11 @@ export interface ToolContext {
  */
 export interface ToolDefinition<TInput extends z.ZodType = z.ZodType, TData = unknown> {
   readonly name: string;
+  /**
+   * Human-readable title hosts show next to the name (`title` on `tools/list`). Required:
+   * the Anthropic connector directory rejects tools without one (#138).
+   */
+  readonly title: string;
   readonly description: string;
   readonly input: TInput;
   readonly examples: readonly [ToolExample, ...ToolExample[]];

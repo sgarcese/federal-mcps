@@ -25,6 +25,9 @@ export const overlongToolName: ServerDefinition = withTools([
 /** `tool-name-prefix`: a tool that forgot the agency prefix. */
 export const missingPrefix: ServerDefinition = withTools([variant({ name: "get_raw" })]);
 
+/** `tool-title`: blank. */
+export const missingTitle: ServerDefinition = withTools([variant({ title: " " })]);
+
 /** `tool-description`: empty. */
 export const emptyDescription: ServerDefinition = withTools([variant({ description: "   " })]);
 
