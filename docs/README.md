@@ -51,6 +51,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   CPI's nearest-published-area handling.
 - [ADR-011](adr/ADR-011-m5-qcew.md) — M5 QCEW: the first non-timeseries program (CSV area
   slices) over a registry fetch capability; county/state headline; disclosure codes as caveats.
+- [ADR-012](adr/ADR-012-m6-release-hardening.md) — M6 release hardening: an eval set vs the live
+  server, a connector quickstart, directory submission, and the first tag v0.1.0 (0.x, minor per milestone).
 
 ## Runbooks
 
