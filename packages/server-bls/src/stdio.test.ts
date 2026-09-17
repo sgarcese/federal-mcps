@@ -10,7 +10,9 @@ import { buildBlsDefinition } from "./definition.js";
 import { stubHttpClient } from "./__fixtures__/stub-client.js";
 
 /**
- * Spawns the `federal-mcps-bls` bin's source directly under `tsx`, the same
+ * Spawns the `federal-mcps-bls` bin's source directly under `tsx` with the `development`
+ * export condition, so `@federal-mcps/core` resolves to source in the child too and the test
+ * runs on a fresh checkout with no build (#39) — the same
  * way the shell's own `stdio.test.ts` (`packages/core/src/server/stdio.test.ts`)
  * spawns its fixture — a real child process talking JSON-RPC over stdin/stdout,
  * which is exactly how Claude Desktop and Claude Code launch this server. The
@@ -43,7 +45,11 @@ describe.runIf(existsSync(tsx))("federal-mcps-bls over stdio", () => {
     const env: Record<string, string> = { GEO_CATALOG_PATH: catalogPath };
     for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
     env.GEO_CATALOG_PATH = catalogPath;
-    const transport = new StdioClientTransport({ command: tsx, args: [bin], env });
+    const transport = new StdioClientTransport({
+      command: tsx,
+      args: ["--conditions", "development", bin],
+      env,
+    });
     await client.connect(transport);
     try {
       expect(client.getServerVersion()).toMatchObject({ name: expected.name });
