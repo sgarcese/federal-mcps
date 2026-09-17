@@ -3,12 +3,21 @@
  * workflow, the Terraform backend-config helper and tests. Plain ESM so the
  * workflow can run it with `node` and no build step.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-export const DEFAULT_INSTANCES_PATH = join(here, "..", "instances.json");
+/**
+ * The real fleet record is gitignored (per-deployer, holds the AWS account; ADR-004). When it is
+ * absent — CI, a fresh clone — fall back to the committed `instances.example.json` placeholder, so
+ * validation and mocked terraform tests run without any deployer's account.
+ */
+const REAL_INSTANCES_PATH = join(here, "..", "instances.json");
+const EXAMPLE_INSTANCES_PATH = join(here, "..", "instances.example.json");
+export const DEFAULT_INSTANCES_PATH = existsSync(REAL_INSTANCES_PATH)
+  ? REAL_INSTANCES_PATH
+  : EXAMPLE_INSTANCES_PATH;
 
 const REQUIRED_STRINGS = ["name", "description", "account", "region", "environmentTag"];
 

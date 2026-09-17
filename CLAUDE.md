@@ -123,7 +123,10 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 - `scripts/` — `instance.mjs` (fleet-record loader used by CI and tests),
   `tf-backend-config.mjs`, `infra-check.sh`.
 - `instances.json` — the fleet record (ADR-004); the only place an AWS account or
-  region is named.
+  region is named. It is **gitignored** (per-deployer, holds the account); the repo
+  commits `instances.example.json` with a placeholder account, and `scripts/instance.mjs`
+  + `terraform/instances/dev/locals.tf` fall back to it when the real file is absent, so
+  CI (mocked provider, `-backend=false`) needs no real account.
 
 ## Commands
 

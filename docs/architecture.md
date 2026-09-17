@@ -210,7 +210,8 @@ multi-vintage geography.
 ## Deployment
 
 Per ADR-004 and ADR-006: `instances.json` is the fleet record; Release 1 has one instance, `dev`, in
-the Responsive City account (`123456789012`, `us-east-1`). Each server has its own
+the Responsive City account (`us-east-1`; the account id lives in the gitignored
+`instances.json`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
 `bls-mcp.responsive.city/mcp` in Release 1.
 
