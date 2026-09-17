@@ -25,7 +25,8 @@
     "build": "tsc -b tsconfig.json",
     "clean": "rimraf packages/*/dist",
     "infra:check": "bash scripts/infra-check.sh",
-    "geography:build": "npm run geography:build -w packages/geography-build"
+    "geography:build": "npm run geography:build -w packages/geography-build",
+    "eval": "node docs/evals/run.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
