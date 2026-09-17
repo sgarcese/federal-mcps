@@ -1,7 +1,9 @@
+import type { HttpClient } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { lausCodeOf, lausIndicatorDefinitions } from "./laus-indicators.js";
 import { buildLausSeriesId, LAUS_MEASURES } from "./laus.js";
-import { createIndicatorRegistry, type IndicatorDefinition } from "./registry.js";
+import { createIndicatorRegistry, fetchStrategyOf, type IndicatorDefinition } from "./registry.js";
+import { type IndicatorFetch, timeseriesFetch } from "./series-fetch.js";
 
 const stub = (name: string, program = "TEST"): IndicatorDefinition => ({
   name,
@@ -60,5 +62,35 @@ describe("lausIndicatorDefinitions (LAUS on the registry)", () => {
     expect(def?.agencyCodeOf(withoutCode)).toBeUndefined();
     // The exported helper agrees with the definition.
     expect(lausCodeOf(withCode)).toBe("CN0803100000000");
+  });
+});
+
+describe("fetchStrategyOf (fetch capability seam, #123)", () => {
+  it("falls back to the timeseries default when a definition supplies no fetch", () => {
+    expect(fetchStrategyOf(stub("laus_like"))).toBe(timeseriesFetch);
+  });
+
+  it("uses a definition's own capability — a non-timeseries program fetches its own way", async () => {
+    // A stub CSV-style capability: no HTTP, treats the "series id" as an opaque program key.
+    const csvFetch: IndicatorFetch = async (_client, keys) =>
+      keys.map((k) => ({
+        seriesId: k,
+        observations: [
+          { year: "2024", period: "Q01", periodName: "1st Quarter", value: 42, footnotes: [] },
+        ],
+      }));
+    const def: IndicatorDefinition = { ...stub("qcew_like", "QCEW"), fetch: csvFetch };
+
+    expect(fetchStrategyOf(def)).toBe(csvFetch);
+    const noClient = undefined as unknown as HttpClient;
+    const [result] = await fetchStrategyOf(def)(noClient, ["08031"], {});
+    expect(result?.seriesId).toBe("08031");
+    expect(result?.observations[0]?.value).toBe(42);
+  });
+
+  it("every registered LAUS indicator uses the shared timeseries default (no behaviour change)", () => {
+    for (const def of lausIndicatorDefinitions) {
+      expect(fetchStrategyOf(def)).toBe(timeseriesFetch);
+    }
   });
 });

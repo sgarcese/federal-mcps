@@ -132,3 +132,20 @@ export async function fetchSeriesRaw(
 ): Promise<unknown[]> {
   return fetchSeriesBatches(client, seriesIds, options);
 }
+
+/**
+ * How an indicator fetches observations for its series keys (ADR-011 §2). This is the seam that
+ * lets a non-timeseries program — QCEW's CSV area slices (#124) — plug into `bls_get_indicator`
+ * and `bls_compare_places` alongside the timeseries default, without either tool knowing which.
+ * A "series id" here is just the program's opaque key; the timeseries default treats it as a real
+ * BLS series id, a CSV program would treat it as an area code.
+ */
+export type IndicatorFetch = (
+  client: HttpClient,
+  seriesIds: readonly string[],
+  options: SeriesFetchOptions,
+) => Promise<SeriesResult[]>;
+
+/** The default capability: the five timeseries programs fetch through the BLS Public Data API. */
+export const timeseriesFetch: IndicatorFetch = (client, seriesIds, options) =>
+  fetchSeriesObservations(client, seriesIds, options);
