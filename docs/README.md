@@ -10,6 +10,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   URL in Claude.ai, Claude Code, or any MCP host, and what to ask once connected.
 - [install.md](install.md) — developer install: Claude Code and Claude Desktop stdio
   configs (npm and local checkout), and the remote HTTP endpoint.
+- [privacy.md](privacy.md) — the connector's privacy policy: what a tool call sends, what
+  the hosted endpoint logs (30 days), and that no conversation data is ever received.
+- [directory-readiness.md](directory-readiness.md) — the Anthropic connector-directory
+  review-criteria checklist pass and the drafted submission portal fields (M6.3, #138).
 
 ## Spikes (completed analyses)
 

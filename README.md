@@ -49,7 +49,8 @@ https://bls-mcp.responsive.city/mcp
 ```
 
 New to connectors? [`docs/connect.md`](docs/connect.md) has one-screen, copy-paste steps
-for each host and what to ask once you're connected.
+for each host and what to ask once you're connected. The connector is read-only and keeps
+no user data; see [`docs/privacy.md`](docs/privacy.md).
 
 A typical exchange: resolve the place, then read a number.
 
