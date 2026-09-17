@@ -1,20 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
 import { assemble, type Sources } from "../assemble.js";
 import { buildCatalog } from "../catalog.js";
+import { loadVendoredGeocorr } from "../data/geocorr/vendored.js";
 import { fetchCached, SOURCE_URLS } from "../download.js";
-
-/** The vendored Geocorr sample shipped in this package (#55; see its README). */
-const GEOCORR_SAMPLE_PATH = join(
-  import.meta.dirname,
-  "..",
-  "data",
-  "geocorr",
-  "geocorr2022_sample.csv",
-);
 
 /**
  * Builds the catalog end to end: download (cached), unzip the gazetteers, assemble, and
@@ -52,18 +44,11 @@ async function main(): Promise<void> {
     sources[key] = (await fetchCached(url)).toString("utf-8");
   }
 
-  // Geocorr has no API and no stable download URL (ADR-008 §2); the vendored sample
-  // ships in this package. A full-scale build points this at a regenerated export
-  // (see data/geocorr/README.md) via the same field.
-  //
-  // KNOWN GAP (#141): the sample carries only 7 place→county rows (Atlanta, NYC), and
-  // Census publishes no place↔county relationship file — so this is the ONLY source for
-  // that edge. Building with the sample leaves the LAUS below-threshold county fallback
-  // (ADR-009 §6) empty nationwide: a small city resolves its `below_threshold` flag but
-  // finds no county → `unavailable`. The fix (full national place_county export, acquisition
-  // recipe, and the in-repo-vs-HuggingFace hosting decision) is in
-  // docs/spikes/geocorr-place-county-sourcing.md.
-  sources.geocorr = readFileSync(GEOCORR_SAMPLE_PATH, "utf-8");
+  // Geocorr has no API and no stable download URL (ADR-008 §2), so its exports are vendored
+  // in this package: the sample for cousub↔CBSA / ZCTA↔tract, and the full national
+  // place→county crosswalk (#141) — the only source of that edge, which the LAUS below-
+  // threshold county fallback (ADR-009 §6) depends on. Regenerate with `npm run geocorr:fetch`.
+  sources.geocorr = loadVendoredGeocorr();
 
   const rows = assemble(sources);
   mkdirSync(outDir, { recursive: true });

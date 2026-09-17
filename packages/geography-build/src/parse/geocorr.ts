@@ -94,3 +94,50 @@ function parseCsvLine(line: string): string[] {
   fields.push(cur);
   return fields;
 }
+
+/** The broker's native place→county header (first of its two header rows). */
+const RAW_PLACE_COUNTY_HEADER = [
+  "state",
+  "place",
+  "county",
+  "stab",
+  "countyname",
+  "placename",
+  "pop20",
+  "afact",
+];
+
+/** The vendored schema header that `parseGeocorr` reads. */
+export const VENDORED_GEOCORR_HEADER =
+  "geo_pair,child_geoid,child_name,parent_geoid,parent_name,afact,pop20";
+
+/**
+ * Rewrites a raw MCDC Geocorr 2022 place→county export (`g1_=place`, `g2_=county`,
+ * `wtvar=pop20`) into the vendored schema (#141). The broker emits two header rows (column
+ * names, then labels), a separate 2-digit `state` and 5-digit `place` (the Census place GEOID
+ * is their concatenation), a 5-digit `county` GEOID, and a trailing space after `afact`.
+ * Pure: fed by `cli/fetch-geocorr.ts`, unit-tested on a few raw lines.
+ */
+export function transformGeocorrPlaceCounty(raw: string): string {
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const header = parseCsvLine(lines[0] ?? "").map((c) => c.trim().toLowerCase());
+  if (RAW_PLACE_COUNTY_HEADER.some((c, i) => header[i] !== c)) {
+    throw new Error(`geocorr: raw header is not the place→county layout (got ${header.join(",")})`);
+  }
+  const out = [VENDORED_GEOCORR_HEADER];
+  // lines[1] is the human-readable label row; data starts at index 2.
+  for (const line of lines.slice(2)) {
+    const [state, place, county, , countyName, placeName, pop20, afact] = parseCsvLine(line).map(
+      (f) => f.trim(),
+    );
+    if (!state || !place || !county) continue;
+    out.push(
+      `place_county,${state}${place},${quote(placeName ?? "")},${county},${quote(countyName ?? "")},${afact},${pop20}`,
+    );
+  }
+  return out.join("\n");
+}
+
+function quote(s: string): string {
+  return `"${s.replace(/"/g, '""')}"`;
+}

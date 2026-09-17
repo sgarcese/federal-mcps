@@ -1,11 +1,4 @@
 geo_pair,child_geoid,child_name,parent_geoid,parent_name,afact,pop20
-place_county,1304000,"Atlanta city, GA",13121,"Fulton County, GA",0.930,392230
-place_county,1304000,"Atlanta city, GA",13089,"DeKalb County, GA",0.070,29520
-place_county,3651000,"New York city, NY",36061,"New York County, NY",0.190,1576876
-place_county,3651000,"New York city, NY",36047,"Kings County, NY",0.312,2590516
-place_county,3651000,"New York city, NY",36081,"Queens County, NY",0.271,2405464
-place_county,3651000,"New York city, NY",36005,"Bronx County, NY",0.166,1379946
-place_county,3651000,"New York city, NY",36085,"Richmond County, NY",0.061,495747
 cousub_cbsa,0937000,"Hartford town, CT",25540,"Hartford-East Hartford-Middletown, CT",1.000,121054
 cousub_cbsa,2504960,"Cambridge city, MA",14460,"Boston-Cambridge-Newton, MA-NH",1.000,118403
 zcta_tract,19104,"ZCTA5 19104",42101036900,"Census Tract 369, Philadelphia County, PA",0.550,9840
