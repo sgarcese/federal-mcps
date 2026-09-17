@@ -1,6 +1,6 @@
 import type { ContractRule } from "../types.js";
 import { examplesRule } from "./examples.js";
-import { toolDescriptionRule, toolNameRule } from "./naming.js";
+import { toolDescriptionRule, toolNameRule, toolTitleRule } from "./naming.js";
 import { describeSourceRule, resolvePlaceRule } from "./source.js";
 import { verbParametersRule } from "./verbs.js";
 
@@ -10,6 +10,7 @@ import { verbParametersRule } from "./verbs.js";
  */
 export const CONTRACT_RULES: readonly ContractRule[] = [
   toolNameRule,
+  toolTitleRule,
   toolDescriptionRule,
   verbParametersRule,
   describeSourceRule,
@@ -23,6 +24,7 @@ export {
   TOOL_NAME_PATTERN,
   toolDescriptionRule,
   toolNameRule,
+  toolTitleRule,
 } from "./naming.js";
 export { describeSourceRule, resolvePlaceRule } from "./source.js";
 export { FAMILY_VERB_PARAMETERS, familyVerbOf, objectKeys, verbParametersRule } from "./verbs.js";

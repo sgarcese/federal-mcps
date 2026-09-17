@@ -24,6 +24,7 @@ const echoInput = z.object({ text: z.string().describe("Text to echo back.") });
 
 const echo: ToolDefinition<typeof echoInput, { text: string }> = {
   name: "demo_get_raw",
+  title: "Get raw series",
   description: "Echoes text back, wrapped in the family envelope.",
   input: echoInput,
   examples: [{ title: "hello", input: { text: "hello" } }],
@@ -41,6 +42,7 @@ const failingInput = z.object({});
 /** Always throws, so the shell's error mapping can be tested end to end. */
 const failing: ToolDefinition<typeof failingInput, never> = {
   name: "demo_get_indicator",
+  title: "Get indicator",
   description: "Always fails with a quota error; exercises the shell's error mapping.",
   input: failingInput,
   examples: [{ title: "fails", input: {} }],

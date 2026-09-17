@@ -61,6 +61,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     });
     tools.push({
       name: p("resolve_place"),
+      title: "Resolve place",
       fromCore: true,
       description:
         "Resolve a place name to candidates with every identifier (GEOID, UCGID, Data Commons DCID), its parents, which programs publish at its level, and structured flags. Returns status 'ambiguous' when a name means several kinds — pick one with `kind`.",
@@ -87,6 +88,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     tools.push(
       edgeTool(
         p("get_containment"),
+        "Get containment",
         "a place's containment hierarchy (parents with allocation shares)",
         options,
         getContainment,
@@ -97,6 +99,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     tools.push(
       edgeTool(
         p("get_overlap"),
+        "Get overlap",
         "a place's areal overlaps (e.g. a ZCTA's tracts with allocation shares)",
         options,
         getOverlap,
@@ -111,6 +114,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     });
     tools.push({
       name: p("get_lineage"),
+      title: "Get tract lineage",
       fromCore: true,
       description:
         "A census tract's successors across the 2010 → 2020 vintage change, with shares.",
@@ -129,6 +133,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
     });
     tools.push({
       name: p("list_availability"),
+      title: "List availability",
       fromCore: true,
       description:
         "Which programs publish data for a place's summary level, and whether this exact place has a code (else data falls back, e.g. to its county).",
@@ -146,6 +151,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
 
 function edgeTool(
   name: string,
+  title: string,
   what: string,
   options: GeographyToolsOptions,
   fn: (catalog: GeographyCatalog, ucgid: string) => unknown,
@@ -157,6 +163,7 @@ function edgeTool(
   });
   return {
     name,
+    title,
     fromCore: true,
     description: `Return ${what}.`,
     input,

@@ -34,6 +34,7 @@ function demoResult(
 const listInput = z.object({ query: z.string().optional(), topic: z.string().optional() });
 const listIndicators: ToolDefinition<typeof listInput, { ids: readonly string[] }> = {
   name: "demo_list_indicators",
+  title: "List indicators",
   description: "Lists the indicators the demo source reports.",
   input: listInput,
   examples: [{ title: "everything", input: {} }],
@@ -47,6 +48,7 @@ const indicatorInput = z.object({
 });
 const getIndicator: ToolDefinition<typeof indicatorInput, { ids: readonly string[] }> = {
   name: "demo_get_indicator",
+  title: "Get indicator",
   description: "Returns one indicator for one place over time.",
   input: indicatorInput,
   examples: [{ title: "echo in Denver", input: { indicator: "ECHO", place: "0820000" } }],
@@ -56,6 +58,7 @@ const getIndicator: ToolDefinition<typeof indicatorInput, { ids: readonly string
 const compareInput = z.object({ indicator: z.string(), places: z.array(z.string()) });
 const comparePlaces: ToolDefinition<typeof compareInput, { ids: readonly string[] }> = {
   name: "demo_compare_places",
+  title: "Compare places",
   description: "Compares one indicator across places, aligned on period.",
   input: compareInput,
   examples: [{ title: "two places", input: { indicator: "ECHO", places: ["0820000", "0876000"] } }],
@@ -65,6 +68,7 @@ const comparePlaces: ToolDefinition<typeof compareInput, { ids: readonly string[
 const rawInput = z.object({ ids: z.array(z.string()) });
 const getRaw: ToolDefinition<typeof rawInput, { ids: readonly string[] }> = {
   name: "demo_get_raw",
+  title: "Get raw series",
   description: "Echoes raw ids back, wrapped in the family envelope.",
   input: rawInput,
   examples: [{ title: "hello", input: { ids: ["ECHO"] } }],
@@ -74,6 +78,7 @@ const getRaw: ToolDefinition<typeof rawInput, { ids: readonly string[] }> = {
 /** A tool whose name ends in no family verb: the verb rule must leave it alone. */
 const unemployment: ToolDefinition<typeof indicatorInput, { ids: readonly string[] }> = {
   name: "demo_get_unemployment",
+  title: "Get unemployment",
   description: "An agency-specific tool that ends in no family verb.",
   input: indicatorInput,
   examples: [{ title: "Denver", input: { indicator: "LAUS", place: "0820000" } }],
