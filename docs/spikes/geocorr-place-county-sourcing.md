@@ -1,0 +1,115 @@
+# Spike: sourcing the national place→county crosswalk (#141)
+
+**Status:** research complete, build paused. Captures the root cause of #141, the Geocorr
+acquisition recipe, and the open decision on durable hosting (in-repo vendor vs. a
+HuggingFace mirror). No decision ruled yet.
+
+## The bug
+
+`bls_get_indicator` for a below-25,000 city (e.g. **Sedona, AZ**) returns
+`status: "unavailable"` live instead of falling back to its county — the LAUS below-
+threshold county fallback (ADR-009 §6), which is the product's core value.
+
+Reproduced live 2026-09-17:
+
+- `bls_resolve_place("Sedona")` → **correct**: carries `flags: ["below_threshold"]` and the
+  caveat "unemployment comes from the surrounding county". Parents list only Arizona (state),
+  **no county**.
+- `bls_get_indicator("Sedona", city, unemployment_rate)` → `unavailable`, limitation
+  "LAUS publishes no series for Sedona city and no fallback was found."
+
+## Root cause
+
+`lausFallback` (`server-bls/src/laus-indicators.ts`) needs two things; the flag half works,
+the containment half does not:
+
+1. `place.flags.includes("below_threshold")` ✅ set correctly by the catalog.
+2. `lausCountyLookup` → `getContainment(place)` filtered to a county (sumlevel 050) with a
+   LAUS code ❌ returns nothing for Sedona.
+
+The `containment` table's **place→county** edge has exactly one source, and it is barely
+populated:
+
+- **Census publishes no 2020 place↔county relationship file** (confirmed in
+  `geography-build/src/download.ts:28` — the `place/` rel dir holds only place20↔place10
+  comparability). The download pipeline carries zcta↔place and cd↔place, never place↔county.
+- So place↔county is **Geocorr-only** (ADR-008 §2), and the repo ships only
+  `src/data/geocorr/geocorr2022_sample.csv` — **7 rows, Atlanta + NYC only**.
+
+⇒ Every below-threshold city except Atlanta/NYC finds no county → `unavailable`. The
+`assemble.test.ts` fixture hand-feeds Smallburg→Denver County, so the unit test is green while
+the national catalog is empty for this edge. The registry logic is correct; the fix is a
+**data artifact**, not code.
+
+## Acquisition recipe (MCDC Geocorr 2022)
+
+Geocorr has no API and no stable download URL (ADR-008 §2). Its form posts to a SAS broker:
+
+- **Endpoint:** `GET https://mcdc.missouri.edu/cgi-bin/broker`
+- **Fixed hidden fields:** `_PROGRAM=apps.geocorr2022.sas`, `_SERVICE=MCDC_long`, `_debug=0`
+- **Geographies:** `g1_` = source, `g2_` = target. For place→county pop shares we want
+  `g1_=place`, `g2_=county` (afacts then sum to 1 across counties per place, matching the
+  Atlanta 0.930 Fulton / 0.070 DeKalb orientation in the sample).
+- **State:** `state=US` = "Entire United States" (per-state codes are e.g. `Az04`, `Ca06`).
+- **Weighting:** `wtvar=pop20` (2020 census population). Others: `pop16`, `LandSQMI`, `hus20`.
+- **Output:** `fileout=1`, `filefmt=csv`; report `listout`/`lstfmt`; `nozerob=1` drops
+  zero-population intersections; `title=<label>`.
+
+**Gotcha found:** a *minimal* GET (`state=Az04&g1_=place&g2_=county&wtvar=pop20&fileout=1&filefmt=csv`)
+returns HTTP 200 but the SAS job fails — `%EVAL`/`%IF` "character operand where numeric
+required", with unresolved `LONGITUDE`/`LATITUDE` symrefs. The real form submits a **complete**
+field set (all checkboxes/centroid fields present, even when off); the trimmed set leaves a
+macro variable empty. Two reliable ways to get a clean run next time:
+
+1. Drive the actual form once via browser automation (sends every field) and save the CSV, **or**
+2. Enumerate every form field from `geocorr2022.html` (all names captured in the session
+   scratchpad) and replay the full GET, including the centroid/checkbox defaults.
+
+The broker returns an HTML "Query Output" page (job id in the title) linking the generated
+data file under a scratch path — not a stable URL; the file must be pulled from that page.
+
+## Schema transform
+
+Raw Geocorr output columns (native SAS export: `state, county, place, ..., pop20, afact`) do
+**not** match the vendored schema the parser reads
+(`geo_pair, child_geoid, child_name, parent_geoid, parent_name, afact, pop20`). The 7-row
+sample was hand-transformed. A full-file build must either transform raw→vendored schema, or
+teach `parse/geocorr.ts` to read Geocorr's native columns. Prefer a small transform step so
+`parseGeocorr` stays unchanged.
+
+## Size
+
+`place_county` **alone** is modest — ~40–50k intersection rows, a few MB raw, **<1 MB
+gzipped**. The README's "tens of megabytes / not committed" note referred to the full
+multi-crosswalk export; the `zcta_tract` pair is the giant one, and ZCTA↔tract is already
+covered by a downloaded Census relationship file. So only `place_county` needs sourcing here.
+
+## Open decision — durable hosting (owner's call, not yet ruled)
+
+Both keep the build reproducible; they differ in where the generated file lives.
+
+- **(a) Vendor in-repo, gzipped** (`src/data/geocorr/geocorr2022_place_county_natl.csv.gz`),
+  build gunzips it. Smallest unblock: decouples the build from MCDC entirely; one regression
+  test + rebuild + redeploy. Cost: a ~<1 MB binary blob in git and a documented one-time
+  generation. Consistent with ADR-008's existing vendored-file pattern.
+- **(b) HuggingFace dataset mirror** (owner's idea, 2026-09-17): host the transformed,
+  versioned `place_county` (and later a BLS LABSTAT mirror, #51) as a HF dataset; the build
+  downloads it from a stable HF URL like the Census files in `download.ts`. More durable and
+  transformable long-term, and a natural home for the "mirror upstream data we depend on"
+  direction — but it is its own architecture decision (new source of truth, versioning,
+  provenance, CI network dependency) and deserves its own spike → ADR, spanning Geocorr **and**
+  BLS, not folded silently into #141.
+
+**Recommendation:** ship (a) as the immediate #141 fix (smallest thing that unblocks the core
+value, deployable now), and open a separate spike/ADR for (b) the mirror layer covering Geocorr
++ BLS. If (b) is adopted later, it replaces the vendored blob with an HF download — the parser,
+transform, and regression test from (a) carry over unchanged.
+
+## Acceptance (from #141), when build resumes
+
+- Regression test: `assemble` produces a place→county edge for a real below-threshold city
+  (e.g. Sedona `0465350` → its county) from the full crosswalk.
+- Live: a below-threshold city returns its county's LAUS value **with the caveat** — add a
+  live eval case asserting the fallback value, not just no-fabrication.
+- Root cause fixed in the geography build (containment coverage), documented in
+  `data/geocorr/README.md` with the recipe, retrieval date, row count, and SHA-256.
