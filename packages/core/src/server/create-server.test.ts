@@ -57,6 +57,13 @@ describe("createServer", () => {
     }
   });
 
+  it("advertises a title on every tool, describe_source included (directory review criteria)", async () => {
+    const client = await connected();
+    for (const tool of (await client.listTools()).tools) {
+      expect(tool.title, `${tool.name} has no title`).toMatch(/\S/);
+    }
+  });
+
   it("advertises the input schema and the envelope output schema", async () => {
     const client = await connected();
     const tools = (await client.listTools()).tools;

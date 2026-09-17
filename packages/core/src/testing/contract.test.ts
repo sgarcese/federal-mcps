@@ -54,6 +54,18 @@ describe("tool-name-prefix", () => {
   });
 });
 
+describe("tool-title", () => {
+  it("rejects a tool with no human-readable title (directory review requires one)", async () => {
+    const report = await checkFamilyContract(broken.missingTitle);
+    expect(rules(report.violations)).toContain("tool-title");
+  });
+
+  it("is among the checked rules", async () => {
+    const report = await checkFamilyContract(compliantDefinition);
+    expect(report.checked).toContain("tool-title");
+  });
+});
+
 describe("tool-description", () => {
   it("rejects an empty description", async () => {
     const report = await checkFamilyContract(broken.emptyDescription);

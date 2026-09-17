@@ -294,3 +294,25 @@ describe("bls_compare_places", () => {
     await expect(call(compareTool(), { places: many })).rejects.toThrow();
   });
 });
+
+describe("tool descriptions match what the server actually serves (#138)", () => {
+  const tools = blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW });
+  const byName = new Map(tools.map((t) => [t.name, t]));
+
+  for (const name of ["bls_get_indicator", "bls_list_indicators"]) {
+    it(`${name} names all six programs`, () => {
+      const description = byName.get(name)?.description ?? "";
+      for (const program of ["LAUS", "CES", "OEWS", "CPI", "JOLTS", "QCEW"]) {
+        expect(description, `${name} omits ${program}`).toContain(program);
+      }
+    });
+  }
+
+  it("bls_get_raw is not described as LAUS-only", () => {
+    expect(byName.get("bls_get_raw")?.description).not.toMatch(/LAUS series ids/);
+  });
+
+  it("every tool carries a title", () => {
+    for (const tool of tools) expect(tool.title, `${tool.name}`).toMatch(/\S/);
+  });
+});
