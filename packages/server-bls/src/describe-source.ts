@@ -22,6 +22,14 @@ import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
  */
 export const BLS_TIMESERIES_ENDPOINT = "https://api.bls.gov/publicAPI/v2/timeseries/data/";
 
+/**
+ * The QCEW open CSV data-slice API base (ADR-011 §1). QCEW is not on the timeseries API; an area's
+ * quarter is fetched as `<base>/<year>/<qtr>/area/<area>.csv`. Declared here (a source-declaration
+ * file) so the agency hostname lives only where the source is described (static-no-agency-hostname);
+ * the QCEW client imports it. Open data, no key, no daily cap.
+ */
+export const QCEW_ENDPOINT = "https://data.bls.gov/cew/data/api";
+
 const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "LAUS",
