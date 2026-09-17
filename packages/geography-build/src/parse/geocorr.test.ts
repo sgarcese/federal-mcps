@@ -1,6 +1,6 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
-import { parseGeocorr } from "./geocorr.js";
+import { parseGeocorr, transformGeocorrPlaceCounty } from "./geocorr.js";
 
 const CSV = [
   "geo_pair,child_geoid,child_name,parent_geoid,parent_name,afact,pop20",
@@ -44,5 +44,41 @@ describe("parseGeocorr", () => {
 
   it("returns [] for an unknown geo_pair", () => {
     expect(parseGeocorr(CSV, "nonexistent")).toEqual([]);
+  });
+});
+
+/** Raw MCDC broker output: two header rows (names, labels), trailing blank after `afact`. */
+const RAW = [
+  '"state","place","county","stab","CountyName","PlaceName","pop20","afact"',
+  '"State code","Place code","County code","State abbr.","County name","Place name","Total population (2020 Census)","place-to-county allocation factor"',
+  '"04","65350","04005","AZ","Coconino AZ","Sedona city, AZ",2547,0.263 ',
+  '"04","65350","04025","AZ","Yavapai AZ","Sedona city, AZ",7137,0.737 ',
+  '"01","00124","01067","AL","Henry AL","Abbeville city, AL",2358,1 ',
+].join("\n");
+
+describe("transformGeocorrPlaceCounty", () => {
+  it("rewrites the broker's native columns into the vendored schema, one header row", () => {
+    const out = transformGeocorrPlaceCounty(RAW).split("\n");
+    expect(out[0]).toBe("geo_pair,child_geoid,child_name,parent_geoid,parent_name,afact,pop20");
+    expect(out).toHaveLength(4);
+    expect(out[1]).toBe('place_county,0465350,"Sedona city, AZ",04005,"Coconino AZ",0.263,2547');
+  });
+
+  it("builds the 7-digit place GEOID from state + place and keeps the 5-digit county", () => {
+    const rows = parseGeocorr(transformGeocorrPlaceCounty(RAW), "place_county");
+    expect(rows).toContainEqual({
+      childUcgid: ucgidOf("160", "0465350"),
+      parentUcgid: ucgidOf("050", "04025"),
+      share: 0.737,
+    });
+    expect(rows).toContainEqual({
+      childUcgid: ucgidOf("160", "0100124"),
+      parentUcgid: ucgidOf("050", "01067"),
+      share: 1,
+    });
+  });
+
+  it("rejects input whose header is not the broker's place→county layout", () => {
+    expect(() => transformGeocorrPlaceCounty("a,b,c\n1,2,3")).toThrow(/header/);
   });
 });
