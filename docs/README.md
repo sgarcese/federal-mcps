@@ -49,6 +49,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [ADR-010](adr/ADR-010-m4-wages-prices-openings.md) — M4 wages/prices/openings: CES, OEWS,
   CPI and JOLTS as headline indicators behind a program registry, `bls_compare_places`, and
   CPI's nearest-published-area handling.
+- [ADR-011](adr/ADR-011-m5-qcew.md) — M5 QCEW: the first non-timeseries program (CSV area
+  slices) over a registry fetch capability; county/state headline; disclosure codes as caveats.
 
 ## Runbooks
 
