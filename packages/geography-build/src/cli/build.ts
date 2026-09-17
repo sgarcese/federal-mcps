@@ -55,6 +55,14 @@ async function main(): Promise<void> {
   // Geocorr has no API and no stable download URL (ADR-008 §2); the vendored sample
   // ships in this package. A full-scale build points this at a regenerated export
   // (see data/geocorr/README.md) via the same field.
+  //
+  // KNOWN GAP (#141): the sample carries only 7 place→county rows (Atlanta, NYC), and
+  // Census publishes no place↔county relationship file — so this is the ONLY source for
+  // that edge. Building with the sample leaves the LAUS below-threshold county fallback
+  // (ADR-009 §6) empty nationwide: a small city resolves its `below_threshold` flag but
+  // finds no county → `unavailable`. The fix (full national place_county export, acquisition
+  // recipe, and the in-repo-vs-HuggingFace hosting decision) is in
+  // docs/spikes/geocorr-place-county-sourcing.md.
   sources.geocorr = readFileSync(GEOCORR_SAMPLE_PATH, "utf-8");
 
   const rows = assemble(sources);
