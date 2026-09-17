@@ -16,7 +16,7 @@ import { BLS_SERVER_VERSION } from "./version.js";
  * Drafted from `docs/spikes/geography-catalog.md` ("The hierarchy the model
  * has to understand" and "Gotchas the build must handle") so the model asks
  * for the right geographic level before it asks for a number, and knows what
- * this server can and cannot answer in M1.
+ * this server can and cannot answer (all six BLS programs are live; M5, ADR-011).
  */
 export const BLS_INSTRUCTIONS = `
 This server gives U.S. labor market and price statistics from the Bureau of Labor
@@ -60,12 +60,12 @@ fabricated. OEWS is state-level for now; CES also serves single-state metros; JO
 state-level below national. \`bls_list_indicators\` names every indicator, its program, and
 whether that program publishes at a place's level; \`bls_compare_places\` compares one
 indicator across places, aligned on the latest period they share; \`bls_get_raw\` returns
-the unprocessed BLS response for exact series ids. \`bls_describe_source\` reports each
-program's coverage; the one program still planned is QCEW (employment and wages by
-industry), on a separate feed. Call it when unsure what this server can answer.
+the unprocessed BLS response for exact series ids. QCEW (covered employment and average
+weekly wage, county and state, latest quarter) is served from its own CSV feed, with
+suppressed cells flagged, never fabricated. \`bls_describe_source\` reports each program's
+coverage; call it when unsure what this server can answer.
 
-Every result this server family returns — now and once data tools land — carries a
-provenance block: the resolved place, the BLS program and series id, the retrieval date,
+Every result this server family returns carries a provenance block: the resolved place, the BLS program and series id, the retrieval date,
 vintage, footnotes (including preliminary and revised flags), and a ready-to-paste
 citation. Cite that citation when you report a number; never state a BLS figure without
 it. All tools are read-only: this server only reads published federal statistics and

@@ -10,7 +10,7 @@ import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
  *
  * Coverage and cadence come from `docs/architecture.md` ("Server one: BLS").
  * LAUS (M3, ADR-009) and CES/OEWS/CPI/JOLTS (M4, ADR-010) are `available` through
- * `bls_get_indicator`; QCEW is still `planned` (M5, its own CSV client).
+ * `bls_get_indicator`. QCEW (M5, ADR-011) is available too, over its own CSV data-slice client.
  * The threshold, CPI-coverage and QCEW-format caveats come from
  * `docs/spikes/geography-catalog.md` ("Gotchas the build must handle").
  */
@@ -49,9 +49,10 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "QCEW",
     name: "Quarterly Census of Employment and Wages",
-    granularity: "county, metro (CBSA), state, by NAICS industry and ownership",
+    granularity:
+      "county and state, all industries, total covered (metro and NAICS/ownership detail planned)",
     cadence: "quarterly, with an annual average release",
-    status: "planned",
+    status: "available",
   },
   {
     code: "OEWS",
@@ -85,8 +86,9 @@ const CAVEATS: readonly string[] = [
     "layoffs). bls_list_indicators lists the vocabulary and which programs publish at a place's level; " +
     "bls_compare_places compares one indicator across places; bls_get_raw returns the unprocessed BLS " +
     "response. Place resolution (bls_resolve_place) maps a name to candidates with identifiers, BLS " +
-    "area codes and structured flags (e.g. below_threshold with the county fallback). QCEW is the one " +
-    "program below still planned (M5, its own CSV client).",
+    "area codes and structured flags (e.g. below_threshold with the county fallback). All six BLS " +
+    "programs are available: QCEW (covered employment and average weekly wage, county and state) is " +
+    "fetched from its own CSV data-slice API, not the timeseries API.",
   "LAUS publishes a city-level series only for incorporated places with population 25,000 or more " +
     "(about 1,700 places), plus New England towns via county-subdivision codes; smaller places have no " +
     "city series and must fall back to their county.",

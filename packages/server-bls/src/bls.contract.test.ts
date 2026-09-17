@@ -107,7 +107,7 @@ describe("the live BLS server (createServer + InMemoryTransport)", () => {
     }
   });
 
-  it("bls_describe_source returns an envelope: only QCEW still planned", async () => {
+  it("bls_describe_source returns an envelope: all six programs available", async () => {
     const client = await connect();
     try {
       const result = await client.callTool({ name: "bls_describe_source", arguments: {} });
@@ -115,7 +115,7 @@ describe("the live BLS server (createServer + InMemoryTransport)", () => {
       const data = envelope.data as { programs: { code: string; status: string }[] };
       expect(data.programs).toHaveLength(6);
       for (const program of data.programs) {
-        expect(program.status).toBe(program.code === "QCEW" ? "planned" : "available");
+        expect(program.status).toBe("available");
       }
     } finally {
       await client.close();
