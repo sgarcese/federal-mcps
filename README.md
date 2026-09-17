@@ -48,6 +48,9 @@ connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 https://bls-mcp.responsive.city/mcp
 ```
 
+New to connectors? [`docs/connect.md`](docs/connect.md) has one-screen, copy-paste steps
+for each host and what to ask once you're connected.
+
 A typical exchange: resolve the place, then read a number.
 
 ```jsonc

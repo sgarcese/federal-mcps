@@ -1,12 +1,15 @@
 # Installing the BLS server
 
-**Status:** current · covers Release 1's only server, `@federal-mcps/server-bls`
-(issue #8). The server exposes one tool today, `bls_describe_source` — see
-`docs/architecture.md` ("Release 1: BLS only") for what lands in later milestones.
+**Status:** current · developer install guide for `@federal-mcps/server-bls`. Just want
+to add the hosted server to Claude with no install? See [`connect.md`](connect.md) — a
+one-screen, copy-paste quickstart. This page covers running the server yourself.
+
+The server exposes the family verb set — `bls_resolve_place`, `bls_list_indicators`,
+`bls_get_indicator`, `bls_compare_places`, `bls_get_raw`, `bls_describe_source` — across
+six BLS programs (LAUS, CES State & Area, QCEW, OEWS, CPI, JOLTS).
 
 There are three ways to connect: local stdio from the npm package, local stdio from a
-checkout of this repository, and the remote HTTP endpoint once it is deployed (issue
-#10).
+checkout of this repository, and the remote HTTP endpoint (deployed per ADR-007).
 
 ## Claude Code — stdio, from npm
 
@@ -72,21 +75,21 @@ works the same way there.
 
 ## Remote HTTP — Claude's custom connectors
 
-Once issue #10 deploys the server (ADR-004 §5), it answers Streamable HTTP at:
+The deployed server (ADR-007) answers Streamable HTTP at:
 
 ```
 https://bls-mcp.responsive.city/mcp
 ```
 
 Add it in Claude as a custom connector (Settings → Connectors → Add custom connector)
-with that URL. No authentication is required — Release 1 serves public BLS data with no
-end-user auth (ADR-002 §Decision, "Auth"). **This endpoint does not exist yet**; it comes
-online with issue #10's deploy and is verified per merge SHA by a post-deploy
-`initialize` + `tools/list` check (`docs/architecture.md`, "Deployment").
+with that URL. No authentication is required — the server serves public BLS data with no
+end-user auth (ADR-002 §Decision, "Auth"), and each deploy is verified per SHA by a
+post-deploy tool call (`scripts/deploy.sh`, #97). For a non-developer walkthrough of this
+path across hosts, see [`connect.md`](connect.md).
 
 ## Verifying the connection
 
 However you connect, ask the model to call `bls_describe_source` (or just ask "what can
 the BLS server tell me?"). A working connection returns a provenance-wrapped result
-listing LAUS, CES State & Area, QCEW, OEWS, CPI and JOLTS, all marked `planned` in this
-release, plus the 500-queries/day API quota note and the citation format.
+listing LAUS, CES State & Area, QCEW, OEWS, CPI and JOLTS, all `available`, plus the
+API quota note and the citation format.

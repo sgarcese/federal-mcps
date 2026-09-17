@@ -6,8 +6,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 
 - [architecture.md](architecture.md) — the family design: shared core, one server per
   agency, composite endpoint, deployment, roadmap, open decision questions.
-- [install.md](install.md) — connecting to the BLS server: Claude Code and Claude
-  Desktop stdio configs, and the remote HTTP endpoint once it is deployed.
+- [connect.md](connect.md) — non-developer quickstart: add the hosted BLS connector by
+  URL in Claude.ai, Claude Code, or any MCP host, and what to ask once connected.
+- [install.md](install.md) — developer install: Claude Code and Claude Desktop stdio
+  configs (npm and local checkout), and the remote HTTP endpoint.
 
 ## Spikes (completed analyses)
 
