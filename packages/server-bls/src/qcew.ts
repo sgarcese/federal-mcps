@@ -139,3 +139,8 @@ export function latestPublishedQuarter(now: Date): QcewQuarter {
   d.setUTCMonth(d.getUTCMonth() - 6);
   return { year: d.getUTCFullYear(), quarter: Math.floor(d.getUTCMonth() / 3) + 1 };
 }
+
+/** The quarter before the given one (Q1 → prior year's Q4). */
+export function priorQuarter({ year, quarter }: QcewQuarter): QcewQuarter {
+  return quarter > 1 ? { year, quarter: quarter - 1 } : { year: year - 1, quarter: 4 };
+}
