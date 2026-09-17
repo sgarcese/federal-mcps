@@ -15,7 +15,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "geography:build": "tsx src/cli/build.ts"
+    "geography:build": "tsx src/cli/build.ts",
+    "geocorr:fetch": "tsx src/cli/fetch-geocorr.ts"
   },
   "dependencies": {
     "@federal-mcps/core": "0.0.0",

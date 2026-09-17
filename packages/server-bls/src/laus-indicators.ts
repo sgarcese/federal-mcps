@@ -46,6 +46,8 @@ function lausFallback(
   place: PlaceCandidate,
 ): IndicatorFallback | undefined {
   if (!place.flags.includes("below_threshold")) return undefined;
+  // The place→county containment edge comes from the vendored national Geocorr crosswalk
+  // (geography-build/src/data/geocorr, #141); Census ships no place↔county relationship file.
   const county = lausCountyLookup(catalog, place);
   if (!county) return undefined;
   return {

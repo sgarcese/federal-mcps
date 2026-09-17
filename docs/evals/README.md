@@ -30,8 +30,9 @@ live public API, so it is run before a release (M6.4), not on every PR.
   - ambiguous bare name ("Denver") → the server stops and asks, no value invented;
   - no local CPI (Worcester County) → the U.S. city average, explicitly flagged;
   - a New England town under 25k (Amesbury, MA) → served via the town exception;
-  - a below-threshold city (Sedona, AZ) and a multi-state metro (Boston) → never a fabricated
-    city-level number;
+  - a below-threshold city (Sedona, AZ) → its county's value (Yavapai County) with the
+    fallback caveat, never a bare city number (#141);
+  - a multi-state metro (Boston) → never a fabricated city-level number;
   - an unknown place → `not_found`, no value.
 
 ## Grading
