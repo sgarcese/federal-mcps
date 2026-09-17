@@ -1,9 +1,9 @@
-# Spike: M6 — Release hardening (eval, adoption, v1.0.0)
+# Spike: M6 — Release hardening (eval, adoption, v0.1.0)
 
 M1–M5 delivered the BLS server (six programs: LAUS, CES, OEWS, CPI, JOLTS, QCEW) and the shared
-geography core, deployed and live at `bls-mcp.responsive.city`. M6 is the "make it a real 1.0"
+geography core, deployed and live at `bls-mcp.responsive.city`. M6 is the first-release
 milestone: prove it answers policy questions well, make it easy for a non-developer to connect,
-submit it to the Anthropic connector directory, and tag v1.0.0. Unlike M1–M5 this is partly
+submit it to the Anthropic connector directory, and tag v0.1.0 — the first public release. Unlike M1–M5 this is partly
 product- and UX-shaped, so the decisions below are about *what "done" means*, not new machinery.
 
 ## What M6 delivers
@@ -12,7 +12,7 @@ product- and UX-shaped, so the decisions below are about *what "done" means*, no
   "does this actually answer well," not just "does it respond."
 - A **connector quickstart** — the one-screen "add this URL" path for the people the tool is for.
 - A **directory submission** meeting Anthropic's connector review criteria.
-- **v1.0.0**: a tagged release with notes and `NOTICE` attribution.
+- **v0.1.0**: the first tagged release, with notes and `NOTICE` attribution.
 
 ## The decisions (numbered; recommendations given)
 
@@ -50,19 +50,23 @@ name/description limits; prompt-injection and safety rules; a working test conne
 `claude-ai`). Record the pass in `docs/` and submit after the eval bar is met. The servers are
 already read-only and annotated, so this is mostly verification + the submission form.
 
-### 4. v1.0.0: what "1.0" asserts
+### 4. Versioning: v0.1.0 now, minor-per-milestone, 1.0.0 later
 
-**Recommendation:** tag **v1.0.0** once the eval bar is met, the quickstart is published, and the
-directory submission is prepared. Release notes summarize the six BLS programs + geography core and
-name the known limitations (metro CES multi-state, OEWS metros, QCEW metro/NAICS pickers, CPI item
-pickers, region/division CPI). Ensure `NOTICE` attributes any borrowed code. v1.0 = "the BLS
-server is complete and adoptable," not "every program has every dimension."
+The project has never tagged a release (M1–M5 were internal build milestones). **Recommendation:**
+tag **v0.1.0** as the *first* release, once the eval bar is met, the quickstart is published, and
+the directory submission is prepared. Stay in `0.x`: a `1.0.0` is a backward-compatibility promise,
+and the tool contracts + indicator vocabulary are still growing (pickers, metros, new programs,
+Census/CDC). Use semver's pre-1.0 convention: **each feature milestone is a minor bump** (M6 →
+`0.1.0`, M7 pickers → `0.2.0`, …); **patch releases are fixes** (`0.1.1`). `1.0.0` is reserved for
+the day the API is committed stable. Release notes summarize the six BLS programs + geography core
+and name the known limitations (CES multi-state metros, OEWS metros, QCEW metro/NAICS pickers, CPI
+item pickers, region/division CPI). Ensure `NOTICE` attributes any borrowed code.
 
 ### 5. Release-1 scope boundary
 
-**Recommendation:** Release 1 (v1.0.0) is the **BLS server + geography core**. Census and CDC PLACES
-servers, and the composite endpoint, are post-1.0. The deferred sub-dimension work (below) is post-1.0
-too — 1.0 ships the headline of each program, done well and adoptable.
+**Recommendation:** Release 1 (v0.1.0) is the **BLS server + geography core**. Census and CDC PLACES
+servers, and the composite endpoint, are post-1.0. The deferred sub-dimension work (below) is later
+too — 0.1.0 ships the headline of each program, done well and adoptable.
 
 ## Roadmap beyond M6 (captured here; not built in M6)
 
@@ -98,7 +102,7 @@ fetch already exists); then metro completions (CES multi-state, OEWS/QCEW metro)
    and grades; a reported pass-rate.
 2. **Connector quickstart** — `docs/connect.md` + README "Try it" link.
 3. **Directory-submission readiness** — review-criteria checklist pass + prepared submission.
-4. **v1.0.0 release** — tag, release notes, `NOTICE`, and the known-limitations list.
+4. **v0.1.0 release** — tag, release notes, `NOTICE`, and the known-limitations list.
 
 ## Out of scope for M6
 
