@@ -1,6 +1,6 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
-import { GeographyCatalog } from "@federal-mcps/core";
+import { GeographyCatalog, type HttpClient, type HttpResult } from "@federal-mcps/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { blsIndicatorTools } from "./get-indicator.js";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
@@ -94,6 +94,38 @@ describe("bls_get_indicator", () => {
     expect(data.measure).toBe("job_openings");
   });
 
+  it("dispatches QCEW covered_employment via the CSV client (Denver County)", async () => {
+    const csv = [
+      '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
+      '"08031","0","10","70","0","2024","1","",45970,559807,561820,561041,15497545518,7590975514,149132980,2125',
+    ].join("\n");
+    const notUsed = () => {
+      throw new Error("only getText");
+    };
+    const qcewClient: HttpClient = {
+      getJson: notUsed,
+      postJson: notUsed,
+      async getText(): Promise<HttpResult<string>> {
+        return { value: csv, status: 200, cache: { hit: false } };
+      },
+    };
+    const getIndicator = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => qcewClient,
+      now: NOW,
+    })[0];
+    const res = await call(getIndicator, {
+      place: "Denver",
+      kind: "county",
+      indicator: "covered_employment",
+    });
+    expect(res.source.program).toBe("QCEW");
+    expect(res.source.ids).toEqual(["08031"]); // the QCEW key is the area code
+    const data = res.data as { measure: string; latest: { period: string; value: number } | null };
+    expect(data.measure).toBe("covered_employment");
+    expect(data.latest).toEqual({ period: "2024-Q01", value: 560889 });
+  });
+
   it("builds the right series id per indicator and seasonal flag", async () => {
     const emp = await run({ place: "Denver", kind: "county", indicator: "employment" });
     expect(emp.source.ids).toEqual(["LAUCN080310000000005"]); // measure 05 = employment
@@ -163,6 +195,8 @@ describe("bls_list_indicators", () => {
       "hires",
       "quits",
       "layoffs",
+      "covered_employment",
+      "average_weekly_wage",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
@@ -198,7 +232,7 @@ describe("bls_list_indicators", () => {
     const res = await call(listTool(), {});
     const data = res.data as { indicators: { indicator: string; program: string }[] };
     const programs = new Set(data.indicators.map((i) => i.program));
-    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS"]));
+    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS", "QCEW"]));
   });
 });
 
