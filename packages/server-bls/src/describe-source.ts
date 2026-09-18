@@ -112,6 +112,9 @@ const CAVEATS: readonly string[] = [
     "API used by the other programs here; it has its own parsing, suppression codes and update cadence.",
   "Values may carry preliminary or revised flags in the underlying footnote codes; check a result's " +
     "footnotes before treating a number as final.",
+  "BLS.gov cannot vouch for the data or analyses derived from these data after the data have been " +
+    "retrieved from BLS.gov (BLS API terms of service); every result carries its retrieval date and " +
+    "citation for that reason.",
 ];
 
 export function describeSource(): SourceDescription {

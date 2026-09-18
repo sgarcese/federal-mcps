@@ -105,4 +105,7 @@ vulnerability, see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-Apache-2.0 — see [`LICENSE`](LICENSE). Borrowed code is attributed in `NOTICE` when it lands.
+Apache-2.0 — see [`LICENSE`](LICENSE). Data sources and their terms are recorded in
+[`docs/licensing.md`](docs/licensing.md) and credited in [`NOTICE`](NOTICE). BLS.gov cannot
+vouch for the data or analyses derived from these data after the data have been retrieved from
+BLS.gov; every answer carries its retrieval date and citation.
