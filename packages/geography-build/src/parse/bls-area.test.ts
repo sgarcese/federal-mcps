@@ -84,6 +84,7 @@ describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
       '"08031","Denver County, Colorado"',
       '"C1974","Denver-Aurora-Centennial, CO MSA"',
       '"C1002","Abbeville, LA MicroSA"',
+      '"C1974","Denver-Aurora-Centennial, CO MSA"', // the file repeats rows verbatim
       '"CS216","Denver-Aurora-Greeley, CO CSA"',
     ].join("\n");
     const rows = parseQcewArea(csv);

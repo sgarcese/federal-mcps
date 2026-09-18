@@ -115,6 +115,7 @@ function statesFromTitle(title: string): { first: string; postals: string[] } | 
  */
 export function parseQcewArea(text: string): AgencyCodeRow[] {
   const out: AgencyCodeRow[] = [];
+  const seen = new Set<string>();
   const lines = text
     .split(/\r?\n/)
     .filter((l) => l.trim().length > 0)
@@ -126,7 +127,8 @@ export function parseQcewArea(text: string): AgencyCodeRow[] {
         ?.trim()
         .replace(/^"(.*)"$/, "$1") ?? "";
     const m = /^C(\d{4})$/.exec(fips);
-    if (!m) continue;
+    if (!m || seen.has(fips)) continue; // the file repeats ~1,000 area rows verbatim
+    seen.add(fips);
     out.push({
       ucgid: ucgidOf("310", `${m[1]}0`),
       agency: "bls",
