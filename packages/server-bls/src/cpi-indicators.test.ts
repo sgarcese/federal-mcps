@@ -126,7 +126,11 @@ describe("CPI fallback ladder: metro → division → region → U.S. city avera
   });
   const NOW = () => new Date("2025-02-01T00:00:00Z");
   const run = (args: Record<string, unknown>) =>
-    blsIndicatorTools({ catalog: () => catalog, httpClient: () => scriptedBlsClient(), now: NOW })[0]
+    blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => scriptedBlsClient(),
+      now: NOW,
+    })[0]
       // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
       ?.handler(args as any, {} as any);
 

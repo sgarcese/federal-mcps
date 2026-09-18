@@ -100,7 +100,12 @@ describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
   });
 
   it("CPI maps region and division area codes onto the Census region/division entities (#154)", () => {
-    const cu = ["area_code\tarea_name", "0100\tNortheast", "0480\tMountain", "D200\tMidwest - Size Class D"].join("\n");
+    const cu = [
+      "area_code\tarea_name",
+      "0100\tNortheast",
+      "0480\tMountain",
+      "D200\tMidwest - Size Class D",
+    ].join("\n");
     const rows = parseCpiArea(cu);
     expect(rows).toEqual([
       expect.objectContaining({ ucgid: ucgidOf("020", "1"), program: "CPI", code: "0100" }),

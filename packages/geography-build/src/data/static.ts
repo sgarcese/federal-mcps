@@ -94,6 +94,78 @@ export const US_STATE_POSTAL_TO_FIPS: Readonly<Record<string, string>> = Object.
 });
 
 /**
+ * Census regions (summary level 020) and divisions (030), from the Census Bureau's
+ * "Census Regions and Divisions of the United States" (state-geocodes). Puerto Rico (72) belongs
+ * to no region. Stored at build time so the catalog can nest state → division → region and CPI can
+ * fall back through them (ADR-013 §6, #154).
+ */
+export interface CensusRegion {
+  code: string;
+  name: string;
+}
+export interface CensusDivision {
+  code: string;
+  name: string;
+  region: string;
+  /** 2-digit state FIPS codes in the division. */
+  states: readonly string[];
+}
+export const CENSUS_REGIONS: readonly CensusRegion[] = [
+  { code: "1", name: "Northeast" },
+  { code: "2", name: "Midwest" },
+  { code: "3", name: "South" },
+  { code: "4", name: "West" },
+];
+export const CENSUS_DIVISIONS: readonly CensusDivision[] = [
+  { code: "1", name: "New England", region: "1", states: ["09", "23", "25", "33", "44", "50"] },
+  { code: "2", name: "Middle Atlantic", region: "1", states: ["34", "36", "42"] },
+  { code: "3", name: "East North Central", region: "2", states: ["17", "18", "26", "39", "55"] },
+  {
+    code: "4",
+    name: "West North Central",
+    region: "2",
+    states: ["19", "20", "27", "29", "31", "38", "46"],
+  },
+  {
+    code: "5",
+    name: "South Atlantic",
+    region: "3",
+    states: ["10", "11", "12", "13", "24", "37", "45", "51", "54"],
+  },
+  { code: "6", name: "East South Central", region: "3", states: ["01", "21", "28", "47"] },
+  { code: "7", name: "West South Central", region: "3", states: ["05", "22", "40", "48"] },
+  {
+    code: "8",
+    name: "Mountain",
+    region: "4",
+    states: ["04", "08", "16", "30", "32", "35", "49", "56"],
+  },
+  { code: "9", name: "Pacific", region: "4", states: ["02", "06", "15", "41", "53"] },
+];
+
+/**
+ * CPI `cu.area` codes for the census regions (`0100`–`0400`) and divisions (`0110`–`0490`), onto
+ * the region/division entity (sumlevel + code). Verified against cu.area 2026-09-17.
+ */
+export const CPI_AREA_TO_REGION_DIVISION: Readonly<
+  Record<string, { sumlevel: "020" | "030"; geoid: string }>
+> = Object.freeze({
+  "0100": { sumlevel: "020", geoid: "1" }, // Northeast
+  "0200": { sumlevel: "020", geoid: "2" }, // Midwest
+  "0300": { sumlevel: "020", geoid: "3" }, // South
+  "0400": { sumlevel: "020", geoid: "4" }, // West
+  "0110": { sumlevel: "030", geoid: "1" }, // New England
+  "0120": { sumlevel: "030", geoid: "2" }, // Middle Atlantic
+  "0230": { sumlevel: "030", geoid: "3" }, // East North Central
+  "0240": { sumlevel: "030", geoid: "4" }, // West North Central
+  "0350": { sumlevel: "030", geoid: "5" }, // South Atlantic
+  "0360": { sumlevel: "030", geoid: "6" }, // East South Central
+  "0370": { sumlevel: "030", geoid: "7" }, // West South Central
+  "0480": { sumlevel: "030", geoid: "8" }, // Mountain
+  "0490": { sumlevel: "030", geoid: "9" }, // Pacific
+});
+
+/**
  * Which summary level each program publishes at, and any constraint the model must know.
  * Powers `publishes_at` and the geography guide (ADR-003 §9). BLS Release 1 programs.
  */
@@ -116,6 +188,18 @@ export const PUBLISHES_AT: readonly PublishesAtRow[] = [
     program: "CPI",
     sumlevel: "310",
     constraintNote: "only ~23 metros; most places have no local CPI",
+  },
+  {
+    agency: "bls",
+    program: "CPI",
+    sumlevel: "030",
+    constraintNote: "census division; many division series publish bimonthly",
+  },
+  {
+    agency: "bls",
+    program: "CPI",
+    sumlevel: "020",
+    constraintNote: "census region; some region series publish bimonthly",
   },
   { agency: "bls", program: "QCEW", sumlevel: "050", constraintNote: null },
   { agency: "bls", program: "JOLTS", sumlevel: "040", constraintNote: "state only" },

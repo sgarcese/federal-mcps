@@ -1,5 +1,5 @@
 import { ucgidOf } from "@federal-mcps/core";
-import { COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
+import { CENSUS_DIVISIONS, CENSUS_REGIONS, COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
 import {
   parseCesArea,
   parseCpiArea,
@@ -73,6 +73,12 @@ export function assemble(sources: Sources): CatalogRows {
     extend(aliases, parsed.aliases);
   }
 
+  // Census regions and divisions (#154, ADR-013 §6): built from the static table, nested
+  // state → division → region, so CPI can walk up and later servers reuse the levels.
+  const regional = regionDivisionRows();
+  extend(entities, regional.entities);
+  extend(aliases, regional.aliases);
+
   const agencyCodes: AgencyCodeRow[] = [];
   if (sources.lausArea) extend(agencyCodes, parseLausArea(sources.lausArea));
   if (sources.cesArea) extend(agencyCodes, parseCesArea(sources.cesArea));
@@ -107,7 +113,11 @@ export function assemble(sources: Sources): CatalogRows {
   return {
     entities,
     aliases,
-    containment: [...deriveStrictContainment(entities), ...mergeWeighted(weighted, geocorr)],
+    containment: [
+      ...deriveStrictContainment(entities),
+      ...regional.containment,
+      ...mergeWeighted(weighted, geocorr),
+    ],
     agencyCodes,
     publishesAt: [...PUBLISHES_AT],
     countyChange: [...COUNTY_CHANGES],
@@ -174,4 +184,49 @@ function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
     }
   }
   return out;
+}
+
+/** Region/division entities, their aliases, and the state → division → region nesting (#154). */
+function regionDivisionRows(): {
+  entities: EntityRow[];
+  aliases: AliasRow[];
+  containment: ContainmentRow[];
+} {
+  const blank = {
+    lsad: null,
+    funcstat: null,
+    stateFips: null,
+    gnis: null,
+    lat: null,
+    lon: null,
+    aland: null,
+  };
+  const entities: EntityRow[] = [];
+  const aliases: AliasRow[] = [];
+  const containment: ContainmentRow[] = [];
+  for (const r of CENSUS_REGIONS) {
+    const ucgid = ucgidOf("020", r.code);
+    entities.push({ ucgid, geoid: r.code, sumlevel: "020", name: r.name, ...blank });
+    aliases.push({ ucgid, alias: `${r.name} region`, source: "hand" });
+  }
+  for (const d of CENSUS_DIVISIONS) {
+    const ucgid = ucgidOf("030", d.code);
+    entities.push({ ucgid, geoid: d.code, sumlevel: "030", name: d.name, ...blank });
+    aliases.push({ ucgid, alias: `${d.name} division`, source: "hand" });
+    containment.push({
+      childUcgid: ucgid,
+      parentUcgid: ucgidOf("020", d.region),
+      share: 1,
+      relation: "nests",
+    });
+    for (const state of d.states) {
+      containment.push({
+        childUcgid: ucgidOf("040", state),
+        parentUcgid: ucgid,
+        share: 1,
+        relation: "nests",
+      });
+    }
+  }
+  return { entities, aliases, containment };
 }

@@ -27,7 +27,9 @@ describe("assemble", () => {
   });
 
   it("collects entities and aliases across gazetteer files", () => {
-    expect(rows.entities.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
+    // Gazetteer entities plus the 4 regions and 9 divisions the build always adds (#154).
+    const gazetteer = rows.entities.filter((e) => !["020", "030"].includes(e.sumlevel));
+    expect(gazetteer.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
     expect(rows.aliases).toContainEqual({
       ucgid: ucgidOf("050", "08031"),
       alias: "Denver",
@@ -84,7 +86,11 @@ describe("assemble", () => {
       share: 1,
       relation: "nests",
     });
-    expect(rows.aliases).toContainEqual({ ucgid: ucgidOf("030", "8"), alias: "Mountain division", source: "hand" });
+    expect(rows.aliases).toContainEqual({
+      ucgid: ucgidOf("030", "8"),
+      alias: "Mountain division",
+      source: "hand",
+    });
   });
 
   it("attaches QCEW metro C-codes from area_titles.csv when supplied (#153)", () => {

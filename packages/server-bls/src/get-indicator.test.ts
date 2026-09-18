@@ -70,11 +70,13 @@ describe("bls_get_indicator", () => {
     expect(res.limitations ?? []).toEqual([]); // Denver is published — no "no local CPI" caveat
   });
 
-  it("falls back to the U.S. city average with a caveat where CPI is not published", async () => {
+  it("falls back up the CPI ladder with a caveat where CPI is not published (county → Mountain division, #154)", async () => {
     const res = await run({ place: "Denver", kind: "county", indicator: "cpi_all_items" });
-    expect(res.source.ids).toEqual(["CUUR0000SA0"]);
+    expect(res.source.ids).toEqual(["CUUR0480SA0"]);
     expect(res.source.program).toBe("CPI");
-    expect(res.limitations?.join(" ")).toMatch(/not published for Denver County/i);
+    expect(res.limitations?.join(" ")).toMatch(
+      /not published for Denver County.*Mountain division/is,
+    );
   });
 
   it("dispatches OEWS occupational_wage to the statewide OE series (Colorado)", async () => {
@@ -216,10 +218,10 @@ describe("bls_list_indicators", () => {
     const data = res.data as { indicators: IndicatorAvailability[] };
     const laus = data.indicators.find((i) => i.indicator === "unemployment_rate");
     expect(laus).toMatchObject({ program: "LAUS", publishedAtLevel: true });
-    // CPI does not publish for a county, so it reports its U.S. city average fallback.
+    // CPI does not publish for a county, so it reports its Census-division fallback (#154).
     const cpi = data.indicators.find((i) => i.indicator === "cpi_all_items");
     expect(cpi).toMatchObject({ program: "CPI", publishedAtLevel: false });
-    expect(cpi?.fallbackTo).toBe("U.S. city average");
+    expect(cpi?.fallbackTo).toBe("Mountain division");
     expect(res.place?.geoid).toBe("08031");
   });
 
