@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/geography-build",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Builds the versioned SQLite geography catalog (@rc/geo-catalog) from Census, OMB and BLS sources.",
   "license": "Apache-2.0",
@@ -19,7 +19,7 @@
     "geocorr:fetch": "tsx src/cli/fetch-geocorr.ts"
   },
   "dependencies": {
-    "@federal-mcps/core": "0.0.0",
+    "@federal-mcps/core": "0.2.0",
     "better-sqlite3": "13.0.3"
   },
   "devDependencies": {

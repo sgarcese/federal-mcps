@@ -144,9 +144,9 @@ each program is an *indicator* behind `get_indicator`, never a tool of its own.
 |---|---|---|
 | `bls_resolve_place` | available | core resolver with BLS area codes and coverage flags attached |
 | `bls_list_indicators` | available | the measures a program publishes, and whether it publishes at a place's level |
-| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS) | one indicator, one place, over time; a place below a program's coverage falls back (LAUS→county, CPI→U.S. city average) with a caveat |
+| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` pickers validated per indicator (ADR-013); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place |
 | `bls_compare_places` | available | one indicator across ≤20 places, aligned on the latest shared period; a thin wrapper over `get_indicator` |
-| `bls_get_raw` | available | raw series IDs, ≤50, auto-chunked past 20 years |
+| `bls_get_raw` | available | raw timeseries IDs from any program (LAUS, CES, OEWS, CPI, JOLTS, PPI), ≤50, auto-chunked past 20 years |
 | `bls_describe_source` | available | coverage, cadence, caveats, citation format |
 
 Program coverage behind these verbs (from `bls_describe_source`):
@@ -154,11 +154,12 @@ Program coverage behind these verbs (from `bls_describe_source`):
 | Program | Status | Local granularity | Measures |
 |---|---|---|---|
 | LAUS | available (M3) | state, MSA, county, city ≥25k | unemployment rate, unemployment, employment, labor force |
-| CES State & Area | available (M4) | state and single-state metro (CBSA) | total nonfarm payroll employment |
-| OEWS | available (M4) | state (metro arriving) | all-occupations mean annual wage |
-| CPI | available (M4) | ~23 metros + U.S. city average | all items; no local CPI → U.S. city average, flagged |
+| CES State & Area | available (M4, metros completed M7) | state and metro (CBSA); a multi-state metro is filed under its first state with a caveat | total nonfarm payroll employment |
+| OEWS | available (M4, M7) | state and metro | mean annual wage, all occupations or one of 22 SOC major groups (`occupation`) |
+| CPI | available (M4, M7) | ~23 metros, census divisions and regions, U.S. city average | CPI-U by expenditure group (`item`); no local CPI → division → region → U.S., each flagged |
 | JOLTS | available (M4) | state | openings, hires, quits, layoffs |
-| QCEW | available (M5) | county and state | covered employment, average weekly wage; CSV client, not the timeseries API (metro + NAICS/ownership planned) |
+| QCEW | available (M5, M7) | county, state and metro | covered employment, average weekly wage by NAICS sector (`industry`) and ownership; CSV client, not the timeseries API |
+| PPI | available (M7) | national only | final demand and commodity indexes (`item`), e.g. inputs to construction, lumber, steel, concrete |
 
 Internals: pure series-ID builders per program with a unit test each against a
 published ID; 500/day quota via batching, chunking and a budget counter; the LAUS
@@ -201,6 +202,7 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 | **M2 Geography catalog** | geography-build pipeline; SQLite catalog with weighted-overlap shares and 2010→2020 tract lineage; `resolvePlace` with ambiguity status, county fallback and structured flags; `geography://guide`; a hosted `server-geo` (`geo-mcp.responsive.city`); `bls_resolve_place` via `core.geographyTools()` (ADR-008) | UGEO-Bench runs in-repo and a small model shows a demonstrable lift with the geography tools; "Denver" resolves to city/county/metro/CSA with every BLS code and structured flags; `server-geo` live |
 | **M3 Labor market core** | LAUS only (ADR-009): series-ID builder, `bls_get_indicator`, `bls_list_indicators`, `bls_get_raw` (raw, batched, chunked), LAUS flipped to `available` in `bls_describe_source`; recorded fixtures; quota enforcement end to end | Unemployment questions for any state, metro, county or ≥25k city answer from fixtures in tests and from the live API in the smoke job, with the below-threshold county fallback; preliminary flags surface in the envelope |
 | **M4 Wages, prices, openings** | A program registry generalizing `bls_get_indicator` off LAUS; CES, OEWS, CPI and JOLTS builders + indicators; `bls_compare_places`; CPI's ~23-metro codes with a U.S.-city-average fallback. state-level for OEWS; CES adds single-state metros | Payroll, wage, price and job-openings questions answer through the family verbs; comparing places on one indicator returns period-aligned rows |
+| **M7 Functional completions** | A dimension seam on the registry (`IndicatorDefinition.dimensions`, ADR-013); CPI item, QCEW industry/ownership and OEWS occupation pickers; OEWS and QCEW metros, CES multi-state metros, Census regions and divisions in the catalog with the CPI fallback ladder; PPI as a national-scope program; `caveatOf` and agency-code notes so a direct series can carry a condition | Inflation by type of good by metro, construction-sector wages by county, occupational wages by metro, and national producer prices all answer through the same verbs, every gap flagged |
 | **M5 QCEW** | A registry fetch-capability seam (ADR-011 §2) so a non-timeseries program dispatches behind `bls_get_indicator`; a CSV slice client over `data.bls.gov/cew/data/api` with long-TTL cache; `covered_employment` + `average_weekly_wage` at county and state. Metro (`C`-code) and NAICS/ownership pickers deferred | Covered employment and average weekly wage for any county or state answer through the family verbs, with disclosure suppressions carried as caveats |
 | **M6 Release hardening** | Optional LABSTAT observation mirror for LAUS and SM; eval set of real policy questions run against the deployed server; README, install docs for Claude, Claude Code and one third-party host; Anthropic directory submission; tagged v1.0.0 | Eval set passes at an agreed threshold; a new user installs and gets a cited answer without reading source |
 

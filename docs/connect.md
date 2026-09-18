@@ -57,9 +57,17 @@ guessing — you pick, then ask for the statistic.
 > LAUCN080310000000003), with a BLS citation you can paste into a report.
 
 The same pattern answers payroll employment, occupational wages, consumer prices, job
-openings, and quarterly employment-and-wage counts. To compare places, name them
-together — "compare unemployment across Colorado, Utah, and Nevada" — and the answer lines
-them up on the latest period they all share.
+openings, quarterly employment-and-wage counts, and national producer prices. To compare
+places, name them together — "compare unemployment across Colorado, Utah, and Nevada" —
+and the answer lines them up on the latest period they all share.
+
+You can narrow most of these. Ask for "food inflation in Denver" or "energy prices in the
+Boston metro" (CPI by expenditure group); "construction wages in Denver County" or
+"private-sector manufacturing employment in Colorado" (QCEW by industry and ownership);
+"what do healthcare practitioners earn in the Denver metro" (OEWS by occupation group); or
+"how have lumber and steel prices moved" (PPI — national only, and the answer says so if
+you name a place). The server publishes each vocabulary through `bls_list_indicators`, so
+Claude picks the right code rather than guessing.
 
 Not sure what's available for your town or state? Ask "what can the BLS server tell me
 about \<place\>?" — that runs `bls_list_indicators` (what publishes at that level) and

@@ -26,14 +26,18 @@ Every server exposes the same six family verbs — `resolve_place`, `get_indicat
 (`bls_get_indicator`). One tool call returns one indicator for one place over time, in a
 provenance envelope (value, resolved place, series id, vintage, footnote flags, citation).
 
-| Program | Indicator(s) | Coverage |
-|---|---|---|
-| **LAUS** | unemployment rate, unemployment, employment, labor force | state · metro · county · city ≥25k (smaller cities fall back to their county, flagged) |
-| **CES State & Area** | payroll employment (total nonfarm) | state · single-state metro |
-| **OEWS** | occupational wage (all-occupations mean annual) | state |
-| **CPI** | all-items price index | ~23 metros + U.S. city average (no local CPI → nearest published, flagged) |
-| **JOLTS** | job openings, hires, quits, layoffs | state |
-| **QCEW** | employment & wages by industry | *in progress (M5)* |
+| Program | Indicator(s) | Coverage | Pickers |
+|---|---|---|---|
+| **LAUS** | unemployment rate, unemployment, employment, labor force | state · metro · county · city ≥25k (smaller cities fall back to their county, flagged) | — |
+| **CES State & Area** | payroll employment (total nonfarm) | state · metro (multi-state metros served under their first state, flagged) | — |
+| **OEWS** | occupational wage (mean annual) | state · metro | `occupation` (22 SOC major groups) |
+| **CPI** | consumer price index | ~23 metros → census division → region → U.S. city average, each step flagged | `item` (all items, food, housing, shelter, energy, gasoline, medical care, …) |
+| **JOLTS** | job openings, hires, quits, layoffs | state | — |
+| **QCEW** | covered employment, average weekly wage | county · state · metro (suppressed cells flagged) | `industry` (NAICS sectors) · `ownership` (total, private, government) |
+| **PPI** | producer price index | national only; place optional, flagged when given | `item` (final demand, all commodities, inputs to construction, lumber, steel, concrete, …) |
+
+Pickers are optional named arguments on `bls_get_indicator` and `bls_compare_places`;
+`bls_list_indicators` publishes each indicator's vocabulary.
 
 Numbers carry their caveats: preliminary/revised flags, the below-threshold county
 fallback, and "no local series" substitutions all travel in the envelope — a tool never

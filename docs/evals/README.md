@@ -34,6 +34,10 @@ live public API, so it is run before a release (M6.4), not on every PR.
     fallback caveat, never a bare city number (#141);
   - a multi-state metro (Boston) → never a fabricated city-level number;
   - an unknown place → `not_found`, no value.
+- **M7 completions (v0.2.0):** a CPI expenditure item by metro, QCEW construction wages by county
+  (industry + ownership pickers), an OEWS occupation group by metro, a multi-state metro's CES
+  series (flagged), a state with no metro CPI reading its census division (flagged), and a PPI
+  question with a place → the national series with the national-only caveat, never a local number.
 
 ## Grading
 
