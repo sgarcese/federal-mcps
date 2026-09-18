@@ -64,7 +64,10 @@ export const cpiIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: cpiAreaOf,
     buildSeriesId: (code, { seasonallyAdjusted, dimensions }) =>
-      buildCuSeriesId(code, { seasonallyAdjusted, item: dimensions.item }),
+      buildCuSeriesId(code, {
+        seasonallyAdjusted,
+        ...(dimensions.item ? { item: dimensions.item } : {}),
+      }),
     dimensions: [CPI_ITEM_DIMENSION],
     fallback: cpiFallback,
   },

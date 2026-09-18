@@ -91,8 +91,8 @@ describe("cpi_all_items end to end via bls_get_indicator (#150)", () => {
   function tool(client = scriptedBlsClient()) {
     return blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW })[0];
   }
-  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
   const run = (args: Record<string, unknown>, client?: ReturnType<typeof scriptedBlsClient>) =>
+    // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
     tool(client).handler(args as any, {} as any);
 
   it("picks a CPI metro's food item series and reports the dimension", async () => {
