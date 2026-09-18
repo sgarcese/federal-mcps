@@ -434,6 +434,36 @@ describe("multi-state metro CES (#153)", () => {
   });
 });
 
+describe("OEWS occupation picker + metro coverage (#152)", () => {
+  it("dispatches occupational_wage to the Denver metro OE series (kind: metro), all occupations by default", async () => {
+    const res = await run({ place: "Denver", kind: "metro", indicator: "occupational_wage" });
+    expect(res.source.ids).toEqual(["OEUM001974000000000000004"]);
+    expect(res.source.program).toBe("OEWS");
+    expect(res.place?.geoid).toBe("19740");
+    const data = res.data as { measure: string; dimensions: unknown };
+    expect(data.measure).toBe("occupational_wage");
+    expect(data.dimensions).toEqual({ occupation: "000000" });
+  });
+
+  it("passes an explicit occupation code to the Colorado statewide OE series", async () => {
+    const res = await run({
+      place: "Colorado",
+      indicator: "occupational_wage",
+      occupation: "470000",
+    });
+    expect(res.source.ids).toEqual(["OEUS080000000000047000004"]);
+    expect(res.source.program).toBe("OEWS");
+    const data = res.data as { dimensions: unknown };
+    expect(data.dimensions).toEqual({ occupation: "470000" });
+  });
+
+  it("rejects an occupation code outside the vocabulary, listing the accepted codes", async () => {
+    await expect(
+      run({ place: "Colorado", indicator: "occupational_wage", occupation: "999999" }),
+    ).rejects.toThrow(/occupation.*"999999".*000000.*470000/s);
+  });
+});
+
 describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
   const CSV = [
     '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
