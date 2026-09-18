@@ -431,6 +431,9 @@ describe("multi-state metro CES (#153)", () => {
     expect(res.source.ids).toEqual(["SMU17169800000000001"]);
     expect(res.place?.geoid).toBe("16980");
     expect(res.limitations?.join(" ")).toMatch(/multi-state.*Illinois/);
+  });
+});
+
 describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
   const CSV = [
     '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
