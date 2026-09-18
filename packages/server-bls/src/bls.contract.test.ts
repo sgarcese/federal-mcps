@@ -107,13 +107,13 @@ describe("the live BLS server (createServer + InMemoryTransport)", () => {
     }
   });
 
-  it("bls_describe_source returns an envelope: all six programs available", async () => {
+  it("bls_describe_source returns an envelope: all seven programs available", async () => {
     const client = await connect();
     try {
       const result = await client.callTool({ name: "bls_describe_source", arguments: {} });
       const envelope = EnvelopeSchema.parse(result.structuredContent);
       const data = envelope.data as { programs: { code: string; status: string }[] };
-      expect(data.programs).toHaveLength(6);
+      expect(data.programs).toHaveLength(7);
       for (const program of data.programs) {
         expect(program.status).toBe("available");
       }
