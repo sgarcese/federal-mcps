@@ -48,16 +48,46 @@ describe("parseLausArea", () => {
 });
 
 describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
-  it("CES emits a state+area code for a single-state metro, skips statewide and multi-state", () => {
-    const sm = [
-      "area_code\tarea_name",
-      "19740\tDenver-Aurora-Lakewood, CO",
-      "16980\tChicago-Naperville-Elgin, IL-IN-WI",
-      "00000\tStatewide",
-    ].join("\n");
+  it("CES emits a state+area code for a single-state metro and skips statewide", () => {
+    const sm = ["area_code\tarea_name", "19740\tDenver-Aurora-Lakewood, CO", "00000\tStatewide"].join(
+      "\n",
+    );
     const rows = parseCesArea(sm);
     expect(rows.map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
     expect(rows[0]?.code).toBe("0819740"); // state 08 + area 19740, the SM series key
+    expect(rows[0]?.note).toBeNull();
+  });
+
+  it("CES files a multi-state metro under the FIRST state in its title, with a note (#153)", () => {
+    // Verified live 2026-09-17: SMU36356200000000001 (NY-NJ), SMU29281400000000001 (MO-KS),
+    // SMU42379800000000001 (PA-NJ-DE-MD), SMU11479000000000001 (DC-VA-MD-WV) all exist;
+    // SMU34356200000000001 (the NJ prefix for New York) does not.
+    const sm = [
+      "area_code\tarea_name",
+      "16980\tChicago-Naperville-Elgin, IL-IN-WI",
+      "35620\tNew York-Newark-Jersey City, NY-NJ",
+      "47900\tWashington-Arlington-Alexandria, DC-VA-MD-WV",
+    ].join("\n");
+    const rows = parseCesArea(sm);
+    expect(rows.map((r) => r.code)).toEqual(["1716980", "3635620", "1147900"]);
+    expect(rows[0]?.note).toMatch(/multi-state.*IL/);
+  });
+
+  it("QCEW maps a metro C-code from area_titles.csv to its CBSA; skips CSAs, states, counties, US (#153)", () => {
+    const csv = [
+      '"area_fips","area_title"',
+      '"US000","U.S. TOTAL"',
+      '"08000","Colorado -- Statewide"',
+      '"08031","Denver County, Colorado"',
+      '"C1974","Denver-Aurora-Centennial, CO MSA"',
+      '"C1002","Abbeville, LA MicroSA"',
+      '"CS216","Denver-Aurora-Greeley, CO CSA"',
+    ].join("\n");
+    const rows = parseQcewArea(csv);
+    expect(rows).toEqual([
+      expect.objectContaining({ ucgid: ucgidOf("310", "19740"), program: "QCEW", code: "C1974" }),
+      expect.objectContaining({ ucgid: ucgidOf("310", "10020"), program: "QCEW", code: "C1002" }),
+    ]);
   });
 
   it("OEWS maps a 7-digit zero-padded CBSA", () => {

@@ -53,3 +53,15 @@ describe("cesIndicatorDefinitions", () => {
     expect(blsIndicatorDefinitions.map((d) => d.name)).toContain("payroll_employment");
   });
 });
+
+describe("CES multi-state metro caveat (#153)", () => {
+  it("caveatOf returns the SM code's note so the envelope carries it", () => {
+    const def = cesIndicatorDefinitions[0];
+    const chicago = metro("16980", [
+      { agency: "bls", program: "SM", code: "1716980", note: "CES publishes this under IL." },
+    ]);
+    expect(cesCodeOf(chicago)).toBe("1716980");
+    expect(def?.caveatOf?.(chicago)).toBe("CES publishes this under IL.");
+    expect(def?.caveatOf?.(metro("19740", [{ agency: "bls", program: "SM", code: "0819740" }]))).toBeUndefined();
+  });
+});

@@ -423,3 +423,12 @@ describe("dimension seam (#149): named picker arguments on the tools", () => {
     expect((res.data as { dimensions: unknown }).dimensions).toEqual({ item: "04" });
   });
 });
+
+describe("multi-state metro CES (#153)", () => {
+  it("serves Chicago payroll employment under the first state, with the caveat in limitations", async () => {
+    const res = await run({ place: "Chicago", kind: "metro", indicator: "payroll_employment" });
+    expect(res.source.ids).toEqual(["SMU17169800000000001"]);
+    expect(res.place?.geoid).toBe("16980");
+    expect(res.limitations?.join(" ")).toMatch(/multi-state.*Illinois/);
+  });
+});

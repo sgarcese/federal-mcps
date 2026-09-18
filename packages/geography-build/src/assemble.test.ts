@@ -65,6 +65,16 @@ describe("assemble", () => {
     expect(rows.countyChange.some((c) => c.oldUcgid === ucgidOf("050", "09001"))).toBe(true);
   });
 
+  it("attaches QCEW metro C-codes from area_titles.csv when supplied (#153)", () => {
+    const withQcew = assemble({
+      gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },
+      qcewArea: '"area_fips","area_title"\n"C1974","Denver-Aurora-Centennial, CO MSA"',
+    });
+    expect(withQcew.agencyCodes).toContainEqual(
+      expect.objectContaining({ ucgid: ucgidOf("310", "19740"), program: "QCEW", code: "C1974" }),
+    );
+  });
+
   it("has no lineage or weighted overlap when no #55 sources are supplied", () => {
     expect(rows.lineage).toEqual([]);
   });
