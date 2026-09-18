@@ -27,6 +27,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
+- [spikes/census-server-suitability.md](spikes/census-server-suitability.md) — the official Census
+  Bureau MCP server re-checked against the family contract (2026-09-18): build on the core, borrow
+  its data index and query grammar; six decision questions.
 
 ## ADRs
 
