@@ -19,6 +19,8 @@ import { ucgidOf } from "../identifiers.js";
  */
 export function buildFixtureCatalog(): string {
   const entities: EntityRow[] = [
+    ent("4", "020", "West", {}), // Census region (#154)
+    ent("8", "030", "Mountain", {}), // Census division (#154)
     ent("08", "040", "Colorado", { stateFips: "08", aland: 268_431_000_000 }),
     ent("08031", "050", "Denver County", { stateFips: "08", lsad: "06", aland: 396_915_495 }),
     ent("0820000", "160", "Denver city", { stateFips: "08", lsad: "25", aland: 396_000_000 }),
@@ -48,6 +50,8 @@ export function buildFixtureCatalog(): string {
   ];
 
   const containment: ContainmentRow[] = [
+    { childUcgid: uc("08"), parentUcgid: uc("8"), share: 1 },
+    { childUcgid: uc("8"), parentUcgid: uc("4"), share: 1 },
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },

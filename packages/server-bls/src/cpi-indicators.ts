@@ -1,4 +1,4 @@
-import type { GeographyCatalog, PlaceCandidate } from "@federal-mcps/core";
+import { type GeographyCatalog, type PlaceCandidate, ucgidOf } from "@federal-mcps/core";
 import { buildCuSeriesId, CPI_ALL_ITEMS, CPI_US_CITY_AVERAGE_AREA } from "./cpi.js";
 import type { DimensionDefinition, IndicatorDefinition, IndicatorFallback } from "./registry.js";
 
@@ -16,18 +16,61 @@ export function cpiAreaOf(place: PlaceCandidate): string | undefined {
   return place.agencyCodes.find((c) => c.agency === "bls" && c.program === CPI_PROGRAM)?.code;
 }
 
+const DIVISION_SUMLEVEL = "030";
+const REGION_SUMLEVEL = "020";
+
+/** The CPI code on a catalog entity, if the entity exists and carries one. */
+function cpiCodeOfUcgid(catalog: GeographyCatalog, ucgid: string): string | undefined {
+  return catalog.agencyCodesOf(ucgid).find((c) => c.agency === "bls" && c.program === CPI_PROGRAM)
+    ?.code;
+}
+
 /**
- * CPI's "no local CPI" fallback: any place without its own published CPI area resolves to the U.S.
- * city average, carrying the caveat that the number is national, not local. Always returns (CPI can
- * always answer with the U.S. city average), so `get_indicator` never reports CPI as unavailable.
+ * CPI's "no local CPI" fallback ladder (ADR-013 §6): a place without its own published CPI area
+ * reads its Census **division**, else its **region**, else the U.S. city average — each step
+ * flagged with a caveat, never a fabricated local index. The ladder walks the catalog's nesting
+ * from the place's state (a multi-state metro has no single state and goes straight to the U.S.
+ * average). Always returns, so `get_indicator` never reports CPI as unavailable.
  */
-function cpiFallback(_catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback {
+function cpiFallback(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback {
+  if (place.stateFips) {
+    const division = catalog
+      .parentsOf(ucgidOf("040", place.stateFips))
+      .map((p) => p.entity)
+      .find((e) => e.sumlevel === DIVISION_SUMLEVEL);
+    const divisionCode = division ? cpiCodeOfUcgid(catalog, division.ucgid) : undefined;
+    if (division && divisionCode) {
+      return {
+        geoid: division.geoid,
+        name: `${division.name} division`,
+        sumlevel: DIVISION_SUMLEVEL,
+        code: divisionCode,
+        caveat: `CPI is not published for ${place.name}; showing the ${division.name} division (CPI-U). Local CPI is available only for about 23 large metro areas; many division series publish bimonthly.`,
+      };
+    }
+    const region = division
+      ? catalog
+          .parentsOf(division.ucgid)
+          .map((p) => p.entity)
+          .find((e) => e.sumlevel === REGION_SUMLEVEL)
+      : undefined;
+    const regionCode = region ? cpiCodeOfUcgid(catalog, region.ucgid) : undefined;
+    if (region && regionCode) {
+      return {
+        geoid: region.geoid,
+        name: `${region.name} region`,
+        sumlevel: REGION_SUMLEVEL,
+        code: regionCode,
+        caveat: `CPI is not published for ${place.name}; showing the ${region.name} region (CPI-U). Local CPI is available only for about 23 large metro areas; some region series publish bimonthly.`,
+      };
+    }
+  }
   return {
     geoid: CPI_US_CITY_AVERAGE_AREA,
     name: "U.S. city average",
     sumlevel: "010",
     code: CPI_US_CITY_AVERAGE_AREA,
-    caveat: `CPI is not published for ${place.name}; showing the U.S. city average (CPI-U, all items). Local CPI is available only for about 23 large metro areas.`,
+    caveat: `CPI is not published for ${place.name}; showing the U.S. city average (CPI-U). Local CPI is available only for about 23 large metro areas, census divisions and regions.`,
   };
 }
 

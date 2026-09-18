@@ -1,6 +1,10 @@
 import { ucgidOf } from "@federal-mcps/core";
 import type { AgencyCodeRow } from "../types.js";
-import { CPI_AREA_TO_CBSA, US_STATE_POSTAL_TO_FIPS } from "../data/static.js";
+import {
+  CPI_AREA_TO_CBSA,
+  CPI_AREA_TO_REGION_DIVISION,
+  US_STATE_POSTAL_TO_FIPS,
+} from "../data/static.js";
 
 /**
  * Decodes a BLS LAUS `la.area` code into the Census GEOID it names and that GEOID's
@@ -169,6 +173,17 @@ export function parseOewsArea(text: string): AgencyCodeRow[] {
 export function parseCpiArea(text: string): AgencyCodeRow[] {
   return parseBlsAreaFile(text, (areaCode) => {
     const code = areaCode.trim();
+    const regional = CPI_AREA_TO_REGION_DIVISION[code];
+    if (regional) {
+      return {
+        ucgid: ucgidOf(regional.sumlevel, regional.geoid),
+        agency: "bls",
+        program: "CPI",
+        code,
+        codeVintage: 2023,
+        note: null,
+      };
+    }
     const cbsa = CPI_AREA_TO_CBSA[code];
     if (!cbsa) return null;
     return {

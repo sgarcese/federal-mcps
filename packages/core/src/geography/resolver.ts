@@ -68,6 +68,8 @@ const USPS_TO_FIPS: Readonly<Record<string, string>> = Object.freeze({
 
 /** Maps a kind hint (a sumlevel or a label like "county"/"metro"/"city") to sumlevels. */
 const KIND_HINTS: Readonly<Record<string, string[]>> = Object.freeze({
+  region: ["020"],
+  division: ["030"],
   state: ["040"],
   county: ["050"],
   city: ["160"],

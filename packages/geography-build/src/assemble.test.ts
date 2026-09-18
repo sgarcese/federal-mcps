@@ -27,7 +27,9 @@ describe("assemble", () => {
   });
 
   it("collects entities and aliases across gazetteer files", () => {
-    expect(rows.entities.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
+    // Gazetteer entities plus the 4 regions and 9 divisions the build always adds (#154).
+    const gazetteer = rows.entities.filter((e) => !["020", "030"].includes(e.sumlevel));
+    expect(gazetteer.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
     expect(rows.aliases).toContainEqual({
       ucgid: ucgidOf("050", "08031"),
       alias: "Denver",
@@ -63,6 +65,32 @@ describe("assemble", () => {
     );
     expect(rows.publishesAt.some((p) => p.program === "LAUS" && p.sumlevel === "160")).toBe(true);
     expect(rows.countyChange.some((c) => c.oldUcgid === ucgidOf("050", "09001"))).toBe(true);
+  });
+
+  it("adds Census regions (020) and divisions (030) with state → division → region nesting (#154)", () => {
+    const west = rows.entities.find((e) => e.ucgid === ucgidOf("020", "4"));
+    const mountain = rows.entities.find((e) => e.ucgid === ucgidOf("030", "8"));
+    expect(west).toMatchObject({ sumlevel: "020", name: "West", stateFips: null });
+    expect(mountain).toMatchObject({ sumlevel: "030", name: "Mountain" });
+    expect(rows.entities.filter((e) => e.sumlevel === "020")).toHaveLength(4);
+    expect(rows.entities.filter((e) => e.sumlevel === "030")).toHaveLength(9);
+    expect(rows.containment).toContainEqual({
+      childUcgid: ucgidOf("040", "08"),
+      parentUcgid: ucgidOf("030", "8"),
+      share: 1,
+      relation: "nests",
+    });
+    expect(rows.containment).toContainEqual({
+      childUcgid: ucgidOf("030", "8"),
+      parentUcgid: ucgidOf("020", "4"),
+      share: 1,
+      relation: "nests",
+    });
+    expect(rows.aliases).toContainEqual({
+      ucgid: ucgidOf("030", "8"),
+      alias: "Mountain division",
+      source: "hand",
+    });
   });
 
   it("attaches QCEW metro C-codes from area_titles.csv when supplied (#153)", () => {

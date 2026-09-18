@@ -112,3 +112,44 @@ describe("cpi_all_items end to end via bls_get_indicator (#150)", () => {
     ).rejects.toThrow(/item.*"ZZZZZZ".*SA0.*SAF1/s);
   });
 });
+
+describe("CPI fallback ladder: metro → division → region → U.S. city average (#154)", () => {
+  let path: string;
+  let catalog: GeographyCatalog;
+  beforeAll(() => {
+    path = buildFixtureCatalog();
+    catalog = new GeographyCatalog(path);
+  });
+  afterAll(() => {
+    catalog.close();
+    rmSync(dirname(path), { recursive: true, force: true });
+  });
+  const NOW = () => new Date("2025-02-01T00:00:00Z");
+  const run = (args: Record<string, unknown>) =>
+    blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => scriptedBlsClient(),
+      now: NOW,
+    })[0]
+      // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
+      ?.handler(args as any, {} as any);
+
+  it("a state with no metro CPI reads its Census division, flagged", async () => {
+    const res = await run({ place: "Colorado", kind: "state", indicator: "cpi_all_items" });
+    expect(res?.source.ids).toEqual(["CUUR0480SA0"]);
+    expect(res?.place?.geoid).toBe("8");
+    expect(res?.limitations?.join(" ")).toMatch(/Mountain division.*bimonthly/s);
+  });
+
+  it("a state whose division has no CPI series reads its region", async () => {
+    const res = await run({ place: "Washington", kind: "state", indicator: "cpi_all_items" });
+    expect(res?.source.ids).toEqual(["CUUR0400SA0"]);
+    expect(res?.limitations?.join(" ")).toMatch(/West region/);
+  });
+
+  it("a multi-state metro (no single state) still reads the U.S. city average", async () => {
+    const res = await run({ place: "Chicago", kind: "metro", indicator: "cpi_all_items" });
+    expect(res?.source.ids).toEqual(["CUUR0000SA0"]);
+    expect(res?.limitations?.join(" ")).toMatch(/U\.S\. city average/);
+  });
+});
