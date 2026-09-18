@@ -11,9 +11,55 @@ import { QCEW_ENDPOINT } from "./describe-source.js";
  */
 
 /** Total covered ownership (all ownerships combined). */
-const OWN_TOTAL_COVERED = "0";
+export const OWN_TOTAL_COVERED = "0";
 /** All industries (NAICS total). */
-const INDUSTRY_ALL = "10";
+export const INDUSTRY_ALL = "10";
+
+/**
+ * QCEW aggregation-level codes (ADR-013 §2), county and state (M5 scope, ADR-011 §3). A value is
+ * selected by own_code + industry_code, but that pair alone can match more than one row (e.g. a
+ * NAICS domain code); agglvl_code disambiguates by naming the geography level and depth. Verified
+ * 2026-09-17 against the live QCEW API and the agglvl titles reference
+ * (https://data.bls.gov/cew/doc/titles/agglevel/agglevel_titles.htm):
+ *   curl -s https://data.bls.gov/cew/data/api/2024/1/area/08031.csv | awk -F',' '{print $2","$3","$4}' | sort -u
+ *   curl -s https://data.bls.gov/cew/data/api/2024/1/area/08000.csv | awk -F',' '{print $2","$3","$4}' | sort -u
+ * County: total (own 0, industry 10) → agglvl "70"; by ownership (industry 10, own != 0) → "71";
+ * NAICS sector by ownership (industry a sector code, e.g. "23") → "74" (QCEW does not publish a
+ * total-ownership row at the sector level — own_code 0 never appears at agglvl 74). State: the same
+ * pattern one level up — total "50", by ownership "51", sector "54".
+ */
+const COUNTY_AGGLVL = { total: "70", ownership: "71", sector: "74" } as const;
+const STATE_AGGLVL = { total: "50", ownership: "51", sector: "54" } as const;
+/** MSA (`C`-code areas, #153): verified live 2026-09-17 on C1974 (Denver): 40 / 41 / 44. */
+const MSA_AGGLVL = { total: "40", ownership: "41", sector: "44" } as const;
+
+type QcewAreaLevel = "county" | "state" | "msa";
+
+/** A QCEW area's geography level, inferred from its area_fips shape (county 5-digit, state SS000, MSA C####). */
+function qcewAreaLevel(areaFips: string): QcewAreaLevel | undefined {
+  if (/^C\d{4}$/.test(areaFips)) return "msa";
+  if (/^\d{2}000$/.test(areaFips)) return "state";
+  if (/^\d{5}$/.test(areaFips)) return "county";
+  return undefined;
+}
+
+/** The agglvl_code a (level, own_code, industry_code) selection should land on. */
+function expectedAgglvl(level: QcewAreaLevel, ownCode: string, industryCode: string): string {
+  const set = level === "state" ? STATE_AGGLVL : level === "msa" ? MSA_AGGLVL : COUNTY_AGGLVL;
+  if (industryCode !== INDUSTRY_ALL) return set.sector;
+  return ownCode === OWN_TOTAL_COVERED ? set.total : set.ownership;
+}
+
+/** Which row to pick from an area's slice: an ownership code and an industry code (ADR-013 §2). */
+export interface QcewRowSelection {
+  ownCode: string;
+  industryCode: string;
+}
+
+const HEADLINE_SELECTION: QcewRowSelection = {
+  ownCode: OWN_TOTAL_COVERED,
+  industryCode: INDUSTRY_ALL,
+};
 
 /** A QCEW quarter for an area (calendar quarter 1–4). */
 export interface QcewQuarter {
@@ -62,11 +108,16 @@ function toNum(field: string | undefined): number | null {
 }
 
 /**
- * Parse a QCEW area CSV and return its total-covered, all-industries headline row, or undefined if
- * the slice has no such row (an area with no published total). A suppressed row (disclosure code
- * set) yields null measures — never a fabricated value.
+ * Parse a QCEW area CSV and return the row selected by own_code + industry_code, disambiguated by
+ * the matching agglvl_code (ADR-013 §2) — undefined when the slice has zero or more than one
+ * candidate row (this never guesses; ADR-011 §5's "never fabricated" extends to row selection, not
+ * only suppressed cells). Defaults to the total-covered, all-industries headline. A suppressed row
+ * (disclosure code set) yields null measures — never a fabricated value.
  */
-export function parseQcewHeadline(csv: string): QcewHeadline | undefined {
+export function parseQcewRow(
+  csv: string,
+  selection: QcewRowSelection = HEADLINE_SELECTION,
+): QcewHeadline | undefined {
   const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
   const header = lines.shift();
   if (!header) return undefined;
@@ -74,6 +125,7 @@ export function parseQcewHeadline(csv: string): QcewHeadline | undefined {
   const idx = (name: string) => cols.indexOf(name);
   const iOwn = idx("own_code");
   const iInd = idx("industry_code");
+  const iAgg = idx("agglvl_code");
   if (iOwn < 0 || iInd < 0) return undefined;
 
   const at = {
@@ -88,33 +140,73 @@ export function parseQcewHeadline(csv: string): QcewHeadline | undefined {
     wage: idx("avg_wkly_wage"),
   };
 
-  for (const line of lines) {
-    const f = splitCsvLine(line);
-    if (f[iOwn] !== OWN_TOTAL_COVERED || f[iInd] !== INDUSTRY_ALL) continue;
-    const disclosureCode = f[at.disc] ?? "";
-    const suppressed = disclosureCode !== "";
-    const months = [toNum(f[at.m1]), toNum(f[at.m2]), toNum(f[at.m3])].filter(
-      (m): m is number => m !== null,
-    );
-    const employment =
-      suppressed || months.length < 3 ? null : Math.round(months.reduce((a, b) => a + b, 0) / 3);
-    return {
-      areaFips: f[at.area] ?? "",
-      year: Number.parseInt(f[at.year] ?? "0", 10),
-      quarter: Number.parseInt(f[at.qtr] ?? "0", 10),
-      employment,
-      averageWeeklyWage: suppressed ? null : toNum(f[at.wage]),
-      establishments: suppressed ? null : toNum(f[at.estabs]),
-      disclosureCode,
-    };
+  const rows = lines
+    .map(splitCsvLine)
+    .filter((f) => f[iOwn] === selection.ownCode && f[iInd] === selection.industryCode);
+  if (rows.length === 0) return undefined;
+
+  let candidates = rows;
+  if (iAgg >= 0) {
+    const level = qcewAreaLevel(rows[0]?.[at.area] ?? "");
+    if (level) {
+      const agglvl = expectedAgglvl(level, selection.ownCode, selection.industryCode);
+      const filtered = rows.filter((f) => f[iAgg] === agglvl);
+      if (filtered.length > 0) candidates = filtered;
+    }
   }
-  return undefined;
+  if (candidates.length !== 1) return undefined;
+
+  const f = candidates[0] as string[];
+  const disclosureCode = f[at.disc] ?? "";
+  const suppressed = disclosureCode !== "";
+  const months = [toNum(f[at.m1]), toNum(f[at.m2]), toNum(f[at.m3])].filter(
+    (m): m is number => m !== null,
+  );
+  const employment =
+    suppressed || months.length < 3 ? null : Math.round(months.reduce((a, b) => a + b, 0) / 3);
+  return {
+    areaFips: f[at.area] ?? "",
+    year: Number.parseInt(f[at.year] ?? "0", 10),
+    quarter: Number.parseInt(f[at.qtr] ?? "0", 10),
+    employment,
+    averageWeeklyWage: suppressed ? null : toNum(f[at.wage]),
+    establishments: suppressed ? null : toNum(f[at.estabs]),
+    disclosureCode,
+  };
 }
 
 /**
- * Fetch and parse the total-covered, all-industries headline for one area and quarter, through the
- * core client (`getText`, long-TTL cache — the quarter is fixed once released). Returns undefined
- * when the slice is empty/unavailable (e.g. the quarter is not yet published).
+ * Parse a QCEW area CSV and return its total-covered, all-industries headline row. Kept as the
+ * pre-#151 entry point; equivalent to `parseQcewRow(csv)`.
+ */
+export function parseQcewHeadline(csv: string): QcewHeadline | undefined {
+  return parseQcewRow(csv);
+}
+
+/**
+ * Fetch an area's quarter slice and parse the row selected by `selection` (default: total-covered,
+ * all-industries), through the core client (`getText`, long-TTL cache — the quarter is fixed once
+ * released, so the cache key is unaffected by which row is later picked from it). Returns undefined
+ * when the slice is empty/unavailable (e.g. the quarter is not yet published) or when `selection`
+ * matches no unique row.
+ */
+export async function fetchQcewRow(
+  client: HttpClient,
+  area: string,
+  quarter: QcewQuarter,
+  selection: QcewRowSelection = HEADLINE_SELECTION,
+  options: { freshTtlSeconds?: number } = {},
+): Promise<QcewHeadline | undefined> {
+  const reqOptions: RequestOptions =
+    options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
+  const { value } = await client.getText(qcewAreaUrl(area, quarter), reqOptions);
+  if (!value || value.trim().length === 0) return undefined;
+  return parseQcewRow(value, selection);
+}
+
+/**
+ * Fetch and parse the total-covered, all-industries headline for one area and quarter. Kept as the
+ * pre-#151 entry point; equivalent to `fetchQcewRow(client, area, quarter, undefined, options)`.
  */
 export async function fetchQcewHeadline(
   client: HttpClient,
@@ -122,11 +214,7 @@ export async function fetchQcewHeadline(
   quarter: QcewQuarter,
   options: { freshTtlSeconds?: number } = {},
 ): Promise<QcewHeadline | undefined> {
-  const reqOptions: RequestOptions =
-    options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
-  const { value } = await client.getText(qcewAreaUrl(area, quarter), reqOptions);
-  if (!value || value.trim().length === 0) return undefined;
-  return parseQcewHeadline(value);
+  return fetchQcewRow(client, area, quarter, HEADLINE_SELECTION, options);
 }
 
 /**
