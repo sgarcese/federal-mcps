@@ -1,6 +1,6 @@
 import type { GeographyCatalog, PlaceCandidate } from "@federal-mcps/core";
-import { buildCuSeriesId, CPI_US_CITY_AVERAGE_AREA } from "./cpi.js";
-import type { IndicatorDefinition, IndicatorFallback } from "./registry.js";
+import { buildCuSeriesId, CPI_ALL_ITEMS, CPI_US_CITY_AVERAGE_AREA } from "./cpi.js";
+import type { DimensionDefinition, IndicatorDefinition, IndicatorFallback } from "./registry.js";
 
 /**
  * CPI registered as an indicator definition (ADR-010 §1, §4). CPI publishes only for the U.S. city
@@ -31,15 +31,41 @@ function cpiFallback(_catalog: GeographyCatalog, place: PlaceCandidate): Indicat
   };
 }
 
-/** CPI all items (CPI-U), NSA by default (ADR-010 §5). */
+/**
+ * The curated CPI expenditure-item vocabulary (ADR-013 §1–2, #150) — ~10 groups, each verified
+ * against the live BLS API (see cpi.ts's header for the ids and date checked). All items (`SA0`)
+ * is the default, so an unqualified call is unchanged.
+ */
+const CPI_ITEM_DIMENSION: DimensionDefinition = {
+  argument: "item",
+  description: "A CPI expenditure-item group (default: all items).",
+  default: CPI_ALL_ITEMS,
+  vocabulary: [
+    { code: "SA0", label: "all items" },
+    { code: "SAF1", label: "food" },
+    { code: "SAF11", label: "food at home" },
+    { code: "SAH", label: "housing" },
+    { code: "SAH1", label: "shelter" },
+    { code: "SA0E", label: "energy" },
+    { code: "SETB01", label: "gasoline, all types" },
+    { code: "SAM", label: "medical care" },
+    { code: "SAT", label: "transportation" },
+    { code: "SAA", label: "apparel" },
+  ],
+};
+
+/** CPI all items (CPI-U), NSA by default (ADR-010 §5); an `item` picks an expenditure group. */
 export const cpiIndicatorDefinitions: IndicatorDefinition[] = [
   {
     name: "cpi_all_items",
     program: CPI_PROGRAM,
-    description: "Consumer Price Index for All Urban Consumers (CPI-U), all items.",
+    description:
+      "Consumer Price Index for All Urban Consumers (CPI-U), all items by default; pass item to pick an expenditure group (e.g. food, housing, energy — see bls_list_indicators).",
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: cpiAreaOf,
-    buildSeriesId: (code, { seasonallyAdjusted }) => buildCuSeriesId(code, { seasonallyAdjusted }),
+    buildSeriesId: (code, { seasonallyAdjusted, dimensions }) =>
+      buildCuSeriesId(code, { seasonallyAdjusted, item: dimensions.item }),
+    dimensions: [CPI_ITEM_DIMENSION],
     fallback: cpiFallback,
   },
 ];
