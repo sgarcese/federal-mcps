@@ -154,6 +154,23 @@ describe("fetchQcewRow", () => {
   });
 });
 
+describe("parseQcewRow for a metro (MSA) slice (#153)", () => {
+  // agglvl codes verified live 2026-09-17 on C1974 (Denver metro) 2024 Q1: own 0 / ind 10 → 40;
+  // own 5 / ind 10 → 41; own 5 / ind 23 → 44.
+  const MSA = [
+    '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
+    '"C1974","0","10","40","0","2024","1","",100,1000,1000,1000,1,1,1,2000',
+    '"C1974","5","10","41","0","2024","1","",90,900,900,900,1,1,1,1900',
+    '"C1974","5","23","44","0","2024","1","",10,100,100,100,1,1,1,1500',
+    '"C1974","5","23","45","0","2024","1","",10,50,50,50,1,1,1,1400',
+  ].join("\n");
+  it("picks the MSA total, ownership and sector rows by their agglvl", () => {
+    expect(parseQcewRow(MSA)?.averageWeeklyWage).toBe(2000);
+    expect(parseQcewRow(MSA, { ownCode: "5", industryCode: "10" })?.averageWeeklyWage).toBe(1900);
+    expect(parseQcewRow(MSA, { ownCode: "5", industryCode: "23" })?.averageWeeklyWage).toBe(1500);
+  });
+});
+
 describe("qcewAreaUrl + latestPublishedQuarter", () => {
   it("builds the CSV slice url", () => {
     expect(qcewAreaUrl("08031", { year: 2024, quarter: 1 })).toBe(

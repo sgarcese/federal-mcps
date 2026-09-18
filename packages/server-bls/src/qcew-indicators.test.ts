@@ -43,7 +43,12 @@ describe("qcewAreaCodeOf", () => {
     expect(qcewAreaCodeOf(place("050", "08031"))).toBe("08031");
     expect(qcewAreaCodeOf(place("040", "08"))).toBe("08000");
   });
-  it("returns undefined for metro/city (QCEW MSA deferred)", () => {
+  it("reads a metro's QCEW C-code off the catalog's agency codes (#153); undefined without one, or for a city", () => {
+    const denver = {
+      ...place("310", "19740"),
+      agencyCodes: [{ agency: "bls", program: "QCEW", code: "C1974" }],
+    };
+    expect(qcewAreaCodeOf(denver)).toBe("C1974");
     expect(qcewAreaCodeOf(place("310", "19740"))).toBeUndefined();
     expect(qcewAreaCodeOf(place("160", "0820000"))).toBeUndefined();
   });
@@ -131,5 +136,17 @@ describe("QCEW NAICS industry + ownership pickers (#151)", () => {
     // No total-ownership row exists at the sector level in this fixture.
     const result = await runFetch("average_weekly_wage", getTextClient(DENVER), ["08031|0|23"]);
     expect(result?.observations).toEqual([]);
+  });
+});
+
+describe("QCEW sector detail needs an ownership (#151)", () => {
+  it("rejects a sector with the default total ownership, naming the ownership codes that publish it", () => {
+    const def = qcewIndicatorDefinitions[0];
+    expect(() =>
+      def?.buildSeriesId("08031", { seasonallyAdjusted: false, dimensions: { industry: "23", ownership: "0" } }),
+    ).toThrow(/sector.*ownership.*5/s);
+    expect(
+      def?.buildSeriesId("08031", { seasonallyAdjusted: false, dimensions: { industry: "10", ownership: "0" } }),
+    ).toBe("08031|0|10");
   });
 });
