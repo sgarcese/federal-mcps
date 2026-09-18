@@ -49,3 +49,11 @@ describe("BLS describeSource()", () => {
     expect(d.citationFormat.length).toBeGreaterThan(0);
   });
 });
+
+describe("BLS terms of service (docs/licensing.md)", () => {
+  it("carries the required 'cannot vouch' sentence in the caveats", () => {
+    expect(describeSource().caveats.join(" ")).toContain(
+      "BLS.gov cannot vouch for the data or analyses derived from these data after the data have been retrieved from BLS.gov",
+    );
+  });
+});

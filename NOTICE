@@ -1,0 +1,30 @@
+federal-mcps
+Copyright (c) 2026 the federal-mcps contributors
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This project ships or downloads data from the following sources. See docs/licensing.md for
+the terms each carries and how the project meets them.
+
+U.S. Census Bureau — gazetteer files, 2020 relationship files, and the Data API.
+  Works of the United States Government (17 U.S.C. § 105); no copyright. Products that use the
+  Census Bureau Data API must state: "This product uses the Census Bureau Data API but is not
+  endorsed or certified by the Census Bureau."
+
+U.S. Bureau of Labor Statistics — LABSTAT area code tables, the Public Data API, and the QCEW
+  open data feed. Works of the United States Government; no copyright. BLS asks that the retrieval
+  date be cited and states that "BLS.gov cannot vouch for the data or analyses derived from these
+  data after the data have been retrieved from BLS.gov."
+
+Missouri Census Data Center (MCDC), University of Missouri — Geocorr 2022 place-to-county
+  correlation output, vendored as packages/geography-build/src/data/geocorr/*. Geocorr is produced
+  by MCDC (a Census Bureau State Data Center partner, sponsored by the Missouri State Library,
+  published by the University of Missouri Center for Health Policy) from public-domain Census
+  Bureau block data. MCDC publishes no licence or terms for Geocorr output; the project credits
+  MCDC as the source of the allocation factors. Suggested citation: Missouri Census Data Center,
+  Geocorr 2022: Geographic Correspondence Engine, https://mcdc.missouri.edu/applications/geocorr2022.html
+  (retrieved 2026-09-17).
+
+Design inspiration (no code copied): cyanheads/bls-labor-mcp-server (Apache-2.0),
+  pipeworx-io/mcp-bls (MIT), b-barker/bls-oews-mcp (MIT), harperbrian's provenance-envelope
+  pattern, and the official uscensusbureau/us-census-bureau-data-api-mcp (CC0 1.0), whose dataset
+  index and Census API query grammar inform the planned Census server.

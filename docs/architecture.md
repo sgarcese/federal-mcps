@@ -67,7 +67,7 @@ additive.
 | 4 | Auth | None for end users; agency API keys as sensitive Terraform variables on the Lambda (ADR-006); optional per-client usage plans | Public data. Anthropic directory accepts unauthenticated public-data connectors. Organizations that need caller identity or audit can front the server with their own gateway. |
 | 5 | Tool pattern | One tool per action, 8–12 per server, family verb set | Surface is small once organized by place and indicator. Raw-ID `get_raw` is the escape hatch. |
 | 6 | Geography catalog | Build-time SQLite shipped with each server, generated from Census/OMB/agency code tables | Read-only, versioned, no runtime database; removes the Census server's Postgres dependency for a Lambda. |
-| 7 | Census strategy | Adapt the official `uscensusbureau/us-census-bureau-data-api-mcp` (CC0, TypeScript) onto the core; contribute upstream where it fits | Already solves dataset discovery and FIPS resolution with CI and tests. We replace its Postgres and stdio-only transport. |
+| 7 | Census strategy | Build `server-census` on the core as `server-bls` was built; borrow the official `uscensusbureau/us-census-bureau-data-api-mcp` (CC0) dataset/table index and Census API query grammar as data, not code (ruled 2026-09-18, [spike](spikes/census-server-suitability.md)) | Upstream went quiet in 2026-03, is Postgres/Docker/stdio-bound, returns free text with no caveats, and duplicates the geography the catalog carries; its skeleton is what the core replaces. |
 | 8 | Testing | TDD; recorded fixtures; contract tests on every tool; live smoke tests gated by `LIVE_TESTS=1` | Agency APIs are slow and rate-limited; conventions are enforced mechanically. |
 
 ## Repository layout
@@ -206,7 +206,18 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 | **M5 QCEW** | A registry fetch-capability seam (ADR-011 §2) so a non-timeseries program dispatches behind `bls_get_indicator`; a CSV slice client over `data.bls.gov/cew/data/api` with long-TTL cache; `covered_employment` + `average_weekly_wage` at county and state. Metro (`C`-code) and NAICS/ownership pickers deferred | Covered employment and average weekly wage for any county or state answer through the family verbs, with disclosure suppressions carried as caveats |
 | **M6 Release hardening** | Optional LABSTAT observation mirror for LAUS and SM; eval set of real policy questions run against the deployed server; README, install docs for Claude, Claude Code and one third-party host; Anthropic directory submission; tagged v1.0.0 | Eval set passes at an agreed threshold; a new user installs and gets a cited answer without reading source |
 
-Deferred to later releases, deliberately: Census server, CDC PLACES server,
+**M8 Census (planned, rulings 2026-09-18 on the suitability spike):** a curated ACS indicator
+vocabulary through `census_get_indicator` on the registry seam (population, median household
+income, poverty, rent, home value, educational attainment, commute, health insurance), with
+`census_get_raw` carrying the Census API grammar and `census_search_tables` for discovery; margins
+of error, annotation sentinels and the ACS 1-year → 5-year fallback as first-class caveats from
+the start; geography from the core catalog (county subdivisions added when a story needs them);
+all calls through the core client with a long-TTL cache, no mirror; the Census API's required
+sentence ("This product uses the Census Bureau Data API but is not endorsed or certified by the
+Census Bureau.") displayed. Starts with a spike on the vocabulary and reliability rules → ADR →
+seam-first build, after the M7 deploy is verified.
+
+Deferred to later releases, deliberately: CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
 
