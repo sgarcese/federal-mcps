@@ -42,7 +42,8 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "SM",
     name: "Current Employment Statistics, State & Area",
-    granularity: "state and single-state metro (CBSA), total nonfarm",
+    granularity:
+      "state and metro (CBSA; a multi-state metro is filed under its first state, flagged), total nonfarm",
     cadence: "monthly",
     status: "available",
   },
@@ -50,14 +51,15 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "QCEW",
     name: "Quarterly Census of Employment and Wages",
     granularity:
-      "county and state, all industries, total covered (metro and NAICS/ownership detail planned)",
+      "county, state and metro; by NAICS sector (industry) and ownership, default all industries total covered",
     cadence: "quarterly, with an annual average release",
     status: "available",
   },
   {
     code: "OEWS",
     name: "Occupational Employment and Wage Statistics",
-    granularity: "state (metro/CBSA planned), all-occupations mean annual wage",
+    granularity:
+      "state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations",
     cadence: "annual",
     status: "available",
   },
@@ -65,7 +67,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "CPI",
     name: "Consumer Price Index",
     granularity:
-      "U.S. city average, census region, census division, and about 23 named metro areas",
+      "about 23 named metro areas, census divisions and regions, and the U.S. city average; by expenditure group (item)",
     cadence:
       "monthly nationally; many of the ~23 metro-area indexes publish bimonthly or semiannually",
     status: "available",
