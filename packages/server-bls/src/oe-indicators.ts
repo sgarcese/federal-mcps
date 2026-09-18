@@ -33,10 +33,8 @@ export function oewsCodeOf(place: PlaceCandidate): string | undefined {
 
 /**
  * The 22 SOC major groups, as 6-char OEWS occupation codes (2-digit major group + "0000"), plus
- * the "000000" all-occupations code, which is also the default (ADR-013 §2). Verified against the
- * live BLS API (no-key GET),
- * 2026-09-17: 000000 (Colorado, $77,190) and 470000 (Colorado, $65,880) — see oe.ts's header for
- * the full verification note.
+ * the "000000" all-occupations code, which is also the default (ADR-013 §2). Every code verified
+ * against the live BLS API on 2026-09-17 (Colorado, 2025 data) — see oe.ts's header.
  */
 const OCCUPATION_DIMENSION: DimensionDefinition = {
   argument: "occupation",

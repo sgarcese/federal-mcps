@@ -22,10 +22,12 @@
  *     $65,880 (`OEUS080000000000047000004`).
  *   - Denver-Aurora-Centennial metro (CBSA 19740 → OEWS area "0019740"), all occupations, annual
  *     mean wage, 2025 = $81,690 (`OEUM001974000000000000004`).
- * A fourth live check (occupation 110000, management) hit the no-key API's daily request cap
- * before it returned a result. The other SOC major-group codes in the vocabulary follow the
- * verified id shape exactly (2-digit major group + "0000") and are BLS's own published SOC
- * major-group list; they were not each individually checked against a live response.
+ * All 22 SOC major groups were then verified in one registered-key query (Colorado, annual mean
+ * wage, 2025 data returned for every id): 110000 $165,160 · 130000 $100,650 · 150000 $128,910 ·
+ * 170000 $113,860 · 190000 $99,060 · 210000 $66,600 · 230000 $162,080 · 250000 $71,910 ·
+ * 270000 $86,930 · 290000 $111,430 · 310000 $46,000 · 330000 $65,990 · 350000 $43,540 ·
+ * 370000 $44,960 · 390000 $46,600 · 410000 $65,010 · 430000 $56,100 · 450000 $46,080 ·
+ * 470000 $65,880 · 490000 $68,080 · 510000 $56,410 · 530000 $58,350 (2026-09-17).
  */
 
 const OE_AREA_TYPE_STATE = "S";
