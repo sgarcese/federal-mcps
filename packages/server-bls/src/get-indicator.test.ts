@@ -3,6 +3,8 @@ import { dirname } from "node:path";
 import { GeographyCatalog, type HttpClient, type HttpResult } from "@federal-mcps/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { blsIndicatorTools } from "./get-indicator.js";
+import { blsIndicatorDefinitions } from "./indicators.js";
+import type { IndicatorDefinition } from "./registry.js";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { scriptedBlsClient } from "./__fixtures__/scripted-client.js";
 
@@ -314,5 +316,100 @@ describe("tool descriptions match what the server actually serves (#138)", () =>
 
   it("every tool carries a title", () => {
     for (const tool of tools) expect(tool.title, `${tool.name}`).toMatch(/\S/);
+  });
+});
+
+describe("dimension seam (#149): named picker arguments on the tools", () => {
+  /** A stub indicator that declares an `item` dimension and encodes the chosen code in its id. */
+  const itemStub: IndicatorDefinition = {
+    name: "stub_item",
+    program: "LAUS",
+    description: "stub with an item dimension",
+    defaultSeasonallyAdjusted: false,
+    agencyCodeOf: (place) =>
+      place.agencyCodes.find((c) => c.agency === "bls" && c.program === "LAUS")?.code,
+    buildSeriesId: (code, { dimensions }) => `LAU${code}${dimensions.item}`,
+    dimensions: [
+      {
+        argument: "item",
+        description: "Which item.",
+        default: "03",
+        vocabulary: [
+          { code: "03", label: "rate" },
+          { code: "04", label: "level" },
+        ],
+      },
+    ],
+  };
+  const tools = blsIndicatorTools({
+    catalog: () => catalog,
+    httpClient: () => scriptedBlsClient(),
+    now: NOW,
+    definitions: [...blsIndicatorDefinitions, itemStub],
+  });
+  const named = (n: string) => {
+    const t = tools.find((x) => x.name === n);
+    if (!t) throw new Error(n);
+    return t;
+  };
+  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
+  const go = (n: string, args: Record<string, unknown>) => named(n).handler(args as any, {} as any);
+
+  it("applies the dimension default and reports the selection", async () => {
+    const res = await go("bls_get_indicator", {
+      place: "Denver",
+      kind: "county",
+      indicator: "stub_item",
+    });
+    expect(res.source.ids).toEqual(["LAUCN080310000000003"]);
+    expect((res.data as { dimensions: unknown }).dimensions).toEqual({ item: "03" });
+  });
+
+  it("passes an explicit dimension code to the series-id builder", async () => {
+    const res = await go("bls_get_indicator", {
+      place: "Denver",
+      kind: "county",
+      indicator: "stub_item",
+      item: "04",
+    });
+    expect(res.source.ids).toEqual(["LAUCN080310000000004"]);
+  });
+
+  it("rejects a code outside the vocabulary with the accepted list", async () => {
+    await expect(
+      go("bls_get_indicator", { place: "Denver", kind: "county", indicator: "stub_item", item: "99" }),
+    ).rejects.toThrow(/item.*"99".*03.*04/s);
+  });
+
+  it("rejects a dimension argument on an indicator that declares none", async () => {
+    await expect(
+      go("bls_get_indicator", {
+        place: "Denver",
+        kind: "county",
+        indicator: "unemployment_rate",
+        occupation: "110000",
+      }),
+    ).rejects.toThrow(/unemployment_rate.*no dimension/s);
+  });
+
+  it("bls_list_indicators publishes each indicator's dimensions and vocabulary", async () => {
+    const res = await go("bls_list_indicators", {});
+    const data = res.data as {
+      indicators: { indicator: string; dimensions?: { argument: string; vocabulary: unknown[] }[] }[];
+    };
+    const stub = data.indicators.find((i) => i.indicator === "stub_item");
+    expect(stub?.dimensions?.[0]?.argument).toBe("item");
+    expect(stub?.dimensions?.[0]?.vocabulary).toHaveLength(2);
+    expect(data.indicators.find((i) => i.indicator === "unemployment_rate")?.dimensions).toBeUndefined();
+  });
+
+  it("bls_compare_places carries the same dimension to every place", async () => {
+    const res = await go("bls_compare_places", {
+      indicator: "stub_item",
+      places: ["Colorado", "Denver County"],
+      item: "04",
+    });
+    expect(res.source.ids.every((id) => id.endsWith("04"))).toBe(true);
+    expect((res.data as { dimensions: unknown }).dimensions).toEqual({ item: "04" });
   });
 });
