@@ -122,7 +122,8 @@ describe("bls_get_indicator", () => {
       indicator: "covered_employment",
     });
     expect(res.source.program).toBe("QCEW");
-    expect(res.source.ids).toEqual(["08031"]); // the QCEW key is the area code
+    // the QCEW key is area|ownership|industry; covered_employment defaults to total-covered/all-industries (#151)
+    expect(res.source.ids).toEqual(["08031|0|10"]);
     const data = res.data as { measure: string; latest: { period: string; value: number } | null };
     expect(data.measure).toBe("covered_employment");
     expect(data.latest).toEqual({ period: "2024-Q01", value: 560889 });
@@ -430,5 +431,50 @@ describe("multi-state metro CES (#153)", () => {
     expect(res.source.ids).toEqual(["SMU17169800000000001"]);
     expect(res.place?.geoid).toBe("16980");
     expect(res.limitations?.join(" ")).toMatch(/multi-state.*Illinois/);
+describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
+  const CSV = [
+    '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
+    '"08031","0","10","70","0","2024","1","",45970,559807,561820,561041,15497545518,7590975514,149132980,2125',
+    // Construction (NAICS 23), private ownership — verified live 2026-09-17 (agglvl 74, ADR-013 §2 / qcew.ts).
+    '"08031","5","23","74","0","2024","1","",2131,21963,22241,22192,515298275,382512168,9375302,1791',
+  ].join("\n");
+  const notUsed = () => {
+    throw new Error("only getText");
+  };
+  const qcewClient: HttpClient = {
+    getJson: notUsed,
+    postJson: notUsed,
+    async getText(): Promise<HttpResult<string>> {
+      return { value: CSV, status: 200, cache: { hit: false } };
+    },
+  };
+  const getIndicator = () =>
+    blsIndicatorTools({ catalog: () => catalog, httpClient: () => qcewClient, now: NOW })[0];
+  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
+  const goQcew = (args: Record<string, unknown>) => getIndicator().handler(args as any, {} as any);
+
+  it("picks the construction/private row and reports the dimensions and key", async () => {
+    const res = await goQcew({
+      place: "Denver",
+      kind: "county",
+      indicator: "average_weekly_wage",
+      industry: "23",
+      ownership: "5",
+    });
+    expect(res.source.ids).toEqual(["08031|5|23"]);
+    const data = res.data as { dimensions: unknown; latest: { value: number } | null };
+    expect(data.dimensions).toEqual({ industry: "23", ownership: "5" });
+    expect(data.latest).toEqual({ period: "2024-Q01", value: 1791 });
+  });
+
+  it("rejects an industry code outside the vocabulary, listing what's accepted", async () => {
+    await expect(
+      goQcew({
+        place: "Denver",
+        kind: "county",
+        indicator: "covered_employment",
+        industry: "99",
+      }),
+    ).rejects.toThrow(/industry.*"99".*all industries/s);
   });
 });
