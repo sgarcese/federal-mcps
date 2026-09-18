@@ -142,7 +142,7 @@ function resolveSeries(
   const top = resolved.candidates[0];
   if (!top) return { status: "not_found" };
   let code = def.agencyCodeOf(top);
-  let caveat: string | undefined;
+  let caveat: string | undefined = code ? def.caveatOf?.(top) : undefined;
   if (!code && def.fallback) {
     const fb = def.fallback(catalog, top);
     if (fb) {
@@ -232,7 +232,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     let reportedName = top.name;
     let reportedParents = top.parents;
     let agencyCode = def.agencyCodeOf(top);
-    let fallbackCaveat: string | undefined;
+    let fallbackCaveat: string | undefined = agencyCode ? def.caveatOf?.(top) : undefined;
 
     if (!agencyCode && def.fallback) {
       const fb = def.fallback(catalog, top);

@@ -62,6 +62,8 @@ describe("CES multi-state metro caveat (#153)", () => {
     ]);
     expect(cesCodeOf(chicago)).toBe("1716980");
     expect(def?.caveatOf?.(chicago)).toBe("CES publishes this under IL.");
-    expect(def?.caveatOf?.(metro("19740", [{ agency: "bls", program: "SM", code: "0819740" }]))).toBeUndefined();
+    expect(
+      def?.caveatOf?.(metro("19740", [{ agency: "bls", program: "SM", code: "0819740" }])),
+    ).toBeUndefined();
   });
 });

@@ -126,10 +126,11 @@ export class GeographyCatalog {
     return this.attachEntities(rows);
   }
 
-  agencyCodesOf(ucgid: string): { agency: string; program: string; code: string }[] {
-    return this.db
-      .prepare("SELECT agency, program, code FROM agency_code WHERE ucgid = ?")
-      .all(ucgid) as { agency: string; program: string; code: string }[];
+  agencyCodesOf(ucgid: string): { agency: string; program: string; code: string; note?: string }[] {
+    const rows = this.db
+      .prepare("SELECT agency, program, code, note FROM agency_code WHERE ucgid = ?")
+      .all(ucgid) as { agency: string; program: string; code: string; note: string | null }[];
+    return rows.map(({ note, ...rest }) => (note === null ? rest : { ...rest, note }));
   }
 
   publishesAt(sumlevel: string): {

@@ -24,6 +24,7 @@ export const SOURCE_URLS = {
   cesArea: "https://download.bls.gov/pub/time.series/sm/sm.area",
   oewsArea: "https://download.bls.gov/pub/time.series/oe/oe.area",
   cpiArea: "https://download.bls.gov/pub/time.series/cu/cu.area",
+  qcewArea: "https://data.bls.gov/cew/doc/titles/area/area_titles.csv",
   // Census 2020 relationship files (ADR-008 §2, #55). Layouts verified live 2026-09-09.
   // Note: Census does not publish a 2020 place<->county relationship file (the `place/`
   // directory holds only place20<->place10 comparability); that edge is Geocorr-only.

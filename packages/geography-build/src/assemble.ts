@@ -1,6 +1,12 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
-import { parseCesArea, parseCpiArea, parseLausArea, parseOewsArea } from "./parse/bls-area.js";
+import {
+  parseCesArea,
+  parseCpiArea,
+  parseLausArea,
+  parseOewsArea,
+  parseQcewArea,
+} from "./parse/bls-area.js";
 import { parseGazetteer } from "./parse/gazetteer.js";
 import { parseGeocorr } from "./parse/geocorr.js";
 import {
@@ -30,6 +36,8 @@ export interface Sources {
   cesArea?: string;
   oewsArea?: string;
   cpiArea?: string;
+  /** QCEW `area_titles.csv`: metro `C`-codes onto CBSAs (#153, ADR-013 §5). */
+  qcewArea?: string;
   /** Census 2020 relationship files (ADR-008 §2, #55). */
   zctaTract?: string;
   zctaCounty?: string;
@@ -70,6 +78,7 @@ export function assemble(sources: Sources): CatalogRows {
   if (sources.cesArea) extend(agencyCodes, parseCesArea(sources.cesArea));
   if (sources.oewsArea) extend(agencyCodes, parseOewsArea(sources.oewsArea));
   if (sources.cpiArea) extend(agencyCodes, parseCpiArea(sources.cpiArea));
+  if (sources.qcewArea) extend(agencyCodes, parseQcewArea(sources.qcewArea));
 
   // Relationship-file edges are areal overlaps (ZCTA/CD layers do not nest); a place
   // spanning counties is a hierarchy allocation ("nests"). (#57 discriminator.)

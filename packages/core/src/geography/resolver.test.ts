@@ -164,7 +164,12 @@ describe("query bounds (robustness)", () => {
 describe("agency-code notes (#153)", () => {
   it("exposes a code's note on the candidate so a server can carry it as a caveat", () => {
     const codes = catalog.agencyCodesOf(ucgidOf("050", "08031"));
-    expect(codes).toContainEqual({ agency: "bls", program: "NOTED", code: "X1", note: "a caveat that must travel (#153)" });
+    expect(codes).toContainEqual({
+      agency: "bls",
+      program: "NOTED",
+      code: "X1",
+      note: "a caveat that must travel (#153)",
+    });
     expect(codes.find((x) => x.program === "LAUS")).not.toHaveProperty("note");
   });
 });

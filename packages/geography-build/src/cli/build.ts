@@ -32,6 +32,7 @@ async function main(): Promise<void> {
     "cesArea",
     "oewsArea",
     "cpiArea",
+    "qcewArea",
     "zctaTract",
     "zctaCounty",
     "zctaPlace",

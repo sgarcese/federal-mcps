@@ -30,6 +30,10 @@ export const cesIndicatorDefinitions: IndicatorDefinition[] = [
     description: "Total nonfarm payroll employment (all employees, in thousands).",
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: cesCodeOf,
+    // A multi-state metro is filed under its first state; the catalog records that as the SM
+    // code's note, and it travels as a limitation (#153, ADR-013 §4).
+    caveatOf: (place) =>
+      place.agencyCodes.find((c) => c.agency === "bls" && c.program === SM_PROGRAM)?.note,
     buildSeriesId: (code, { seasonallyAdjusted }) => buildSmSeriesId(code, { seasonallyAdjusted }),
   },
 ];
