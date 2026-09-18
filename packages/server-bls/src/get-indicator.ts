@@ -14,7 +14,14 @@ import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 import { isLausSeriesId } from "./laus.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
-import { createIndicatorRegistry, fetchStrategyOf, type IndicatorDefinition } from "./registry.js";
+import {
+  createIndicatorRegistry,
+  type DimensionArgument,
+  type DimensionSelection,
+  fetchStrategyOf,
+  type IndicatorDefinition,
+  resolveDimensions,
+} from "./registry.js";
 import { fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
@@ -26,6 +33,62 @@ export interface BlsIndicatorToolsOptions {
   apiKey?: () => string | undefined;
   /** Injectable clock for the retrieval date and default period. */
   now?: () => Date;
+  /** The indicator definitions to register (default: every BLS program's). Injectable for tests. */
+  definitions?: readonly IndicatorDefinition[];
+}
+
+/** The four named picker arguments every data tool accepts (ADR-013 §1); validated per indicator. */
+const dimensionArguments = {
+  item: z
+    .string()
+    .optional()
+    .describe("A CPI/PPI item code from the indicator's vocabulary (bls_list_indicators)."),
+  industry: z
+    .string()
+    .optional()
+    .describe("A NAICS industry code from the indicator's vocabulary (bls_list_indicators)."),
+  ownership: z
+    .string()
+    .optional()
+    .describe("A QCEW ownership code from the indicator's vocabulary (bls_list_indicators)."),
+  occupation: z
+    .string()
+    .optional()
+    .describe("A SOC occupation code from the indicator's vocabulary (bls_list_indicators)."),
+};
+
+/** Parsed tool input may carry the four picker arguments, each possibly undefined. */
+type DimensionArgs = Partial<Record<DimensionArgument, string | undefined>>;
+
+/** Pull the picker arguments out of parsed tool input. */
+function pickDimensionArgs(p: DimensionArgs): DimensionSelection {
+  return {
+    ...(p.item === undefined ? {} : { item: p.item }),
+    ...(p.industry === undefined ? {} : { industry: p.industry }),
+    ...(p.ownership === undefined ? {} : { ownership: p.ownership }),
+    ...(p.occupation === undefined ? {} : { occupation: p.occupation }),
+  };
+}
+
+/** Resolve an indicator's dimensions from tool input, or throw the actionable rejection. */
+function dimensionsOrThrow(def: IndicatorDefinition, p: DimensionArgs): DimensionSelection {
+  const r = resolveDimensions(def, pickDimensionArgs(p));
+  if (!r.ok) throw new Error(r.message);
+  return r.selection;
+}
+
+/** What `bls_list_indicators` publishes for an indicator's dimensions. */
+function describeDimensions(def: IndicatorDefinition) {
+  return def.dimensions === undefined
+    ? {}
+    : {
+        dimensions: def.dimensions.map((d) => ({
+          argument: d.argument,
+          description: d.description,
+          default: d.default,
+          vocabulary: d.vocabulary.map((v) => ({ code: v.code, label: v.label })),
+        })),
+      };
 }
 
 const SOURCE = {
@@ -102,7 +165,7 @@ function resolveSeries(
  */
 export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefinition[] {
   const now = options.now ?? (() => new Date());
-  const registry = createIndicatorRegistry(blsIndicatorDefinitions);
+  const registry = createIndicatorRegistry(options.definitions ?? blsIndicatorDefinitions);
   const input = z.object({
     place: z.string().describe("A place name, e.g. 'Denver', 'Denver County', 'Cook County IL'."),
     indicator: z
@@ -128,6 +191,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       .boolean()
       .optional()
       .describe("Seasonally adjusted (default false; only states and a few metros publish it)."),
+    ...dimensionArguments,
   });
 
   const handler = async (args: unknown): Promise<ToolHandlerResult> => {
@@ -137,6 +201,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     // The enum guarantees a registered indicator, but guard so the type narrows.
     const def = registry.get(measure);
     if (!def) throw new Error(`unknown indicator "${measure}".`);
+    const dimensions = dimensionsOrThrow(def, p);
     const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
 
     const resolved = resolvePlace(catalog, p.place, {
@@ -201,7 +266,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     const startYear = p.startYear ?? currentYear - 1;
     const endYear = p.endYear ?? currentYear;
     const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
-    const seriesId = def.buildSeriesId(agencyCode, { seasonallyAdjusted });
+    const seriesId = def.buildSeriesId(agencyCode, { seasonallyAdjusted, dimensions });
 
     const [series] = await fetchStrategyOf(def)(options.httpClient(), [seriesId], {
       startYear,
@@ -220,6 +285,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       data: {
         measure,
         seasonallyAdjusted,
+        ...(def.dimensions ? { dimensions } : {}),
         latest: latest ? { period: `${latest.year}-${latest.period}`, value: latest.value } : null,
         observations,
       },
@@ -287,6 +353,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           .describe(
             "Seasonally adjusted (default false; only states and a few metros publish it).",
           ),
+        ...dimensionArguments,
       }),
       examples: [
         {
@@ -303,11 +370,13 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           startYear: z.number().int().optional(),
           endYear: z.number().int().optional(),
           seasonallyAdjusted: z.boolean().optional(),
+          ...dimensionArguments,
         });
         const p = compareInput.parse(args);
         const catalog = options.catalog();
         const def = registry.get(p.indicator);
         if (!def) throw new Error(`unknown indicator "${p.indicator}".`);
+        const dimensions = dimensionsOrThrow(def, p);
         const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
         const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
 
@@ -322,7 +391,10 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         const seriesIdByName = new Map<string, string>();
         for (const { name, resolution } of resolutions) {
           if (resolution.status === "ok") {
-            seriesIdByName.set(name, def.buildSeriesId(resolution.code, { seasonallyAdjusted }));
+            seriesIdByName.set(
+              name,
+              def.buildSeriesId(resolution.code, { seasonallyAdjusted, dimensions }),
+            );
           }
         }
         const ids = [...new Set(seriesIdByName.values())];
@@ -399,7 +471,13 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
 
         const footnotes = collectFootnotes(series.flatMap((s) => s.observations));
         return {
-          data: { indicator: p.indicator, seasonallyAdjusted, period: alignedPeriod, rows },
+          data: {
+            indicator: p.indicator,
+            seasonallyAdjusted,
+            ...(def.dimensions ? { dimensions } : {}),
+            period: alignedPeriod,
+            rows,
+          },
           source: {
             ...sourceBase,
             ids,
@@ -447,6 +525,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           indicator: def.name,
           program: def.program,
           description: def.description,
+          ...describeDimensions(def),
         });
         if (!q.place) {
           return { data: { indicators: registry.list().map(catalogEntry) }, source: baseSource };

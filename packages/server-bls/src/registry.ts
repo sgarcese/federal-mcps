@@ -29,6 +29,75 @@ export interface IndicatorFallback {
   caveat: string;
 }
 
+/** The named picker arguments a tool accepts (ADR-013 §1). Fixed set; each indicator declares which apply. */
+export const DIMENSION_ARGUMENTS = ["item", "industry", "ownership", "occupation"] as const;
+export type DimensionArgument = (typeof DIMENSION_ARGUMENTS)[number];
+
+/** One entry a model may pick for a dimension: the code the series id / row picker uses, and its label. */
+export interface DimensionVocabularyEntry {
+  code: string;
+  label: string;
+}
+
+/**
+ * A dimension an indicator declares (ADR-013 §1–2): which tool argument carries it, a curated
+ * vocabulary (published by `bls_list_indicators`), and the code used when the argument is omitted —
+ * always today's headline, so declaring a dimension changes no existing call.
+ */
+export interface DimensionDefinition {
+  argument: DimensionArgument;
+  description: string;
+  vocabulary: readonly DimensionVocabularyEntry[];
+  default: string;
+}
+
+/** The resolved codes for an indicator's dimensions, defaults filled: what `buildSeriesId` receives. */
+export type DimensionSelection = Partial<Record<DimensionArgument, string>>;
+
+/** Options a definition's series-id builder receives. */
+export interface BuildSeriesIdOptions {
+  seasonallyAdjusted: boolean;
+  dimensions: DimensionSelection;
+}
+
+/**
+ * Validate the picker arguments a caller passed against what `def` declares, and fill defaults.
+ * Never a silent default for a bad code: an argument the indicator does not declare, or a code
+ * outside its vocabulary, is rejected with a message naming what is accepted (ADR-013 §1).
+ */
+export function resolveDimensions(
+  def: IndicatorDefinition,
+  args: DimensionSelection,
+): { ok: true; selection: DimensionSelection } | { ok: false; message: string } {
+  const declared = def.dimensions ?? [];
+  const byArgument = new Map(declared.map((d) => [d.argument, d]));
+  for (const argument of DIMENSION_ARGUMENTS) {
+    const value = args[argument];
+    if (value === undefined || byArgument.has(argument)) continue;
+    const accepted = declared.map((d) => d.argument);
+    return {
+      ok: false,
+      message:
+        accepted.length === 0
+          ? `"${argument}" is not accepted: indicator ${def.name} takes no dimension arguments.`
+          : `"${argument}" is not accepted: indicator ${def.name} takes ${accepted.join(", ")}.`,
+    };
+  }
+  const selection: DimensionSelection = {};
+  for (const dim of declared) {
+    const value = args[dim.argument] ?? dim.default;
+    if (!dim.vocabulary.some((v) => v.code === value)) {
+      const codes = dim.vocabulary.map((v) => `${v.code} (${v.label})`).join(", ");
+      return {
+        ok: false,
+        message: `${dim.argument} "${value}" is not in ${def.name}'s vocabulary; accepted: ${codes}. See bls_list_indicators.`,
+      };
+    }
+    selection[dim.argument] = value;
+  }
+  return { ok: true, selection };
+}
+
 /** One indicator the model can request, and everything the handler needs to answer it. */
 export interface IndicatorDefinition {
   /** The indicator name the model uses, e.g. "unemployment_rate". */
@@ -45,8 +114,14 @@ export interface IndicatorDefinition {
    * state's FIPS geoid), not only read it off `agencyCodes`.
    */
   agencyCodeOf(place: PlaceCandidate): string | undefined;
-  /** Build the series id from the agency code and request options. */
-  buildSeriesId(code: string, options: { seasonallyAdjusted: boolean }): string;
+  /**
+   * Build the series id (or a program's opaque key) from the agency code, the seasonal option and
+   * the resolved dimension codes (`options.dimensions`, defaults filled — empty when the indicator
+   * declares none).
+   */
+  buildSeriesId(code: string, options: BuildSeriesIdOptions): string;
+  /** Dimensions this indicator accepts as named picker arguments (ADR-013 §1). Omit for none. */
+  dimensions?: readonly DimensionDefinition[];
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
   /**

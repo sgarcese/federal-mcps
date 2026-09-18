@@ -377,7 +377,12 @@ describe("dimension seam (#149): named picker arguments on the tools", () => {
 
   it("rejects a code outside the vocabulary with the accepted list", async () => {
     await expect(
-      go("bls_get_indicator", { place: "Denver", kind: "county", indicator: "stub_item", item: "99" }),
+      go("bls_get_indicator", {
+        place: "Denver",
+        kind: "county",
+        indicator: "stub_item",
+        item: "99",
+      }),
     ).rejects.toThrow(/item.*"99".*03.*04/s);
   });
 
@@ -395,12 +400,17 @@ describe("dimension seam (#149): named picker arguments on the tools", () => {
   it("bls_list_indicators publishes each indicator's dimensions and vocabulary", async () => {
     const res = await go("bls_list_indicators", {});
     const data = res.data as {
-      indicators: { indicator: string; dimensions?: { argument: string; vocabulary: unknown[] }[] }[];
+      indicators: {
+        indicator: string;
+        dimensions?: { argument: string; vocabulary: unknown[] }[];
+      }[];
     };
     const stub = data.indicators.find((i) => i.indicator === "stub_item");
     expect(stub?.dimensions?.[0]?.argument).toBe("item");
     expect(stub?.dimensions?.[0]?.vocabulary).toHaveLength(2);
-    expect(data.indicators.find((i) => i.indicator === "unemployment_rate")?.dimensions).toBeUndefined();
+    expect(
+      data.indicators.find((i) => i.indicator === "unemployment_rate")?.dimensions,
+    ).toBeUndefined();
   });
 
   it("bls_compare_places carries the same dimension to every place", async () => {
