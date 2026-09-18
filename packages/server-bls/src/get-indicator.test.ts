@@ -532,7 +532,9 @@ describe("national-scope indicators: PPI (#155, ADR-013 §7)", () => {
     });
     expect(res.source.ids).toEqual(["WPUIP2311001"]);
     expect(res.place?.name).toBe("United States");
-    expect(res.limitations?.join(" ")).toMatch(/PPI is published nationally only.*not a Denver County figure/s);
+    expect(res.limitations?.join(" ")).toMatch(
+      /PPI is published nationally only.*not a Denver County figure/s,
+    );
   });
 
   it("does not stop on an ambiguous place for a national indicator", async () => {
@@ -553,7 +555,9 @@ describe("national-scope indicators: PPI (#155, ADR-013 §7)", () => {
 
   it("bls_list_indicators marks the scope and reports it as published for any place", async () => {
     const res = await call(listTool(), { place: "Denver", kind: "county" });
-    const data = res.data as { indicators: { indicator: string; scope?: string; publishedAtLevel: boolean }[] };
+    const data = res.data as {
+      indicators: { indicator: string; scope?: string; publishedAtLevel: boolean }[];
+    };
     const ppi = data.indicators.find((i) => i.indicator === "producer_price_index");
     expect(ppi).toMatchObject({ scope: "national", publishedAtLevel: true });
   });
@@ -565,6 +569,8 @@ describe("bls_get_raw accepts any BLS timeseries id, not only LAUS (#155)", () =
     expect((res.data as { ids: string[] }).ids).toEqual(["WPUFD4", "SMU08000000000000001"]);
   });
   it("still rejects an id that is not a BLS timeseries id", async () => {
-    await expect(call(rawTool(), { ids: ["08031|0|10"] })).rejects.toThrow(/not BLS timeseries ids/);
+    await expect(call(rawTool(), { ids: ["08031|0|10"] })).rejects.toThrow(
+      /not BLS timeseries ids/,
+    );
   });
 });

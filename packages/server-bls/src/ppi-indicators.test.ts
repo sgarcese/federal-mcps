@@ -7,7 +7,11 @@ describe("ppiIndicatorDefinitions (#155, ADR-013 §7)", () => {
 
   it("registers producer_price_index over the PPI program with national scope", () => {
     expect(ppiIndicatorDefinitions.map((d) => d.name)).toEqual(["producer_price_index"]);
-    expect(def).toMatchObject({ program: "PPI", scope: "national", defaultSeasonallyAdjusted: false });
+    expect(def).toMatchObject({
+      program: "PPI",
+      scope: "national",
+      defaultSeasonallyAdjusted: false,
+    });
   });
 
   it("declares an item dimension defaulting to final demand, with the construction inputs", () => {

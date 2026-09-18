@@ -106,6 +106,12 @@ export interface IndicatorDefinition {
   program: string;
   /** Plain-language description, surfaced by `bls_list_indicators`. */
   description: string;
+  /**
+   * `"national"` for a program with no geography (PPI, ADR-013 §7): `place` becomes optional on
+   * the tools, a given place only names the caveat, and `compare_places` declines. Omit for
+   * place-scoped indicators.
+   */
+  scope?: "national";
   /** Default seasonal adjustment for this program (ADR-010 §5). */
   defaultSeasonallyAdjusted: boolean;
   /**
