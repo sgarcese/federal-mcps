@@ -2,7 +2,12 @@ import type { HttpClient } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { lausCodeOf, lausIndicatorDefinitions } from "./laus-indicators.js";
 import { buildLausSeriesId, LAUS_MEASURES } from "./laus.js";
-import { createIndicatorRegistry, fetchStrategyOf, type IndicatorDefinition } from "./registry.js";
+import {
+  createIndicatorRegistry,
+  fetchStrategyOf,
+  type IndicatorDefinition,
+  resolveDimensions,
+} from "./registry.js";
 import { type IndicatorFetch, timeseriesFetch } from "./series-fetch.js";
 
 const stub = (name: string, program = "TEST"): IndicatorDefinition => ({
@@ -92,5 +97,52 @@ describe("fetchStrategyOf (fetch capability seam, #123)", () => {
     for (const def of lausIndicatorDefinitions) {
       expect(fetchStrategyOf(def)).toBe(timeseriesFetch);
     }
+  });
+});
+
+describe("resolveDimensions (M7.1 seam, #149)", () => {
+  const withItem: IndicatorDefinition = {
+    ...stub("cpi"),
+    dimensions: [
+      {
+        argument: "item",
+        description: "Expenditure group.",
+        default: "SA0",
+        vocabulary: [
+          { code: "SA0", label: "All items" },
+          { code: "SAF1", label: "Food" },
+        ],
+      },
+    ],
+  };
+
+  it("fills every declared dimension with its default when no argument is given", () => {
+    expect(resolveDimensions(withItem, {})).toEqual({ ok: true, selection: { item: "SA0" } });
+  });
+
+  it("accepts a code from the vocabulary", () => {
+    expect(resolveDimensions(withItem, { item: "SAF1" })).toEqual({
+      ok: true,
+      selection: { item: "SAF1" },
+    });
+  });
+
+  it("rejects a code outside the vocabulary, listing what is accepted", () => {
+    const r = resolveDimensions(withItem, { item: "nope" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/item.*"nope".*SA0.*SAF1/s);
+  });
+
+  it("rejects an argument the indicator does not declare, naming what it does accept", () => {
+    const r = resolveDimensions(withItem, { occupation: "110000" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/occupation.*cpi.*item/s);
+  });
+
+  it("an indicator with no dimensions rejects any dimension argument", () => {
+    const r = resolveDimensions(stub("plain"), { item: "SA0" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/plain.*no dimension/s);
+    expect(resolveDimensions(stub("plain"), {})).toEqual({ ok: true, selection: {} });
   });
 });
