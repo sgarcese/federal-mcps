@@ -99,6 +99,15 @@ describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
     expect(parseOewsArea(oe).map((r) => r.ucgid)).toEqual([ucgidOf("310", "19740")]);
   });
 
+  it("CPI maps region and division area codes onto the Census region/division entities (#154)", () => {
+    const cu = ["area_code\tarea_name", "0100\tNortheast", "0480\tMountain", "D200\tMidwest - Size Class D"].join("\n");
+    const rows = parseCpiArea(cu);
+    expect(rows).toEqual([
+      expect.objectContaining({ ucgid: ucgidOf("020", "1"), program: "CPI", code: "0100" }),
+      expect.objectContaining({ ucgid: ucgidOf("030", "8"), program: "CPI", code: "0480" }),
+    ]);
+  });
+
   it("CPI maps a bespoke area code through the hand table", () => {
     const cu = ["area_code\tarea_name", "S48B\tDenver", "0000\tUS city average"].join("\n");
     const rows = parseCpiArea(cu);

@@ -65,6 +65,28 @@ describe("assemble", () => {
     expect(rows.countyChange.some((c) => c.oldUcgid === ucgidOf("050", "09001"))).toBe(true);
   });
 
+  it("adds Census regions (020) and divisions (030) with state → division → region nesting (#154)", () => {
+    const west = rows.entities.find((e) => e.ucgid === ucgidOf("020", "4"));
+    const mountain = rows.entities.find((e) => e.ucgid === ucgidOf("030", "8"));
+    expect(west).toMatchObject({ sumlevel: "020", name: "West", stateFips: null });
+    expect(mountain).toMatchObject({ sumlevel: "030", name: "Mountain" });
+    expect(rows.entities.filter((e) => e.sumlevel === "020")).toHaveLength(4);
+    expect(rows.entities.filter((e) => e.sumlevel === "030")).toHaveLength(9);
+    expect(rows.containment).toContainEqual({
+      childUcgid: ucgidOf("040", "08"),
+      parentUcgid: ucgidOf("030", "8"),
+      share: 1,
+      relation: "nests",
+    });
+    expect(rows.containment).toContainEqual({
+      childUcgid: ucgidOf("030", "8"),
+      parentUcgid: ucgidOf("020", "4"),
+      share: 1,
+      relation: "nests",
+    });
+    expect(rows.aliases).toContainEqual({ ucgid: ucgidOf("030", "8"), alias: "Mountain division", source: "hand" });
+  });
+
   it("attaches QCEW metro C-codes from area_titles.csv when supplied (#153)", () => {
     const withQcew = assemble({
       gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },

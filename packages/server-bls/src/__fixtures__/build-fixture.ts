@@ -19,6 +19,10 @@ import { ucgidOf } from "@federal-mcps/core";
  */
 export function buildFixtureCatalog(): string {
   const entities: EntityRow[] = [
+    ent("4", "020", "West", {}), // Census region (#154)
+    ent("8", "030", "Mountain", {}), // Census division with a CPI code (#154)
+    ent("9", "030", "Pacific", {}), // Census division WITHOUT a CPI code in this fixture (#154)
+    ent("53", "040", "Washington", { stateFips: "53", aland: 172_000_000_000 }),
     ent("08", "040", "Colorado", { stateFips: "08", aland: 268_431_000_000 }),
     ent("08031", "050", "Denver County", { stateFips: "08", lsad: "06", aland: 396_915_495 }),
     ent("0820000", "160", "Denver city", { stateFips: "08", lsad: "25", aland: 396_000_000 }),
@@ -50,6 +54,10 @@ export function buildFixtureCatalog(): string {
   ];
 
   const containment: ContainmentRow[] = [
+    { childUcgid: uc("08"), parentUcgid: uc("8"), share: 1 }, // Colorado → Mountain (#154)
+    { childUcgid: uc("53"), parentUcgid: uc("9"), share: 1 }, // Washington → Pacific
+    { childUcgid: uc("8"), parentUcgid: uc("4"), share: 1 },
+    { childUcgid: uc("9"), parentUcgid: uc("4"), share: 1 },
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0899999"), parentUcgid: uc("08031"), share: 1 }, // town nests in its county
@@ -62,6 +70,8 @@ export function buildFixtureCatalog(): string {
     code(uc("0820000"), "LAUS", "CT0820000000000"), // the city is above threshold
     code(uc("19740"), "LAUS", "MT0819740000000"),
     code(uc("19740"), "CPI", "S48B"), // Denver is one of the ~23 published CPI metros
+    code(uc("8"), "CPI", "0480"), // Mountain division CPI (#154)
+    code(uc("4"), "CPI", "0400"), // West region CPI (#154)
     code(uc("19740"), "SM", "0819740"), // CES metro key: state 08 + CBSA 19740 (#110)
     code(uc("19740"), "QCEW", "C1974"), // QCEW metro C-code (#153)
     {

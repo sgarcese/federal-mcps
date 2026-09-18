@@ -173,3 +173,16 @@ describe("agency-code notes (#153)", () => {
     expect(codes.find((x) => x.program === "LAUS")).not.toHaveProperty("note");
   });
 });
+
+describe("Census regions and divisions (#154)", () => {
+  it("resolves a division by name and kind, with its region as parent", () => {
+    const r = resolvePlace(catalog, "Mountain", { kind: "division" });
+    expect(r.candidates[0]).toMatchObject({ geoid: "8", kind: { sumlevel: "030", label: "division" } });
+    expect(r.candidates[0]?.parents.map((p) => p.name)).toContain("West");
+  });
+
+  it("labels regions and divisions", () => {
+    expect(labelForSumlevel("020")).toBe("region");
+    expect(labelForSumlevel("030")).toBe("division");
+  });
+});
