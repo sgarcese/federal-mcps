@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/server-bls",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "MCP server for U.S. Bureau of Labor Statistics data by place: LAUS, CES State & Area, QCEW, OEWS, CPI, JOLTS.",
   "license": "Apache-2.0",
   "type": "module",

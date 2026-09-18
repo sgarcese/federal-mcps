@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/core",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Shared runtime for the federal-mcps family: geography resolver, HTTP client, provenance envelope, server shell, test helpers.",
   "license": "Apache-2.0",
   "type": "module",

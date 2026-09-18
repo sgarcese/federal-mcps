@@ -29,10 +29,12 @@ tagged release. This ADR records the M6 rulings (owner, 2026-09-17); build issue
    `claude mcp add`, any MCP host) plus a short "what to ask" and the ambiguity/caveat behaviour a
    user will notice. No auth; public data.
 
-3. **Directory submission after a review-criteria checklist pass.** Verify against Anthropic's
-   connector review criteria (read-only tools with correct annotations — already enforced by the
-   contract suite; name/description limits; prompt-injection and safety rules; a working test
-   connection). Record the pass and submit once the eval bar is met.
+3. **The connector review criteria are the release quality bar — no directory submission.**
+   Verify against Anthropic's connector review criteria (read-only tools with correct annotations
+   and titles — enforced by the contract suite; name/description limits; prompt-injection and safety
+   rules; a working test connection; a privacy policy) and record the pass. *Amended 2026-09-17
+   (owner ruling on #135): the criteria were adopted as a proxy for quality and reliability, not as
+   a path to listing; the project does not submit to the directory.*
 
 4. **Versioning: v0.1.0 now, minor-per-milestone, 1.0.0 later.** Nothing has been tagged (M1–M5 were
    internal build milestones); **M6 cuts the first release, v0.1.0**. The project stays in `0.x` — a

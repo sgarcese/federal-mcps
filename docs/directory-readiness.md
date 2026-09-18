@@ -1,16 +1,16 @@
 # Directory-submission readiness (M6.3, #138)
 
-**Status:** current · the review-criteria checklist pass for submitting the hosted BLS connector
-to the Anthropic Connectors Directory, per ADR-012 §3, plus the drafted portal fields. Checked
+**Status:** current · the Anthropic connector review criteria used as the project's **quality
+and reliability bar** (ADR-012 §3 as amended 2026-09-17: no directory submission is planned),
+plus the portal fields drafted before that ruling, kept for reference. Checked
 2026-09-17 against Anthropic's [pre-submission checklist](https://claude.com/docs/connectors/building/review-criteria),
 [submission guide](https://claude.com/docs/connectors/building/submission) and
 [Software Directory Policy](https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy).
 Re-run this pass before each submission; the criteria pages change.
 
-Submission itself is the owner's act (ADR-012 §3: submit once the eval bar is met). Two
-prerequisites are outside the code: the portal lives in **Claude.ai organization admin settings
-and needs a Team or Enterprise organization** (individual plans cannot submit), and the
-**API-ownership criterion** (below) needs a deliberate answer.
+The project is not submitting to the directory (owner ruling, 2026-09-17). Rows marked
+"Owner decision" or "Owner" below were submission prerequisites and are moot; the remaining
+rows are re-run as a checklist before each release alongside the eval set.
 
 ## Checklist
 
