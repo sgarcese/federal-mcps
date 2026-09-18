@@ -9,12 +9,12 @@ describe("BLS describeSource()", () => {
     expect(d.homepage).toBe("https://www.bls.gov");
   });
 
-  it("lists all six architecture-doc programs, every one available (LAUS/CES/OEWS/CPI/JOLTS/QCEW)", () => {
+  it("lists all seven programs, every one available (LAUS/CES/OEWS/CPI/JOLTS/QCEW/PPI)", () => {
     const d = describeSource();
     const codes = d.programs.map((p) => p.code).sort();
-    expect(codes).toEqual(["CPI", "JOLTS", "LAUS", "OEWS", "QCEW", "SM"].sort());
+    expect(codes).toEqual(["CPI", "JOLTS", "LAUS", "OEWS", "PPI", "QCEW", "SM"].sort());
     const byCode = Object.fromEntries(d.programs.map((p) => [p.code, p]));
-    for (const code of ["LAUS", "SM", "OEWS", "CPI", "JOLTS", "QCEW"]) {
+    for (const code of ["LAUS", "SM", "OEWS", "CPI", "JOLTS", "QCEW", "PPI"]) {
       expect(byCode[code]?.status).toBe("available");
     }
     for (const program of d.programs) {

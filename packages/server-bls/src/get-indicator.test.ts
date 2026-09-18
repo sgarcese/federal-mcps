@@ -202,6 +202,7 @@ describe("bls_list_indicators", () => {
       "layoffs",
       "covered_employment",
       "average_weekly_wage",
+      "producer_price_index",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
@@ -237,7 +238,7 @@ describe("bls_list_indicators", () => {
     const res = await call(listTool(), {});
     const data = res.data as { indicators: { indicator: string; program: string }[] };
     const programs = new Set(data.indicators.map((i) => i.program));
-    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS", "QCEW"]));
+    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS", "QCEW", "PPI"]));
   });
 });
 
@@ -251,8 +252,10 @@ describe("bls_get_raw", () => {
     expect(res.source.citation).toMatch(/LAUCN080310000000003/);
   });
 
-  it("rejects ids that are not LAUS series ids", async () => {
-    await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(/not LAUS series ids/);
+  it("rejects ids that are not BLS timeseries ids", async () => {
+    await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(
+      /not BLS timeseries ids/,
+    );
   });
 });
 

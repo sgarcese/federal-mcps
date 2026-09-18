@@ -102,6 +102,7 @@ export interface LineageEdge {
 
 /** Human/model-readable labels for the summary levels the catalog carries. */
 export const SUMLEVEL_LABELS: Readonly<Record<string, string>> = Object.freeze({
+  "010": "nation",
   "020": "region",
   "030": "division",
   "040": "state",

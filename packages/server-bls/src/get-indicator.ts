@@ -12,7 +12,12 @@ import {
 } from "@federal-mcps/core";
 import { z } from "zod";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
+import { isSmSeriesId } from "./ces.js";
+import { isCuSeriesId } from "./cpi.js";
+import { isJtSeriesId } from "./jt.js";
 import { isLausSeriesId } from "./laus.js";
+import { isOeSeriesId } from "./oe.js";
+import { isWpuSeriesId } from "./ppi.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
 import {
   createIndicatorRegistry,
@@ -163,11 +168,103 @@ function resolveSeries(
  * LAUS 25,000 threshold falls back to its county with an explicit caveat — never a silent
  * substitution or a fabricated city number.
  */
+/** A BLS Public Data API timeseries id from any program this server builds (QCEW keys are not ids). */
+function isBlsTimeseriesId(id: string): boolean {
+  return (
+    isLausSeriesId(id) ||
+    isSmSeriesId(id) ||
+    isOeSeriesId(id) ||
+    isCuSeriesId(id) ||
+    isJtSeriesId(id) ||
+    isWpuSeriesId(id)
+  );
+}
+
+/** A UCGID-free reference to the nation, for national-scope answers (ADR-013 §7). */
+const UNITED_STATES = { geoid: "US", sumlevel: "010", label: "nation", name: "United States" };
+
+/** The name a caveat should use for a place a national-scope caller mentioned, without stopping on ambiguity. */
+function mentionedPlaceName(
+  catalog: GeographyCatalog,
+  place: string,
+  opts: { kind?: string | undefined; state?: string | undefined },
+): string {
+  const resolved = resolvePlace(catalog, place, {
+    ...(opts.kind === undefined ? {} : { kind: opts.kind }),
+    ...(opts.state === undefined ? {} : { state: opts.state }),
+  });
+  const top = resolved.status === "ambiguous" ? undefined : resolved.candidates[0];
+  return top?.name ?? place;
+}
+
 export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefinition[] {
   const now = options.now ?? (() => new Date());
   const registry = createIndicatorRegistry(options.definitions ?? blsIndicatorDefinitions);
+
+  /**
+   * A national-scope indicator (PPI): no geography to resolve. A mentioned place only names the
+   * caveat — the answer is the national series, stated as such, never a fabricated local number.
+   */
+  const nationalIndicator = async (
+    def: IndicatorDefinition,
+    p: {
+      place?: string | undefined;
+      kind?: string | undefined;
+      state?: string | undefined;
+      startYear?: number | undefined;
+      endYear?: number | undefined;
+      seasonallyAdjusted?: boolean | undefined;
+    },
+    dimensions: DimensionSelection,
+    catalog: GeographyCatalog,
+  ): Promise<ToolHandlerResult> => {
+    const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
+    const currentYear = now().getFullYear();
+    const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
+    const seriesId = def.buildSeriesId(UNITED_STATES.geoid, { seasonallyAdjusted, dimensions });
+    const [series] = await fetchStrategyOf(def)(options.httpClient(), [seriesId], {
+      startYear: p.startYear ?? currentYear - 1,
+      endYear: p.endYear ?? currentYear,
+      ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
+    });
+    const observations = series?.observations ?? [];
+    const latest = observations[0];
+    const footnotes = collectFootnotes(observations);
+    const limitations =
+      p.place === undefined
+        ? []
+        : [
+            `${def.program} is published nationally only; this is not a ${mentionedPlaceName(catalog, p.place, p)} figure.`,
+          ];
+    return {
+      data: {
+        measure: def.name,
+        seasonallyAdjusted,
+        ...(def.dimensions ? { dimensions } : {}),
+        latest: latest ? { period: `${latest.year}-${latest.period}`, value: latest.value } : null,
+        observations,
+      },
+      source: {
+        ...sourceBase,
+        ids: [seriesId],
+        citation: buildCitation(
+          { agency: "bls", program: def.program, ids: [seriesId], url: sourceBase.url },
+          now(),
+        ),
+      },
+      place: placeRef(UNITED_STATES),
+      ...(footnotes.length > 0 ? { footnotes } : {}),
+      ...(latest ? { vintage: `${latest.year}-${latest.period}` } : {}),
+      ...(limitations.length > 0 ? { limitations } : {}),
+    };
+  };
   const input = z.object({
-    place: z.string().describe("A place name, e.g. 'Denver', 'Denver County', 'Cook County IL'."),
+    place: z
+      .string()
+      .optional()
+      .describe(
+        "A place name, e.g. 'Denver', 'Denver County', 'Cook County IL'. Optional only for a national-scope indicator (PPI).",
+      ),
     indicator: z
       .enum(registry.names() as [string, ...string[]])
       .default("unemployment_rate")
@@ -203,6 +300,15 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     if (!def) throw new Error(`unknown indicator "${measure}".`);
     const dimensions = dimensionsOrThrow(def, p);
     const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
+
+    if (def.scope === "national") {
+      return nationalIndicator(def, p, dimensions, catalog);
+    }
+    if (p.place === undefined) {
+      throw new Error(
+        `place is required for ${measure}; only national-scope indicators (e.g. producer_price_index) answer without one.`,
+      );
+    }
 
     const resolved = resolvePlace(catalog, p.place, {
       ...(p.kind === undefined ? {} : { kind: p.kind }),
@@ -315,7 +421,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       name: "bls_get_indicator",
       title: "Get indicator",
       description:
-        "Get one BLS indicator for a place, with footnote flags and a citation: unemployment, employment and labor force (LAUS); payroll employment (CES); occupational wage (OEWS); the all-items price index (CPI); job openings, hires, quits and layoffs (JOLTS); covered employment and average weekly wage (QCEW). Coverage gaps fall back and are flagged: a city below the 25,000 LAUS threshold returns its county's value; a place with no local CPI returns the U.S. city average.",
+        "Get one BLS indicator for a place, with footnote flags and a citation: unemployment, employment and labor force (LAUS); payroll employment (CES); occupational wage (OEWS); the all-items price index (CPI); job openings, hires, quits and layoffs (JOLTS); covered employment and average weekly wage (QCEW); producer price indexes (PPI, national only — place optional). Coverage gaps fall back and are flagged: a city below the 25,000 LAUS threshold returns its county's value; a place with no local CPI returns the U.S. city average.",
       input,
       examples: [
         {
@@ -376,6 +482,11 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         const catalog = options.catalog();
         const def = registry.get(p.indicator);
         if (!def) throw new Error(`unknown indicator "${p.indicator}".`);
+        if (def.scope === "national") {
+          throw new Error(
+            `${p.indicator} is published nationally only, so there is nothing to compare across places; use bls_get_indicator.`,
+          );
+        }
         const dimensions = dimensionsOrThrow(def, p);
         const sourceBase = { agency: "bls", program: def.program, url: BLS_TIMESERIES_ENDPOINT };
         const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
@@ -497,7 +608,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       name: "bls_list_indicators",
       title: "List indicators",
       description:
-        "List every indicator this server reports (across LAUS, CES, OEWS, CPI, JOLTS and QCEW) with its program and description. Given a place, each indicator also reports whether its program publishes at that place's level, and the fallback it would use otherwise (e.g. a small city's county, or the U.S. city average for CPI).",
+        "List every indicator this server reports (across LAUS, CES, OEWS, CPI, JOLTS, QCEW and PPI) with its program and description. Given a place, each indicator also reports whether its program publishes at that place's level, and the fallback it would use otherwise (e.g. a small city's county, or the U.S. city average for CPI).",
       input: z.object({
         place: z
           .string()
@@ -525,6 +636,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           indicator: def.name,
           program: def.program,
           description: def.description,
+          ...(def.scope ? { scope: def.scope } : {}),
           ...describeDimensions(def),
         });
         if (!q.place) {
@@ -583,7 +695,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       name: "bls_get_raw",
       title: "Get raw series",
       description:
-        "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI or JOLTS series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block.",
+        "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI, JOLTS or PPI series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block.",
       input: z.object({
         ids: z
           .array(z.string())
@@ -600,10 +712,10 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           endYear: z.number().int().optional(),
         });
         const q = rawInput.parse(args);
-        const bad = q.ids.filter((id) => !isLausSeriesId(id));
+        const bad = q.ids.filter((id) => !isBlsTimeseriesId(id));
         if (bad.length > 0) {
           throw new Error(
-            `not LAUS series ids: ${bad.join(", ")}. Build them from resolve_place + the indicator.`,
+            `not BLS timeseries ids: ${bad.join(", ")}. Take ids from a bls_get_indicator result's source block (LAUS, CES, OEWS, CPI, JOLTS or PPI series).`,
           );
         }
         const responses = await fetchSeriesRaw(options.httpClient(), q.ids, {
@@ -617,7 +729,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
             ...SOURCE,
             ids: q.ids,
             citation: buildCitation(
-              { agency: "bls", program: "LAUS", ids: q.ids, url: SOURCE.url },
+              { agency: "bls", program: "timeseries", ids: q.ids, url: SOURCE.url },
               now(),
             ),
           },

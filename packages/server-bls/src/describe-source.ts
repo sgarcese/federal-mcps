@@ -77,18 +77,30 @@ const PROGRAMS: readonly ProgramDescription[] = [
     cadence: "monthly",
     status: "available",
   },
+  {
+    code: "PPI",
+    name: "Producer Price Index",
+    granularity:
+      "national only (no state or metro PPI); final demand and commodity indexes such as inputs to construction, lumber, steel, concrete",
+    cadence: "monthly",
+    status: "available",
+  },
 ];
 
 const CAVEATS: readonly string[] = [
-  "bls_get_indicator returns a statistic for a resolved place across five programs now: LAUS " +
+  "bls_get_indicator returns a statistic for a resolved place across the timeseries programs: LAUS " +
     "(unemployment rate, unemployment, employment, labor force), CES State & Area (payroll " +
     "employment), OEWS (occupational wage), CPI (all items) and JOLTS (job openings, hires, quits, " +
     "layoffs). bls_list_indicators lists the vocabulary and which programs publish at a place's level; " +
     "bls_compare_places compares one indicator across places; bls_get_raw returns the unprocessed BLS " +
     "response. Place resolution (bls_resolve_place) maps a name to candidates with identifiers, BLS " +
-    "area codes and structured flags (e.g. below_threshold with the county fallback). All six BLS " +
-    "programs are available: QCEW (covered employment and average weekly wage, county and state) is " +
-    "fetched from its own CSV data-slice API, not the timeseries API.",
+    "area codes and structured flags (e.g. below_threshold with the county fallback). All seven BLS " +
+    "programs are available: QCEW (covered employment and average weekly wage, county, state and metro) " +
+    "is fetched from its own CSV data-slice API, not the timeseries API; PPI (producer_price_index) " +
+    "is national only — place is optional and, when given, only names the caveat.",
+  "Producer prices — including construction material prices — are published nationally only (PPI); " +
+    "there is no state or metro PPI. Construction labor cost by place is QCEW construction-sector " +
+    "(industry 23) wages and employment.",
   "LAUS publishes a city-level series only for incorporated places with population 25,000 or more " +
     "(about 1,700 places), plus New England towns via county-subdivision codes; smaller places have no " +
     "city series and must fall back to their county.",
