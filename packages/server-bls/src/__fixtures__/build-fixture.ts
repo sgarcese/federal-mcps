@@ -68,6 +68,7 @@ export function buildFixtureCatalog(): string {
       ...code(uc("16980"), "SM", "1716980"), // multi-state metro filed under IL (#153)
       note: "CES publishes this multi-state metro as one series under Illinois (IL).",
     },
+    code(uc("19740"), "OEWS", "0019740"), // OEWS metro area code: "00" + CBSA 19740 (#152)
     code(uc("09001"), "LAUS", "CN0900100000000"), // Fairfield County CT, for compare_places
 
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
