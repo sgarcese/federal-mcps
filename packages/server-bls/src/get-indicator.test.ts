@@ -202,6 +202,7 @@ describe("bls_list_indicators", () => {
       "layoffs",
       "covered_employment",
       "average_weekly_wage",
+      "producer_price_index",
     ]);
     expect(data.indicators[0]?.description.length).toBeGreaterThan(0);
   });
@@ -237,7 +238,7 @@ describe("bls_list_indicators", () => {
     const res = await call(listTool(), {});
     const data = res.data as { indicators: { indicator: string; program: string }[] };
     const programs = new Set(data.indicators.map((i) => i.program));
-    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS", "QCEW"]));
+    expect(programs).toEqual(new Set(["LAUS", "SM", "CPI", "OEWS", "JOLTS", "QCEW", "PPI"]));
   });
 });
 
@@ -251,8 +252,10 @@ describe("bls_get_raw", () => {
     expect(res.source.citation).toMatch(/LAUCN080310000000003/);
   });
 
-  it("rejects ids that are not LAUS series ids", async () => {
-    await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(/not LAUS series ids/);
+  it("rejects ids that are not BLS timeseries ids", async () => {
+    await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(
+      /not BLS timeseries ids/,
+    );
   });
 });
 
@@ -511,5 +514,66 @@ describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
         industry: "99",
       }),
     ).rejects.toThrow(/industry.*"99".*all industries/s);
+  });
+});
+
+describe("national-scope indicators: PPI (#155, ADR-013 §7)", () => {
+  it("answers with no place at all, reporting the United States", async () => {
+    const res = await run({ indicator: "producer_price_index" });
+    expect(res.source.ids).toEqual(["WPUFD4"]);
+    expect(res.source.program).toBe("PPI");
+    expect(res.place?.name).toBe("United States");
+    expect(res.limitations ?? []).toEqual([]);
+  });
+
+  it("given a place, returns the national series with an explicit national-only caveat", async () => {
+    const res = await run({
+      place: "Denver",
+      kind: "county",
+      indicator: "producer_price_index",
+      item: "IP2311001",
+    });
+    expect(res.source.ids).toEqual(["WPUIP2311001"]);
+    expect(res.place?.name).toBe("United States");
+    expect(res.limitations?.join(" ")).toMatch(
+      /PPI is published nationally only.*not a Denver County figure/s,
+    );
+  });
+
+  it("does not stop on an ambiguous place for a national indicator", async () => {
+    const res = await run({ place: "Denver", indicator: "producer_price_index" });
+    expect(res.source.ids).toEqual(["WPUFD4"]);
+    expect(res.limitations?.join(" ")).toMatch(/nationally only/);
+  });
+
+  it("still requires a place for a place-scoped indicator", async () => {
+    await expect(run({ indicator: "unemployment_rate" })).rejects.toThrow(/place is required/);
+  });
+
+  it("bls_compare_places rejects a national-only indicator with guidance", async () => {
+    await expect(
+      call(compareTool(), { indicator: "producer_price_index", places: ["Colorado", "Utah"] }),
+    ).rejects.toThrow(/national.*bls_get_indicator/s);
+  });
+
+  it("bls_list_indicators marks the scope and reports it as published for any place", async () => {
+    const res = await call(listTool(), { place: "Denver", kind: "county" });
+    const data = res.data as {
+      indicators: { indicator: string; scope?: string; publishedAtLevel: boolean }[];
+    };
+    const ppi = data.indicators.find((i) => i.indicator === "producer_price_index");
+    expect(ppi).toMatchObject({ scope: "national", publishedAtLevel: true });
+  });
+});
+
+describe("bls_get_raw accepts any BLS timeseries id, not only LAUS (#155)", () => {
+  it("fetches a PPI and a CES id", async () => {
+    const res = await call(rawTool(), { ids: ["WPUFD4", "SMU08000000000000001"] });
+    expect((res.data as { ids: string[] }).ids).toEqual(["WPUFD4", "SMU08000000000000001"]);
+  });
+  it("still rejects an id that is not a BLS timeseries id", async () => {
+    await expect(call(rawTool(), { ids: ["08031|0|10"] })).rejects.toThrow(
+      /not BLS timeseries ids/,
+    );
   });
 });
