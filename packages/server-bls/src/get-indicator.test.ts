@@ -431,6 +431,9 @@ describe("multi-state metro CES (#153)", () => {
     expect(res.source.ids).toEqual(["SMU17169800000000001"]);
     expect(res.place?.geoid).toBe("16980");
     expect(res.limitations?.join(" ")).toMatch(/multi-state.*Illinois/);
+  });
+});
+
 describe("OEWS occupation picker + metro coverage (#152)", () => {
   it("dispatches occupational_wage to the Denver metro OE series (kind: metro), all occupations by default", async () => {
     const res = await run({ place: "Denver", kind: "metro", indicator: "occupational_wage" });
