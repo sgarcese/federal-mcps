@@ -25,6 +25,8 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   UGEO-Bench benchmark that shaped M2 (ADR-008).
 - [spikes/geography-hosting.md](spikes/geography-hosting.md) — datastore, serving topology
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
+- [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
+  every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
 
 ## ADRs
 
