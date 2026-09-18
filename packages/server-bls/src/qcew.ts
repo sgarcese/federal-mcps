@@ -30,17 +30,22 @@ export const INDUSTRY_ALL = "10";
  */
 const COUNTY_AGGLVL = { total: "70", ownership: "71", sector: "74" } as const;
 const STATE_AGGLVL = { total: "50", ownership: "51", sector: "54" } as const;
+/** MSA (`C`-code areas, #153): verified live 2026-09-17 on C1974 (Denver): 40 / 41 / 44. */
+const MSA_AGGLVL = { total: "40", ownership: "41", sector: "44" } as const;
 
-/** A QCEW area's geography level, inferred from its area_fips shape (county 5-digit, state SS000). */
-function qcewAreaLevel(areaFips: string): "county" | "state" | undefined {
+type QcewAreaLevel = "county" | "state" | "msa";
+
+/** A QCEW area's geography level, inferred from its area_fips shape (county 5-digit, state SS000, MSA C####). */
+function qcewAreaLevel(areaFips: string): QcewAreaLevel | undefined {
+  if (/^C\d{4}$/.test(areaFips)) return "msa";
   if (/^\d{2}000$/.test(areaFips)) return "state";
   if (/^\d{5}$/.test(areaFips)) return "county";
   return undefined;
 }
 
 /** The agglvl_code a (level, own_code, industry_code) selection should land on. */
-function expectedAgglvl(level: "county" | "state", ownCode: string, industryCode: string): string {
-  const set = level === "state" ? STATE_AGGLVL : COUNTY_AGGLVL;
+function expectedAgglvl(level: QcewAreaLevel, ownCode: string, industryCode: string): string {
+  const set = level === "state" ? STATE_AGGLVL : level === "msa" ? MSA_AGGLVL : COUNTY_AGGLVL;
   if (industryCode !== INDUSTRY_ALL) return set.sector;
   return ownCode === OWN_TOTAL_COVERED ? set.total : set.ownership;
 }

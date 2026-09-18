@@ -22,7 +22,8 @@ import type { IndicatorFetch, SeriesObservation, SeriesResult } from "./series-f
  * step), and picks the row by own_code, industry_code and the matching agglvl_code (`qcew.ts`).
  * Suppressed cells travel as a footnote with a null value — never fabricated; a selection with no
  * unique matching row (e.g. QCEW does not publish a total-ownership row at the sector level)
- * likewise returns no observation rather than a guess. Metro (the QCEW `C`-code) is a follow-up.
+ * likewise returns no observation rather than a guess. Metros resolve through the catalog's QCEW
+ * `C`-code (#153).
  */
 const QCEW_PROGRAM = "QCEW";
 const COUNTY_SUMLEVEL = "050";
@@ -34,11 +35,34 @@ const QCEW_MAX_LOOKBACK = 3;
 /** Separates the area, ownership and industry codes in the opaque series key. */
 const KEY_SEPARATOR = "|";
 
-/** The QCEW area code for a place: county = 5-digit FIPS, state = SS000. Undefined otherwise. */
+const CBSA_SUMLEVEL = "310";
+
+/**
+ * The QCEW area code for a place: county = 5-digit FIPS, state = SS000 (both GEOID-derived), metro
+ * = the `C`-code the catalog stores on the CBSA from QCEW's own area file (#153, ADR-013 §5).
+ * Undefined otherwise — never a fabricated area.
+ */
 export function qcewAreaCodeOf(place: PlaceCandidate): string | undefined {
   if (place.kind.sumlevel === COUNTY_SUMLEVEL) return place.geoid; // 5-digit county FIPS
   if (place.kind.sumlevel === STATE_SUMLEVEL) return `${place.geoid}000`; // SS000 statewide
+  if (place.kind.sumlevel === CBSA_SUMLEVEL) {
+    return place.agencyCodes.find((c) => c.agency === "bls" && c.program === QCEW_PROGRAM)?.code;
+  }
   return undefined;
+}
+
+/**
+ * QCEW publishes NAICS sector detail only by ownership (there is no total-ownership row at the
+ * sector aggregation level — verified on Denver County, Colorado and the Denver MSA). Rather than
+ * return an empty answer, a sector request with the default total ownership is rejected with the
+ * codes that do publish it (ADR-013 §1: never a silent default).
+ */
+function assertSectorHasOwnership(industryCode: string, ownCode: string): void {
+  if (industryCode !== INDUSTRY_ALL && ownCode === OWN_TOTAL_COVERED) {
+    throw new Error(
+      `QCEW publishes sector detail (industry ${industryCode}) only by ownership, not as a total: pass ownership 5 (private), 1 (federal), 2 (state) or 3 (local government).`,
+    );
+  }
 }
 
 /** The ownership vocabulary (ADR-013 §2): total covered is the default. */
@@ -96,6 +120,7 @@ const INDUSTRY_DIMENSION: DimensionDefinition = {
 
 /** Encode the area + resolved ownership/industry dimensions into the opaque series key. */
 function buildQcewKey(area: string, ownCode: string, industryCode: string): string {
+  assertSectorHasOwnership(industryCode, ownCode);
   return [area, ownCode, industryCode].join(KEY_SEPARATOR);
 }
 

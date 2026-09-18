@@ -49,7 +49,7 @@ describe("qcewAreaCodeOf", () => {
       agencyCodes: [{ agency: "bls", program: "QCEW", code: "C1974" }],
     };
     expect(qcewAreaCodeOf(denver)).toBe("C1974");
-    expect(qcewAreaCodeOf(place("310", "19740"))).toBeUndefined();
+    expect(qcewAreaCodeOf({ ...place("310", "19740"), agencyCodes: [] })).toBeUndefined();
     expect(qcewAreaCodeOf(place("160", "0820000"))).toBeUndefined();
   });
 });
@@ -143,10 +143,16 @@ describe("QCEW sector detail needs an ownership (#151)", () => {
   it("rejects a sector with the default total ownership, naming the ownership codes that publish it", () => {
     const def = qcewIndicatorDefinitions[0];
     expect(() =>
-      def?.buildSeriesId("08031", { seasonallyAdjusted: false, dimensions: { industry: "23", ownership: "0" } }),
+      def?.buildSeriesId("08031", {
+        seasonallyAdjusted: false,
+        dimensions: { industry: "23", ownership: "0" },
+      }),
     ).toThrow(/sector.*ownership.*5/s);
     expect(
-      def?.buildSeriesId("08031", { seasonallyAdjusted: false, dimensions: { industry: "10", ownership: "0" } }),
+      def?.buildSeriesId("08031", {
+        seasonallyAdjusted: false,
+        dimensions: { industry: "10", ownership: "0" },
+      }),
     ).toBe("08031|0|10");
   });
 });
