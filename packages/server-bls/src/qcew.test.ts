@@ -133,12 +133,12 @@ describe("parseQcewRow: industry + ownership pickers (#151)", () => {
       '"08000","5","23","54","0","2024","1","",1,1,1,1,1,1,1,1529',
     ].join("\n");
     expect(parseQcewRow(stateCsv)?.averageWeeklyWage).toBe(1500);
-    expect(
-      parseQcewRow(stateCsv, { ownCode: "5", industryCode: "10" })?.averageWeeklyWage,
-    ).toBe(1600);
-    expect(
-      parseQcewRow(stateCsv, { ownCode: "5", industryCode: "23" })?.averageWeeklyWage,
-    ).toBe(1529);
+    expect(parseQcewRow(stateCsv, { ownCode: "5", industryCode: "10" })?.averageWeeklyWage).toBe(
+      1600,
+    );
+    expect(parseQcewRow(stateCsv, { ownCode: "5", industryCode: "23" })?.averageWeeklyWage).toBe(
+      1529,
+    );
   });
 });
 

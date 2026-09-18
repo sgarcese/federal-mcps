@@ -39,11 +39,7 @@ function qcewAreaLevel(areaFips: string): "county" | "state" | undefined {
 }
 
 /** The agglvl_code a (level, own_code, industry_code) selection should land on. */
-function expectedAgglvl(
-  level: "county" | "state",
-  ownCode: string,
-  industryCode: string,
-): string {
+function expectedAgglvl(level: "county" | "state", ownCode: string, industryCode: string): string {
   const set = level === "state" ? STATE_AGGLVL : COUNTY_AGGLVL;
   if (industryCode !== INDUSTRY_ALL) return set.sector;
   return ownCode === OWN_TOTAL_COVERED ? set.total : set.ownership;

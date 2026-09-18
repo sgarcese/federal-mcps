@@ -62,22 +62,18 @@ describe("qcewIndicatorDefinitions", () => {
   });
 
   it("covered_employment fetches the latest headline and averages the three monthly levels", async () => {
-    const result = await runFetch(
-      "covered_employment",
-      getTextClient(DENVER),
-      [headlineKey("08031")],
-    );
+    const result = await runFetch("covered_employment", getTextClient(DENVER), [
+      headlineKey("08031"),
+    ]);
     expect(result?.seriesId).toBe("08031|0|10");
     expect(result?.observations[0]?.value).toBe(560889); // round((559807+561820+561041)/3)
     expect(result?.observations[0]?.period).toBe("Q01");
   });
 
   it("average_weekly_wage returns the wage field", async () => {
-    const result = await runFetch(
-      "average_weekly_wage",
-      getTextClient(DENVER),
-      [headlineKey("08031")],
-    );
+    const result = await runFetch("average_weekly_wage", getTextClient(DENVER), [
+      headlineKey("08031"),
+    ]);
     expect(result?.observations[0]?.value).toBe(2125);
   });
 

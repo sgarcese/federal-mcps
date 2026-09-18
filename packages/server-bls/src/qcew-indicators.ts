@@ -163,7 +163,11 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: qcewAreaCodeOf,
     buildSeriesId: (code, { dimensions }) =>
-      buildQcewKey(code, dimensions.ownership ?? OWN_TOTAL_COVERED, dimensions.industry ?? INDUSTRY_ALL),
+      buildQcewKey(
+        code,
+        dimensions.ownership ?? OWN_TOTAL_COVERED,
+        dimensions.industry ?? INDUSTRY_ALL,
+      ),
     dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
     fetch: qcewFetch("employment"),
   },
@@ -174,7 +178,11 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: qcewAreaCodeOf,
     buildSeriesId: (code, { dimensions }) =>
-      buildQcewKey(code, dimensions.ownership ?? OWN_TOTAL_COVERED, dimensions.industry ?? INDUSTRY_ALL),
+      buildQcewKey(
+        code,
+        dimensions.ownership ?? OWN_TOTAL_COVERED,
+        dimensions.industry ?? INDUSTRY_ALL,
+      ),
     dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
     fetch: qcewFetch("wage"),
   },
