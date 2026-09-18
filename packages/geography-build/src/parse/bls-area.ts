@@ -69,32 +69,76 @@ export function parseCesArea(text: string): AgencyCodeRow[] {
     const code = areaCode.trim();
     if (!/^\d{5}$/.test(code) || code === "00000") return null;
     // A CES metro series needs the state (SM · state · area · …); CBSAs are stateless, so read the
-    // single state from the sm.area title (e.g. "Denver-Aurora-Lakewood, CO"). Multi-state metros
-    // (CES publishes them per state) and untitled rows are skipped — never a fabricated state.
-    const stateFips = singleStateFipsFromTitle(title);
-    if (!stateFips) return null;
+    // state from the sm.area title (e.g. "Denver-Aurora-Lakewood, CO"). BLS files a multi-state
+    // metro as ONE series under the first state in its title (#153; verified live 2026-09-17:
+    // New York-Newark-Jersey City, NY-NJ → SMU36…, Kansas City, MO-KS → SMU29…, Philadelphia
+    // PA-NJ-DE-MD → SMU42…, Washington DC-VA-MD-WV → SMU11…; the NJ-prefixed New York id does
+    // not exist). Untitled or unparseable rows are skipped — never a fabricated state.
+    const parsed = statesFromTitle(title);
+    if (!parsed) return null;
+    const { first: stateFips, postals } = parsed;
     return {
       ucgid: ucgidOf("310", code),
       agency: "bls",
       program: "SM",
       code: `${stateFips}${code}`, // 7-char state+area, the SM series' geography key
       codeVintage: 2023,
-      note: null,
+      note:
+        postals.length > 1
+          ? `CES publishes this multi-state metro as one series under ${postals[0]} (${postals.join("-")}).`
+          : null,
     };
   });
 }
 
-/** The single state FIPS a CES area title names, or null if multi-state or unrecognized. */
-function singleStateFipsFromTitle(title: string): string | null {
+/**
+ * The states a CES area title names ("…, IL-IN-WI"): the first state's FIPS (the one BLS files the
+ * series under) and every postal code, or null if any token is unrecognized (an untrusted parse).
+ */
+function statesFromTitle(title: string): { first: string; postals: string[] } | null {
   const afterComma = title.slice(title.lastIndexOf(",") + 1).trim();
-  const postals = (afterComma.split(/\s+/)[0] ?? "").split("-");
-  const fips = new Set<string>();
-  for (const p of postals) {
-    const f = US_STATE_POSTAL_TO_FIPS[p];
-    if (!f) return null; // an unrecognized token means we can't trust the parse
-    fips.add(f);
+  const postals = (afterComma.split(/\s+/)[0] ?? "").split("-").filter((p) => p.length > 0);
+  if (postals.length === 0) return null;
+  const fips = postals.map((p) => US_STATE_POSTAL_TO_FIPS[p]);
+  const first = fips[0];
+  if (!first || fips.some((f) => !f)) return null; // an unrecognized token means we can't trust the parse
+  return { first, postals };
+}
+
+/**
+ * QCEW `area_titles.csv` (`area_fips,area_title`, quoted CSV): metro and micropolitan areas carry a
+ * QCEW-specific `C` + 4-digit code that is the CBSA code without its trailing zero (`C1974` ↔ CBSA
+ * `19740`; verified 2026-09-17 across all 2,118 C-codes in the file — a fixed pattern, but 252 of
+ * them are retired delineations absent from the 2025 gazetteer, which is why the code is read from
+ * QCEW's own file rather than derived, ADR-013 §5). CSAs (`CS…`), states, counties and the U.S.
+ * total are skipped: the server derives state and county QCEW areas from the GEOID.
+ */
+export function parseQcewArea(text: string): AgencyCodeRow[] {
+  const out: AgencyCodeRow[] = [];
+  const seen = new Set<string>();
+  const lines = text
+    .split(/\r?\n/)
+    .filter((l) => l.trim().length > 0)
+    .slice(1); // header
+  for (const line of lines) {
+    const fips =
+      line
+        .split(",")[0]
+        ?.trim()
+        .replace(/^"(.*)"$/, "$1") ?? "";
+    const m = /^C(\d{4})$/.exec(fips);
+    if (!m || seen.has(fips)) continue; // the file repeats ~1,000 area rows verbatim
+    seen.add(fips);
+    out.push({
+      ucgid: ucgidOf("310", `${m[1]}0`),
+      agency: "bls",
+      program: "QCEW",
+      code: fips,
+      codeVintage: 2023,
+      note: null,
+    });
   }
-  return fips.size === 1 ? ([...fips][0] ?? null) : null;
+  return out;
 }
 
 /**

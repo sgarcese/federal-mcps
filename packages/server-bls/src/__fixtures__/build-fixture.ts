@@ -23,6 +23,7 @@ export function buildFixtureCatalog(): string {
     ent("08031", "050", "Denver County", { stateFips: "08", lsad: "06", aland: 396_915_495 }),
     ent("0820000", "160", "Denver city", { stateFips: "08", lsad: "25", aland: 396_000_000 }),
     ent("19740", "310", "Denver-Aurora-Centennial, CO", { lsad: "M1" }),
+    ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN-WI", { lsad: "M1" }), // multi-state (#153)
     ent("0899999", "160", "Smallburg town", { stateFips: "08", lsad: "43", aland: 5_000_000 }),
     ent("0888888", "160", "Bazville CDP", { stateFips: "08", lsad: "57", aland: 2_000_000 }),
     ent("09001", "050", "Fairfield County", { stateFips: "09", lsad: "06", aland: 1_618_000_000 }),
@@ -42,6 +43,7 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("08031"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("0820000"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("19740"), alias: "Denver", source: "hand" }, // the metro is a strong match too
+    { ucgid: uc("16980"), alias: "Chicago", source: "hand" },
     { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
     { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
     { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
@@ -61,6 +63,11 @@ export function buildFixtureCatalog(): string {
     code(uc("19740"), "LAUS", "MT0819740000000"),
     code(uc("19740"), "CPI", "S48B"), // Denver is one of the ~23 published CPI metros
     code(uc("19740"), "SM", "0819740"), // CES metro key: state 08 + CBSA 19740 (#110)
+    code(uc("19740"), "QCEW", "C1974"), // QCEW metro C-code (#153)
+    {
+      ...code(uc("16980"), "SM", "1716980"), // multi-state metro filed under IL (#153)
+      note: "CES publishes this multi-state metro as one series under Illinois (IL).",
+    },
     code(uc("09001"), "LAUS", "CN0900100000000"), // Fairfield County CT, for compare_places
 
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.

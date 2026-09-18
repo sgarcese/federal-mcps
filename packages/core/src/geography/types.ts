@@ -32,6 +32,8 @@ export interface AgencyCode {
   agency: string;
   program: string;
   code: string;
+  /** A caveat recorded on the code at build (e.g. a multi-state metro filed under one state, #153). */
+  note?: string;
 }
 
 /** What a program publishes at this place's level, and whether this place has a code for it. */

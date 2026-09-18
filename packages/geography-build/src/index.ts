@@ -14,6 +14,7 @@ export {
   parseCpiArea,
   parseLausArea,
   parseOewsArea,
+  parseQcewArea,
 } from "./parse/bls-area.js";
 export { parseGazetteer, stripLsad } from "./parse/gazetteer.js";
 export { parseGeocorr } from "./parse/geocorr.js";
