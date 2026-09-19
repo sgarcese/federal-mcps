@@ -24,6 +24,20 @@ export {
 } from "./describe-source.js";
 export { openBundledCatalog, setCatalogForTest } from "@federal-mcps/core";
 export { CENSUS_SERVER_VERSION } from "./version.js";
+export {
+  ACS_ONE_YEAR_THRESHOLD,
+  ACS_VINTAGE,
+  type AcsFamily,
+  type AcsProduct,
+  type AcsQuery,
+  acsFetch,
+  buildAcsQueryUrl,
+  buildAcsSeriesKey,
+  chooseProduct,
+  parseAcsResponse,
+  parseAcsSeriesKey,
+  reliabilityOf,
+} from "./acs.js";
 
 /**
  * The Census Data API publishes no daily cap comparable to BLS's 500; keys are rate-limited.

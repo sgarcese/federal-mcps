@@ -34,5 +34,7 @@ const cases: [string, string, string, string][] = [
 for (const [vintage, dataset, get, ucgid] of cases) {
   const url = `${E}/${vintage}/${dataset}?get=${get}&ucgid=${ucgid}`;
   const res = await client.getText(url, { queryAuth: { key } });
-  console.error(`${res.status} ${dataset} ${get.split(",")[1]} ${ucgid}: ${res.value.slice(0, 90).replace(/\n/g, " ")}`);
+  console.error(
+    `${res.status} ${dataset} ${get.split(",")[1]} ${ucgid}: ${res.value.slice(0, 90).replace(/\n/g, " ")}`,
+  );
 }

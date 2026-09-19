@@ -63,6 +63,7 @@ function dimensionArgumentSchema(
     industry: `An industry code from the indicator's vocabulary (${agency}_list_indicators).`,
     ownership: `An ownership code from the indicator's vocabulary (${agency}_list_indicators).`,
     occupation: `An occupation code from the indicator's vocabulary (${agency}_list_indicators).`,
+    product: `A data product from the indicator's vocabulary (${agency}_list_indicators), e.g. an ACS 1-year vs 5-year estimate.`,
   };
   const out: Partial<Record<DimensionArgument, z.ZodOptional<z.ZodString>>> = {};
   for (const arg of DIMENSION_ARGUMENTS) {
@@ -84,6 +85,7 @@ function pickDimensionArgs(p: DimensionArgs): DimensionSelection {
     ...(p.industry === undefined ? {} : { industry: p.industry }),
     ...(p.ownership === undefined ? {} : { ownership: p.ownership }),
     ...(p.occupation === undefined ? {} : { occupation: p.occupation }),
+    ...(p.product === undefined ? {} : { product: p.product }),
   };
 }
 
