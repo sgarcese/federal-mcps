@@ -179,5 +179,20 @@ export const acsIndicatorDefinitions: IndicatorDefinition[] = SPECS.map((spec) =
     return `ACS ${periodLabel(product)} estimate shown: ${reason}.`;
   },
   dimensions: [PRODUCT_DIMENSION],
+  // Compare on one product (ADR-014 §5): when sizes mix and no product was requested, every
+  // place reads the 5-year product — the only one all of them have — and the answer says so.
+  alignDimensions: (places, dimensions) => {
+    if (requestedProduct(dimensions) !== undefined) return undefined;
+    const below = places.filter(
+      (p) =>
+        chooseProduct({ population: p.population, sumlevel: p.kind.sumlevel }).product === "5-year",
+    );
+    if (below.length === 0 || below.length === places.length) return undefined;
+    const names = below.map((p) => p.name).join(", ");
+    return {
+      dimensions: { ...dimensions, product: "5-year" },
+      note: `Compared on the ACS ${periodLabel("5-year")} product for every place: ${names} ${below.length === 1 ? "is" : "are"} below 65,000 people (or of unknown population), and ACS 1-year estimates exist only at 65,000 or more.`,
+    };
+  },
   fetch: acsFetch,
 }));

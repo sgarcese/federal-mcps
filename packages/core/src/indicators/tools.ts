@@ -496,7 +496,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
             `${p.indicator} is published nationally only, so there is nothing to compare across places; use ${agency}_get_indicator.`,
           );
         }
-        const dimensions = dimensionsOrThrow(def, p);
+        const requested = dimensionsOrThrow(def, p);
         const sourceBase = { agency, program: def.program, url: sourceUrl };
         const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
 
@@ -511,9 +511,28 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
               ...(p.kind === undefined ? {} : { kind: p.kind }),
               ...(p.state === undefined ? {} : { state: p.state }),
             },
-            dimensions,
+            requested,
           ),
         }));
+        // A program may align the dimensions across every compared place (ADR-014 §5) — e.g. the
+        // ACS 5-year product when sizes mix — and the answer says so.
+        const aligned = def.alignDimensions?.(
+          resolutions.flatMap(({ resolution }) =>
+            resolution.status === "ok" ? [resolution.place] : [],
+          ),
+          requested,
+        );
+        const dimensions = aligned?.dimensions ?? requested;
+        const notes: string[] = aligned?.note ? [aligned.note] : [];
+        if (aligned) {
+          for (const entry of resolutions) {
+            if (entry.resolution.status === "ok") {
+              const caveat = def.caveatOf?.(entry.resolution.place, dimensions);
+              const { caveat: _dropped, ...rest } = entry.resolution;
+              entry.resolution = caveat === undefined ? rest : { ...rest, caveat };
+            }
+          }
+        }
         const seriesIdByName = new Map<string, string>();
         for (const { name, resolution } of resolutions) {
           if (resolution.status === "ok") {
@@ -585,6 +604,8 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
             seriesId: id,
             period: obs ? periodKey(obs) : null,
             value: obs?.value ?? null,
+            ...(obs?.marginOfError !== undefined ? { marginOfError: obs.marginOfError } : {}),
+            ...(obs?.reliability ? { reliability: obs.reliability } : {}),
             place: placeRef({
               geoid: resolution.place.geoid,
               sumlevel: resolution.place.kind.sumlevel,
@@ -613,6 +634,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
                 : "",
           },
           ...(footnotes.length > 0 ? { footnotes } : {}),
+          ...(notes.length > 0 ? { limitations: notes } : {}),
         };
       },
     },
