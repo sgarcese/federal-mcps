@@ -54,6 +54,23 @@ export function buildFixtureCatalog(): string {
       populationVintage: "2024",
     }),
     ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN-WI", { lsad: "M1" }), // multi-state (#153); no population in this fixture (#172)
+    // Below-threshold city with recorded ACS fixtures (M8.4): Sedona, AZ, and its state.
+    ent("04", "040", "Arizona", {
+      stateFips: "04",
+      aland: 294_000_000_000,
+      population: 7_431_344,
+      populationVintage: "2024",
+    }),
+    ent("0465350", "160", "Sedona city", {
+      stateFips: "04",
+      lsad: "25",
+      aland: 49_000_000,
+      population: 9_777,
+      populationVintage: "2024",
+    }),
+    // Denver County tracts with recorded fixtures: an uncomputable median and a low-reliability one.
+    ent("08031980001", "140", "Census Tract 9800.01", { stateFips: "08", aland: 1_000_000 }),
+    ent("08031000503", "140", "Census Tract 5.03", { stateFips: "08", aland: 1_000_000 }),
     ent("0899999", "160", "Smallburg town", {
       stateFips: "08",
       lsad: "43",
@@ -93,6 +110,7 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("19740"), alias: "Denver", source: "hand" }, // the metro is a strong match too
     { ucgid: uc("16980"), alias: "Chicago", source: "hand" },
     { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
+    { ucgid: uc("0465350"), alias: "Sedona", source: "lsad-stripped" },
     { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
     { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
   ];
@@ -105,6 +123,9 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0899999"), parentUcgid: uc("08031"), share: 1 }, // town nests in its county
+    { childUcgid: uc("0465350"), parentUcgid: uc("04"), share: 1 },
+    { childUcgid: uc("08031980001"), parentUcgid: uc("08031"), share: 1 },
+    { childUcgid: uc("08031000503"), parentUcgid: uc("08031"), share: 1 },
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
     { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
   ];
