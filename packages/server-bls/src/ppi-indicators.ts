@@ -1,5 +1,5 @@
 import { buildWpuSeriesId, PPI_FINAL_DEMAND } from "./ppi.js";
-import type { DimensionDefinition, IndicatorDefinition } from "./registry.js";
+import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * PPI registered as an indicator definition (ADR-013 §7, #155) — the first program with **no

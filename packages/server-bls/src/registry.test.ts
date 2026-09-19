@@ -7,7 +7,7 @@ import {
   fetchStrategyOf,
   type IndicatorDefinition,
   resolveDimensions,
-} from "./registry.js";
+} from "@federal-mcps/core";
 import { type IndicatorFetch, timeseriesFetch } from "./series-fetch.js";
 
 const stub = (name: string, program = "TEST"): IndicatorDefinition => ({
@@ -72,7 +72,7 @@ describe("lausIndicatorDefinitions (LAUS on the registry)", () => {
 
 describe("fetchStrategyOf (fetch capability seam, #123)", () => {
   it("falls back to the timeseries default when a definition supplies no fetch", () => {
-    expect(fetchStrategyOf(stub("laus_like"))).toBe(timeseriesFetch);
+    expect(fetchStrategyOf(stub("laus_like"), timeseriesFetch)).toBe(timeseriesFetch);
   });
 
   it("uses a definition's own capability — a non-timeseries program fetches its own way", async () => {
@@ -86,16 +86,16 @@ describe("fetchStrategyOf (fetch capability seam, #123)", () => {
       }));
     const def: IndicatorDefinition = { ...stub("qcew_like", "QCEW"), fetch: csvFetch };
 
-    expect(fetchStrategyOf(def)).toBe(csvFetch);
+    expect(fetchStrategyOf(def, timeseriesFetch)).toBe(csvFetch);
     const noClient = undefined as unknown as HttpClient;
-    const [result] = await fetchStrategyOf(def)(noClient, ["08031"], {});
+    const [result] = await fetchStrategyOf(def, timeseriesFetch)(noClient, ["08031"], {});
     expect(result?.seriesId).toBe("08031");
     expect(result?.observations[0]?.value).toBe(42);
   });
 
   it("every registered LAUS indicator uses the shared timeseries default (no behaviour change)", () => {
     for (const def of lausIndicatorDefinitions) {
-      expect(fetchStrategyOf(def)).toBe(timeseriesFetch);
+      expect(fetchStrategyOf(def, timeseriesFetch)).toBe(timeseriesFetch);
     }
   });
 });

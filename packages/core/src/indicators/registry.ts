@@ -1,5 +1,17 @@
-import type { GeographyCatalog, PlaceCandidate } from "@federal-mcps/core";
-import { type IndicatorFetch, timeseriesFetch } from "./series-fetch.js";
+import type { HttpClient } from "../http/index.js";
+import type { GeographyCatalog, PlaceCandidate } from "../geography/index.js";
+import type { SeriesFetchOptions, SeriesResult } from "./observations.js";
+
+/**
+ * A fetch capability (ADR-011 §2): how an indicator turns its opaque series keys into
+ * observations — the BLS timeseries API, a QCEW CSV slice, an ACS query. `bls_get_indicator`
+ * and `bls_compare_places` dispatch through it, never assuming an endpoint.
+ */
+export type IndicatorFetch = (
+  client: HttpClient,
+  seriesIds: readonly string[],
+  options: SeriesFetchOptions,
+) => Promise<SeriesResult[]>;
 
 /**
  * The BLS indicator registry (ADR-010 §1). `bls_get_indicator` used to hardcode LAUS; the
@@ -144,9 +156,12 @@ export interface IndicatorDefinition {
   fetch?: IndicatorFetch;
 }
 
-/** The fetch capability for a definition: its own if it has one, else the timeseries default. */
-export function fetchStrategyOf(def: IndicatorDefinition): IndicatorFetch {
-  return def.fetch ?? timeseriesFetch;
+/** The fetch capability for a definition: its own if it has one, else the server's default. */
+export function fetchStrategyOf(
+  def: IndicatorDefinition,
+  defaultFetch: IndicatorFetch,
+): IndicatorFetch {
+  return def.fetch ?? defaultFetch;
 }
 
 /** A read-only lookup over a set of indicator definitions, keyed by name. */

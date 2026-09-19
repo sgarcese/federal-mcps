@@ -5,7 +5,7 @@ import { lausIndicatorDefinitions } from "./laus-indicators.js";
 import { qcewIndicatorDefinitions } from "./qcew-indicators.js";
 import { oewsIndicatorDefinitions } from "./oe-indicators.js";
 import { ppiIndicatorDefinitions } from "./ppi-indicators.js";
-import type { IndicatorDefinition } from "./registry.js";
+import type { IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * Every BLS indicator this server exposes, in one place — the seam new programs extend (ADR-010 §1,

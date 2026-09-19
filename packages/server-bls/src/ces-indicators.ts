@@ -1,6 +1,6 @@
 import type { PlaceCandidate } from "@federal-mcps/core";
 import { buildSmSeriesId, CES_STATEWIDE_AREA } from "./ces.js";
-import type { IndicatorDefinition } from "./registry.js";
+import type { IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * CES State & Area (SM) registered as an indicator definition (ADR-010 §1–§2). Total nonfarm

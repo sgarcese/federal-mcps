@@ -38,7 +38,7 @@ export {
   type IndicatorDefinition,
   type IndicatorFallback,
   type IndicatorRegistry,
-} from "./registry.js";
+} from "@federal-mcps/core";
 export {
   fetchSeriesObservations,
   fetchSeriesRaw,

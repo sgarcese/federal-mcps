@@ -1,6 +1,6 @@
 import type { PlaceCandidate } from "@federal-mcps/core";
 import { buildJtSeriesId, JT_DATA_ELEMENTS } from "./jt.js";
-import type { IndicatorDefinition } from "./registry.js";
+import type { IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * JOLTS (Job Openings and Labor Turnover Survey) registered as indicator definitions (ADR-010

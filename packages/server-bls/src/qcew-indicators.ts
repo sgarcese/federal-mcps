@@ -9,7 +9,7 @@ import {
   type QcewRowSelection,
   qcewDisclosureText,
 } from "./qcew.js";
-import type { DimensionDefinition, IndicatorDefinition } from "./registry.js";
+import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 import type { IndicatorFetch, SeriesObservation, SeriesResult } from "./series-fetch.js";
 
 /**

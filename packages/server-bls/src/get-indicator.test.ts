@@ -4,7 +4,7 @@ import { GeographyCatalog, type HttpClient, type HttpResult } from "@federal-mcp
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { blsIndicatorTools } from "./get-indicator.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
-import type { IndicatorDefinition } from "./registry.js";
+import type { IndicatorDefinition } from "@federal-mcps/core";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { scriptedBlsClient } from "./__fixtures__/scripted-client.js";
 
