@@ -1,0 +1,9 @@
+{
+  "url": "https://api.census.gov/data/2024/acs/acs5?get=NAME,B19013_001E,B19013_001M&ucgid=0500000US08031",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"ucgid\"],[\"Denver County, Colorado\",\"91000\",\"2100\",\"0500000US08031\"]]",
+  "recordedAt": "2026-09-19T00:00:00.000Z"
+}
