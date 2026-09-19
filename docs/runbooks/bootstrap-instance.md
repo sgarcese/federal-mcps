@@ -12,6 +12,8 @@ bucket already exists, and `rc-deploy` can create everything a server needs
   If SSO-backed, `aws sso login --profile <profile>` first.
 - `./.env` with `BLS_API_KEY=<your key>` (gitignored). Register free at
   <https://data.bls.gov/registrationEngine/>.
+- `./.env` with `CENSUS_API_KEY=<your key>` when a catalog build is needed (see below;
+  register free at <https://api.census.gov/data/key_signup.html>).
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
@@ -49,7 +51,18 @@ The geography server bakes its catalog into its zip (ADR-008 §7). The script bu
 catalog artifact (`npm run geography:build`, which downloads Census/OMB reference files)
 only if none is present under `packages/geography-build/dist/`; delete that directory, or
 set `GEO_CATALOG_ARTIFACT` to a specific `.sqlite`, to refresh it. The BLS server needs
-the `BLS_API_KEY`; the geography server needs no key — its data is local.
+the `BLS_API_KEY`; the geography server needs no key at serve time — its data is local.
+
+Building the catalog itself now needs `CENSUS_API_KEY` in the environment (ADR-014 §6,
+#172): `geography:build` fetches each summary level's ACS 5-year total population from
+the Census Data API, which requires a key on every data query, and fails loudly — before
+downloading anything — if the variable is unset. Register free at
+<https://api.census.gov/data/key_signup.html> and add it to `.env` alongside
+`BLS_API_KEY` before running `npm run geography:build` (or before a `deploy.sh` run that
+needs to build a fresh catalog). This key is a build-time input only — it is never baked
+into the shipped `.sqlite`, never passed as a Lambda environment variable, and is
+unrelated to the `CENSUS_API_KEY` the deployed `server-census` Lambda needs at runtime
+(ADR-006 §3) for its own ACS calls.
 
 The BLS key is passed as `TF_VAR_bls_api_key` from `.env` and set on the Lambda as the
 `BLS_API_KEY` environment variable (ADR-006 §3). It is stored in Terraform state, in the
