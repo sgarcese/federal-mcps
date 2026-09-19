@@ -74,7 +74,7 @@ function acsPopulationUrl(vintage: string, forLevel: string): string {
 export function requireCensusApiKey(
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  const key = env.CENSUS_API_KEY;
+  const key = env["CENSUS_API_KEY"];
   if (!key) {
     throw new Error(
       "CENSUS_API_KEY is not set. geography:build needs a Census Data API key to fetch ACS " +
