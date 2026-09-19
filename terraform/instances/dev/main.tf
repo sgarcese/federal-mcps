@@ -43,6 +43,14 @@ variable "bls_api_key" {
   sensitive   = true
 }
 
+# ADR-014 §9: the Census Data API key, required for every data query, supplied as
+# TF_VAR_census_api_key from .env by scripts/deploy.sh. Never a default, never in git.
+variable "census_api_key" {
+  description = "Census Data API key, set on the Lambda as CENSUS_API_KEY."
+  type        = string
+  sensitive   = true
+}
+
 # The zip is a real build artifact (packages/server-bls/dist/lambda.zip, from
 # `npm run bundle -w packages/server-bls`), not something Terraform produces;
 # this variable exists (rather than a literal path in the module block) so
@@ -62,6 +70,12 @@ variable "geo_lambda_zip_path" {
   description = "Path to the geography Lambda's esbuild bundle zip (catalog baked in)."
   type        = string
   default     = "../../../packages/server-geo/dist/lambda.zip"
+}
+
+variable "census_lambda_zip_path" {
+  description = "Path to the Census Lambda's esbuild bundle zip (catalog baked in)."
+  type        = string
+  default     = "../../../packages/server-census/dist/lambda.zip"
 }
 
 module "bls_server" {
@@ -85,5 +99,18 @@ module "geo_server" {
   lambda_zip_path = var.geo_lambda_zip_path
   domain_name     = local.instance.domain.geoDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
+  environment_tag = local.instance.environmentTag
+}
+
+# The Census server (M8, ADR-014): its own Lambda, API and domain, sharing the fleet record;
+# the catalog is baked in like the other two, and the Census key rides as CENSUS_API_KEY.
+module "census_server" {
+  source = "../../modules/census-server"
+
+  service_name    = local.instance.naming.censusService
+  lambda_zip_path = var.census_lambda_zip_path
+  domain_name     = local.instance.domain.censusDomainName
+  hosted_zone_id  = local.instance.domain.hostedZoneId
+  census_api_key  = var.census_api_key
   environment_tag = local.instance.environmentTag
 }

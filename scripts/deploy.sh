@@ -8,9 +8,10 @@
 # Requirements:
 #   - AWS_PROFILE (or ambient credentials) for an rc-deploy session in the
 #     instance's account.
-#   - The BLS API key in ./.env as BLS_API_KEY (gitignored). It becomes
-#     TF_VAR_bls_api_key and is set on the Lambda as an environment variable
-#     (ADR-006 §3); it is never written to the repo.
+#   - The BLS API key in ./.env as BLS_API_KEY and the Census Data API key as
+#     CENSUS_API_KEY (gitignored). They become TF_VAR_bls_api_key /
+#     TF_VAR_census_api_key and are set on each Lambda as an environment
+#     variable (ADR-006 §3); never written to the repo.
 #   - The instance's Terraform state bucket already exists in the account
 #     (the pre-existing rc-tfstate bucket; ADR-006 §1).
 set -euo pipefail
@@ -28,6 +29,9 @@ if [ -z "${BLS_API_KEY:-}" ]; then
 fi
 [ -n "${BLS_API_KEY:-}" ] || { echo "::error:: BLS_API_KEY is empty"; exit 1; }
 export TF_VAR_bls_api_key="$BLS_API_KEY"
+# The Census Data API requires a key for every data query (ADR-014 §9); same pattern.
+[ -n "${CENSUS_API_KEY:-}" ] || { echo "::error:: CENSUS_API_KEY is empty (set it in .env)"; exit 1; }
+export TF_VAR_census_api_key="$CENSUS_API_KEY"
 
 echo "== identity"
 aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output json
@@ -46,6 +50,7 @@ if [ -z "${GEO_CATALOG_ARTIFACT:-}" ] && ! ls packages/geography-build/dist/geo-
 fi
 npm run bundle -w packages/server-bls
 npm run bundle -w packages/server-geo
+npm run bundle -w packages/server-census
 
 echo "== terraform init"
 # shellcheck disable=SC2046
@@ -122,12 +127,16 @@ verify_tool_call() {
 
 bls_url="$(terraform -chdir="$ROOT" output -raw bls_custom_domain_url)"
 geo_url="$(terraform -chdir="$ROOT" output -raw geo_custom_domain_url)"
+census_url="$(terraform -chdir="$ROOT" output -raw census_custom_domain_url)"
 verify_server "$bls_url" bls_describe_source
 verify_server "$geo_url" geo_describe_source
+verify_server "$census_url" census_describe_source
 # Prove the bundled catalog actually opens on each server (not just that tools are listed).
 verify_tool_call "$bls_url" bls_resolve_place '{"query":"Denver"}' "Denver"
 verify_tool_call "$geo_url" geo_resolve_place '{"query":"Denver"}' "Denver"
+verify_tool_call "$census_url" census_resolve_place '{"query":"Denver"}' "Denver"
 
 sha="$(git rev-parse HEAD)"
 echo "deployed $sha to $bls_url"
 echo "deployed $sha to $geo_url"
+echo "deployed $sha to $census_url"

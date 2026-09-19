@@ -83,7 +83,7 @@ federal-mcps/
       src/testing/        fixture recorder, contract-test helpers
     geography-build/      generates the SQLite catalog (see geography spike)
     server-bls/           Bureau of Labor Statistics
-    server-census/        adapted from the official Census Bureau server
+    server-census/        Census server on the core (M8, ADR-014): ACS indicators with reliability data
     server-cdc-places/    CDC PLACES via data.cdc.gov (Socrata SODA)
     server-composite/     one endpoint mounting several servers, shared resolve_place
   terraform/              bootstrap/, modules/, instances/<name>/ (ADR-005)

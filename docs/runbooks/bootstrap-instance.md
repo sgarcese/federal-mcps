@@ -25,9 +25,10 @@ servers (ADR-008):
 ```sh
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev bls
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev geo
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev census
 ```
 
-That creates `rc-bls-mcp-dev-role` and `rc-geo-mcp-dev-role` (each trust Lambda, inline
+That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role` and `rc-census-mcp-dev-role` (each trust Lambda, inline
 logs + X-Ray) and grants `rc-deploy` `iam:PassRole` on each. Idempotent; re-running only
 updates the policies. The server argument defaults to `bls` if omitted.
 
