@@ -9,13 +9,13 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:31:23 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:03 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a452fafc3302dab38d4e473f5b101029593ce034d49eff9d2dabf61fe4c7fec1bf8437e992ab0d68d7e9d6b16c49120c51; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a4cc74781665bee610ba205747bc512d5494f2effe54be43c0ed47e1cd652fd2f75653446499f317c36075adbb017ea11a; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "x-content-type-options": "nosniff"
   },
   "body": "",
-  "recordedAt": "2026-09-19T23:31:23.384Z"
+  "recordedAt": "2026-09-19T23:53:04.274Z"
 }

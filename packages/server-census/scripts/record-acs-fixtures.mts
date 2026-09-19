@@ -11,7 +11,7 @@
  * The `census_get_raw` case below (#174) was added to this file's case list so its URL is built
  * by the SAME function the tool uses (`buildRawQueryUrl`), but the fixture it names —
  * `packages/server-census/fixtures/census/8fc8f9e696358fcae4a601f7d9dde079fe271d591caf56cf9d9aa5c6e61799e7.json`
- * — was hand-written (no CENSUS_API_KEY was available in that worktree) with a plausible body.
+ * — recorded with the real key on 2026-09-19 (Denver County median household income 94,718 ± 1,644).
  * Re-record it for real the next time this script runs with a key.
  */
 import { createHttpClient, MemoryBudgetStore, MemoryCacheStore } from "@federal-mcps/core";

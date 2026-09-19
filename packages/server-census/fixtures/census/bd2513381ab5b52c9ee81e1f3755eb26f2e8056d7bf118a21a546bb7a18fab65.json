@@ -9,14 +9,14 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:31:25 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:05 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a46cb6c342902cb47091e30b98b29825849506a5b52e95d686870f44e3fc4cb44676cf65996f7a0bcf7449e59b37262697; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a4aa0fa566d90ce9344318fd924d13f4bd31cc1c5892e094e38c822638d6b029585abb9dc2f3bf087779a544db18b5bcd4; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "transfer-encoding": "chunked",
     "x-content-type-options": "nosniff"
   },
   "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"B19013_001EA\",\"B19013_001MA\",\"ucgid\"],\n[\"Census Tract 9800.01; Denver County; Colorado\",\"-666666666\",\"-222222222\",\"-\",\"**\",\"1400000US08031980001\"]]",
-  "recordedAt": "2026-09-19T23:31:26.100Z"
+  "recordedAt": "2026-09-19T23:53:06.312Z"
 }

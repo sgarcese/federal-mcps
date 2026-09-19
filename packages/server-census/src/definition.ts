@@ -119,8 +119,9 @@ export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinit
         dimensionDescriptions: {
           product: "Which ACS product: auto (default; by population), 1-year, or 5-year.",
         },
+      }),
       censusGetRawTool({
-        httpClient,
+        httpClient: () => deps.httpClient,
         ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
         ...(deps.now ? { now: deps.now } : {}),
       }),

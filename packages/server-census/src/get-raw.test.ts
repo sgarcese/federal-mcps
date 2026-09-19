@@ -18,7 +18,7 @@ const BASE = {
   ids: ["NAME", "B19013_001E", "B19013_001M"],
 };
 
-describe("buildRawQueryUrl (must match scripts/record-acs-fixtures.mts's hand-written fixture exactly)", () => {
+describe("buildRawQueryUrl (must match scripts/record-acs-fixtures.mts exactly)", () => {
   it("builds get + ucgid, ids joined by comma, no key", () => {
     expect(buildRawQueryUrl({ ...BASE, ucgid: "0500000US08031", descriptive: false })).toBe(
       "https://api.census.gov/data/2024/acs/acs5?get=NAME,B19013_001E,B19013_001M&ucgid=0500000US08031",
@@ -129,7 +129,7 @@ describe("census_get_raw input validation", () => {
   });
 });
 
-describe("census_get_raw over the hand-written fixture (Denver County median household income)", () => {
+describe("census_get_raw over the recorded fixture (Denver County median household income, 2020–2024)", () => {
   it("returns the header and rows unchanged, with the query and citation in the source block", async () => {
     const tool = censusGetRawTool({ httpClient: replay, now: () => new Date("2026-09-19") });
     const result = await tool.handler(
@@ -141,7 +141,7 @@ describe("census_get_raw over the hand-written fixture (Denver County median hou
       year: 2024,
       query: { ids: BASE.ids, ucgid: "0500000US08031", descriptive: false },
       header: ["NAME", "B19013_001E", "B19013_001M", "ucgid"],
-      rows: [["Denver County, Colorado", "91000", "2100", "0500000US08031"]],
+      rows: [["Denver County, Colorado", "94718", "1644", "0500000US08031"]],
     });
     expect(result.source.agency).toBe("census");
     expect(result.source.program).toBe("acs/acs5");
