@@ -41,8 +41,8 @@ const tool = (name: string) => {
   if (!t) throw new Error(`no tool ${name}`);
   return t;
 };
-// biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
 const go = (name: string, args: Record<string, unknown>) =>
+  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
   tool(name).handler(args as any, {} as any);
 
 describe("acsIndicatorDefinitions (ADR-014 §1): the thirteen headline indicators", () => {
