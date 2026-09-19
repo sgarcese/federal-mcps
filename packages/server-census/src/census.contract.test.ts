@@ -54,6 +54,7 @@ describe("the live Census server (createServer + InMemoryTransport)", () => {
         "census_compare_places",
         "census_describe_source",
         "census_get_indicator",
+        "census_get_raw",
         "census_list_indicators",
         "census_resolve_place",
       ]);

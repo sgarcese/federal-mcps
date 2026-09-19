@@ -12,6 +12,7 @@ import {
   describeSource,
 } from "./describe-source.js";
 import { censusIndicatorDefinitions } from "./indicators.js";
+import { censusGetRawTool } from "./get-raw.js";
 import { CENSUS_SERVER_VERSION } from "./version.js";
 
 /**
@@ -62,6 +63,7 @@ export interface CensusDefinitionDeps {
 /** The Census server's definition: core's resolver mounted as `census_resolve_place`. */
 export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinition {
   const catalog = () => deps.catalog;
+  const httpClient = () => deps.httpClient;
   return {
     name: "federal-mcps-census",
     version: CENSUS_SERVER_VERSION,
@@ -117,6 +119,10 @@ export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinit
         dimensionDescriptions: {
           product: "Which ACS product: auto (default; by population), 1-year, or 5-year.",
         },
+      censusGetRawTool({
+        httpClient,
+        ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
+        ...(deps.now ? { now: deps.now } : {}),
       }),
     ],
     describeSource,
