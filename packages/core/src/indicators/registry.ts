@@ -151,6 +151,15 @@ export interface IndicatorDefinition {
    * condition — e.g. a multi-state metro CES files under one state, #153). Undefined when none.
    */
   caveatOf?(place: PlaceCandidate, dimensions: DimensionSelection): string | undefined;
+  /**
+   * For `compare_places`: given every resolved place and the caller's dimensions, return the
+   * dimensions to apply to ALL of them (e.g. ACS: the 5-year product when sizes mix, ADR-014 §5)
+   * with a note for the answer, or undefined to leave the per-place choice alone.
+   */
+  alignDimensions?(
+    places: readonly PlaceCandidate[],
+    dimensions: DimensionSelection,
+  ): { dimensions: DimensionSelection; note?: string } | undefined;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
   /**
