@@ -16,8 +16,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
   createSchema(db);
 
   const insertEntity = db.prepare(
-    `INSERT INTO entity (ucgid, geoid, sumlevel, name, lsad, funcstat, state_fips, gnis, lat, lon, aland)
-     VALUES (@ucgid, @geoid, @sumlevel, @name, @lsad, @funcstat, @stateFips, @gnis, @lat, @lon, @aland)`,
+    `INSERT INTO entity (ucgid, geoid, sumlevel, name, lsad, funcstat, state_fips, gnis, lat, lon, aland, population, population_vintage)
+     VALUES (@ucgid, @geoid, @sumlevel, @name, @lsad, @funcstat, @stateFips, @gnis, @lat, @lon, @aland, @population, @populationVintage)`,
   );
   const insertAlias = db.prepare(
     "INSERT INTO alias (ucgid, alias, source) VALUES (@ucgid, @alias, @source)",
@@ -46,7 +46,12 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
   const insertFts = db.prepare("INSERT INTO name_fts (text, ucgid) VALUES (?, ?)");
 
   const run = db.transaction(() => {
-    for (const e of rows.entities) insertEntity.run(e);
+    for (const e of rows.entities)
+      insertEntity.run({
+        ...e,
+        population: e.population ?? null,
+        populationVintage: e.populationVintage ?? null,
+      });
     for (const a of rows.aliases) insertAlias.run(a);
     for (const c of rows.containment)
       insertContainment.run({ ...c, relation: c.relation ?? "nests" });

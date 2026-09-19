@@ -24,6 +24,10 @@ export interface EntityRow {
   lon: number | null;
   /** Land area, square meters, when known. */
   aland: number | null;
+  /** ACS 5-year total population (`B01003_001E`), when known (#172, ADR-014 §6). */
+  population?: number | null;
+  /** The ACS 5-year vintage the population reflects, e.g. "2024" (2020–2024) (#172). */
+  populationVintage?: string | null;
 }
 
 /** An alternate or normalized name for an entity (feeds fuzzy resolution). */

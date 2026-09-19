@@ -5,24 +5,26 @@ import type { Database } from "better-sqlite3";
  * read-only at serve time. Fuzzy name resolution uses an FTS5 table with the `trigram`
  * tokenizer so substring and typo-tolerant matching work without a search service.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const STATEMENTS = [
   // Entities are keyed by UCGID, not GEOID: a GEOID is not unique across summary levels
   // (county, CBSA and ZCTA GEOIDs are all 5 digits and collide). GEOID + sumlevel remain
   // columns; `geoid` is indexed so a bare geoid resolves to its candidate(s) (#73).
   `CREATE TABLE entity (
-     ucgid       TEXT PRIMARY KEY,
-     geoid       TEXT NOT NULL,
-     sumlevel    TEXT NOT NULL,
-     name        TEXT NOT NULL,
-     lsad        TEXT,
-     funcstat    TEXT,
-     state_fips  TEXT,
-     gnis        TEXT,
-     lat         REAL,
-     lon         REAL,
-     aland       INTEGER
+     ucgid               TEXT PRIMARY KEY,
+     geoid               TEXT NOT NULL,
+     sumlevel            TEXT NOT NULL,
+     name                TEXT NOT NULL,
+     lsad                TEXT,
+     funcstat            TEXT,
+     state_fips          TEXT,
+     gnis                TEXT,
+     lat                 REAL,
+     lon                 REAL,
+     aland               INTEGER,
+     population          INTEGER,
+     population_vintage  TEXT
    )`,
   `CREATE INDEX entity_geoid ON entity (geoid)`,
   `CREATE INDEX entity_sumlevel ON entity (sumlevel)`,

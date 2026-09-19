@@ -62,6 +62,15 @@ describe("resolvePlace", () => {
     expect(metro.dcid).toBe("geoId/C19740");
   });
 
+  it("carries the ACS 5-year population from the catalog, null when unknown (#172)", () => {
+    const county = only(resolvePlace(catalog, "Denver", { kind: "county" }));
+    expect(county.population).toBe(715_522);
+    const metro = only(resolvePlace(catalog, "Denver", { kind: "metro" }));
+    expect(metro.population).toBe(3_005_131);
+    const west = only(resolvePlace(catalog, "West", { kind: "region" }));
+    expect(west.population).toBeNull();
+  });
+
   it("flags a below-threshold place and its county fallback", () => {
     const town = only(resolvePlace(catalog, "Smallburg", { kind: "city" }));
     expect(town.flags).toContain("below_threshold");

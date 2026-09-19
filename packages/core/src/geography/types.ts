@@ -58,6 +58,8 @@ export interface PlaceCandidate {
   agencyCodes: AgencyCode[];
   availableAt: Availability[];
   flags: GeographyFlag[];
+  /** ACS 5-year total population from the catalog, when known (#172, ADR-014 §6). */
+  population: number | null;
   caveat?: string;
   /** Ranking score; higher is a better match. */
   score: number;
