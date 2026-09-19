@@ -72,6 +72,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [ADR-013](adr/ADR-013-m7-functional-completions.md) — M7 functional completions: dimension
   pickers as named arguments on the registry, OEWS/CES/QCEW metro completions, Census regions and
   divisions in the catalog, and a national-scope PPI program (v0.2.0).
+- [ADR-014](adr/ADR-014-m8-census-server.md) — M8 Census server: thirteen ACS headline indicators
+  plus decennial population on the registry seam; 1-year/5-year by population, margins of error,
+  reliability grades and annotation sentinels as first-class data; vendored table index (v0.3.0).
 
 ## Runbooks
 
