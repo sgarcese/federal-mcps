@@ -63,7 +63,6 @@ export interface CensusDefinitionDeps {
 /** The Census server's definition: core's resolver mounted as `census_resolve_place`. */
 export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinition {
   const catalog = () => deps.catalog;
-  const httpClient = () => deps.httpClient;
   return {
     name: "federal-mcps-census",
     version: CENSUS_SERVER_VERSION,
