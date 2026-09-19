@@ -2,7 +2,7 @@ import type { HttpClient, HttpResult } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { blsIndicatorDefinitions } from "./indicators.js";
 import { qcewAreaCodeOf, qcewIndicatorDefinitions } from "./qcew-indicators.js";
-import type { DimensionSelection } from "./registry.js";
+import type { DimensionSelection } from "@federal-mcps/core";
 
 const HEADER =
   '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"';

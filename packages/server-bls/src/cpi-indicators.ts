@@ -1,6 +1,10 @@
 import { type GeographyCatalog, type PlaceCandidate, ucgidOf } from "@federal-mcps/core";
 import { buildCuSeriesId, CPI_ALL_ITEMS, CPI_US_CITY_AVERAGE_AREA } from "./cpi.js";
-import type { DimensionDefinition, IndicatorDefinition, IndicatorFallback } from "./registry.js";
+import type {
+  DimensionDefinition,
+  IndicatorDefinition,
+  IndicatorFallback,
+} from "@federal-mcps/core";
 
 /**
  * CPI registered as an indicator definition (ADR-010 §1, §4). CPI publishes only for the U.S. city

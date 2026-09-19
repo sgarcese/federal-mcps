@@ -1,6 +1,6 @@
 import type { PlaceCandidate } from "@federal-mcps/core";
 import { buildOeSeriesId } from "./oe.js";
-import type { DimensionDefinition, IndicatorDefinition } from "./registry.js";
+import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * OEWS (OE) registered as an indicator definition (ADR-010 §1–§2, ADR-013 §1, §3). The headline

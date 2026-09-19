@@ -5,7 +5,7 @@ import {
   ucgidOf,
 } from "@federal-mcps/core";
 import { buildLausSeriesId, LAUS_MEASURE_DESCRIPTIONS, LAUS_MEASURES } from "./laus.js";
-import type { IndicatorDefinition, IndicatorFallback, PlaceAgencyCodes } from "./registry.js";
+import type { IndicatorDefinition, IndicatorFallback, PlaceAgencyCodes } from "@federal-mcps/core";
 
 /**
  * LAUS registered as indicator definitions (ADR-010 §1). The four measures each become an

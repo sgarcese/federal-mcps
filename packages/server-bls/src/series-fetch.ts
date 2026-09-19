@@ -1,4 +1,3 @@
-import type { HttpClient, RequestOptions } from "@federal-mcps/core";
 import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 
 /**
@@ -14,30 +13,14 @@ export const BLS_SERIES_ENDPOINT = BLS_TIMESERIES_ENDPOINT;
 /** BLS API limits: 50 series/query with a key (unregistered is lower). */
 const MAX_SERIES_PER_REQUEST = 50;
 
-export interface SeriesFetchOptions {
-  startYear?: number;
-  endYear?: number;
-  /** BLS registration key. Omitted → unregistered limits; used only in production, never in fixtures. */
-  apiKey?: string;
-  /** Cache TTL (seconds) for a batch response; omit to skip caching. */
-  freshTtlSeconds?: number;
-}
-
-/** One observation for a series: a period's value with its footnote codes. */
-export interface SeriesObservation {
-  year: string;
-  /** Period code, e.g. "M06" (June) or "M13" (annual average). */
-  period: string;
-  periodName: string;
-  /** Parsed numeric value, or null when suppressed/blank. */
-  value: number | null;
-  footnotes: { code: string; text: string }[];
-}
-
-export interface SeriesResult {
-  seriesId: string;
-  observations: SeriesObservation[];
-}
+export type { SeriesFetchOptions, SeriesObservation, SeriesResult } from "@federal-mcps/core";
+import type {
+  HttpClient,
+  IndicatorFetch,
+  RequestOptions,
+  SeriesFetchOptions,
+  SeriesResult,
+} from "@federal-mcps/core";
 
 /** The raw BLS v2 response shape, trimmed to what we read. */
 interface BlsApiResponse {
@@ -140,11 +123,7 @@ export async function fetchSeriesRaw(
  * A "series id" here is just the program's opaque key; the timeseries default treats it as a real
  * BLS series id, a CSV program would treat it as an area code.
  */
-export type IndicatorFetch = (
-  client: HttpClient,
-  seriesIds: readonly string[],
-  options: SeriesFetchOptions,
-) => Promise<SeriesResult[]>;
+export type { IndicatorFetch } from "@federal-mcps/core";
 
 /** The default capability: the five timeseries programs fetch through the BLS Public Data API. */
 export const timeseriesFetch: IndicatorFetch = (client, seriesIds, options) =>

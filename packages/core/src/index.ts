@@ -32,3 +32,5 @@ export * from "./http/index.js";
 export * from "./server/index.js";
 
 export * from "./geography/index.js";
+
+export * from "./indicators/index.js";

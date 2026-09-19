@@ -26,8 +26,8 @@ import {
   fetchStrategyOf,
   type IndicatorDefinition,
   resolveDimensions,
-} from "./registry.js";
-import { fetchSeriesRaw, type SeriesObservation } from "./series-fetch.js";
+} from "@federal-mcps/core";
+import { fetchSeriesRaw, type SeriesObservation, timeseriesFetch } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
   /** How the handler gets a read-only catalog (cached upstream). */
@@ -222,7 +222,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     const currentYear = now().getFullYear();
     const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
     const seriesId = def.buildSeriesId(UNITED_STATES.geoid, { seasonallyAdjusted, dimensions });
-    const [series] = await fetchStrategyOf(def)(options.httpClient(), [seriesId], {
+    const [series] = await fetchStrategyOf(def, timeseriesFetch)(options.httpClient(), [seriesId], {
       startYear: p.startYear ?? currentYear - 1,
       endYear: p.endYear ?? currentYear,
       ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
@@ -374,7 +374,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
     const seriesId = def.buildSeriesId(agencyCode, { seasonallyAdjusted, dimensions });
 
-    const [series] = await fetchStrategyOf(def)(options.httpClient(), [seriesId], {
+    const [series] = await fetchStrategyOf(def, timeseriesFetch)(options.httpClient(), [seriesId], {
       startYear,
       endYear,
       ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
@@ -512,7 +512,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
 
         const currentYear = now().getFullYear();
         const series = ids.length
-          ? await fetchStrategyOf(def)(options.httpClient(), ids, {
+          ? await fetchStrategyOf(def, timeseriesFetch)(options.httpClient(), ids, {
               startYear: p.startYear ?? currentYear - 1,
               endYear: p.endYear ?? currentYear,
               ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
