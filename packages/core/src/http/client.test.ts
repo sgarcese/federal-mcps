@@ -397,7 +397,10 @@ describe("queryAuth (M8.2): a key appended at fetch time only", () => {
     expect(seen).toEqual([`${url}&key=SECRET-KEY`]);
 
     // A second call with the same clean URL is a cache hit: the key is not part of the identity.
-    const second = await client.getJson<number[]>(url, { freshTtlSeconds: 60, queryAuth: { key: "OTHER" } });
+    const second = await client.getJson<number[]>(url, {
+      freshTtlSeconds: 60,
+      queryAuth: { key: "OTHER" },
+    });
     expect(second.cache.hit).toBe(true);
     expect(seen).toHaveLength(1);
   });

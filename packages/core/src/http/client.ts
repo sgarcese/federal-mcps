@@ -29,6 +29,12 @@ export interface RequestOptions {
   /** Cached values older than this are never served on fetch failure. */
   readonly staleTtlSeconds?: number;
   readonly timeoutMs?: number;
+  /**
+   * Query parameters appended to the URL at fetch time only — an API key an agency accepts
+   * nowhere else (Census). They are NOT part of the cache key, the fixture path or recorded
+   * fixture, or any error's `url`, so a key never lands on disk or in a log (ADR-014 §9).
+   */
+  readonly queryAuth?: Record<string, string>;
 }
 
 export interface HttpResult<T> {
@@ -66,6 +72,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     headers: Record<string, string> | undefined,
     timeoutMs: number,
     body: string | undefined,
+    errorUrl: string = url,
   ): Promise<RawResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -87,7 +94,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       return { status: response.status, headers: responseHeaders, body: bodyText };
     } catch (err) {
       if (controller.signal.aborted) {
-        throw new TimeoutError({ source, url, timeoutMs });
+        throw new TimeoutError({ source, url: errorUrl, timeoutMs });
       }
       throw err;
     } finally {
@@ -99,18 +106,27 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /** The URL actually fetched: the clean URL plus any query-string credentials. */
+  function wireUrl(url: string, queryAuth: Record<string, string> | undefined): string {
+    if (!queryAuth || Object.keys(queryAuth).length === 0) return url;
+    const extra = new URLSearchParams(queryAuth).toString();
+    return `${url}${url.includes("?") ? "&" : "?"}${extra}`;
+  }
+
   async function fetchWithRetry(
     url: string,
     headers: Record<string, string> | undefined,
     timeoutMs: number,
     body: string | undefined,
+    queryAuth?: Record<string, string>,
   ): Promise<RawResponse> {
+    const target = wireUrl(url, queryAuth);
     let attempt = 0;
     for (;;) {
       attempt++;
       let raw: RawResponse;
       try {
-        raw = await doFetchOnce(url, headers, timeoutMs, body);
+        raw = await doFetchOnce(target, headers, timeoutMs, body, url);
       } catch (err) {
         if (err instanceof TimeoutError) {
           throw err;
@@ -144,6 +160,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     headers: Record<string, string> | undefined,
     timeoutMs: number,
     body: string | undefined,
+    queryAuth?: Record<string, string>,
   ): Promise<RawResponse> {
     if (fixtureMode === "replay") {
       const fixture = await readFixture(fixtureDir, source, url, body);
@@ -158,7 +175,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       throw new QuotaExceededError({ source, resetsAt: budgetResult.resetsAt });
     }
 
-    const response = await fetchWithRetry(url, headers, timeoutMs, body);
+    const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth);
 
     if (fixtureMode === "record") {
       await writeFixture(fixtureDir, source, url, response, now, body);
@@ -178,6 +195,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     const timeoutMs = options?.timeoutMs ?? defaultTimeoutMs;
     const freshTtlSeconds = options?.freshTtlSeconds;
     const staleTtlSeconds = options?.staleTtlSeconds;
+    const queryAuth = options?.queryAuth;
     const key = cacheKey(method, url, headers, body);
 
     let existing: CacheEntry | undefined;
@@ -198,7 +216,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
 
       try {
-        const response = await performRequest(url, headers, timeoutMs, body);
+        const response = await performRequest(url, headers, timeoutMs, body, queryAuth);
         const value = parse(response.body);
         await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
         return { value, cache: CACHE_MISS, status: response.status };
@@ -215,7 +233,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
     }
 
-    const response = await performRequest(url, headers, timeoutMs, body);
+    const response = await performRequest(url, headers, timeoutMs, body, queryAuth);
     const value = parse(response.body);
     if (freshTtlSeconds !== undefined) {
       await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
