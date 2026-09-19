@@ -8,8 +8,8 @@ export const CENSUS_API_REQUIRED_SENTENCE =
   "This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.";
 
 /**
- * Backs the auto-registered `census_describe_source` tool. Programs flip to `available` as
- * M8.4 lands their indicators; until then the server only resolves places.
+ * Backs the auto-registered `census_describe_source` tool (M8.4: ACS 1-year, ACS 5-year and the
+ * 2020 decennial count are served through `census_get_indicator`).
  */
 const PROGRAMS: readonly ProgramDescription[] = [
   {
@@ -18,21 +18,21 @@ const PROGRAMS: readonly ProgramDescription[] = [
     granularity:
       "areas with 65,000 or more people: nation, region, division, state, county, place, metro, county subdivision, congressional district; smaller places fall back to the 5-year product, flagged",
     cadence: "annual (latest vintage 2024)",
-    status: "planned",
+    status: "available",
   },
   {
     code: "ACS5",
     name: "American Community Survey 5-year estimates",
     granularity: "every area down to tract and ZCTA; a five-year period (latest 2020–2024)",
     cadence: "annual",
-    status: "planned",
+    status: "available",
   },
   {
     code: "DEC",
     name: "Decennial Census (2020 redistricting counts)",
     granularity: "every area; total population with no margin of error",
     cadence: "decennial",
-    status: "planned",
+    status: "available",
   },
 ];
 

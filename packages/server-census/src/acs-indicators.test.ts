@@ -35,12 +35,15 @@ afterAll(() => {
 });
 const NOW = () => new Date("2026-09-19T00:00:00Z");
 const tool = (name: string) => {
-  const t = buildCensusDefinition({ catalog, httpClient: replay(), now: NOW }).tools.find((x) => x.name === name);
+  const t = buildCensusDefinition({ catalog, httpClient: replay(), now: NOW }).tools.find(
+    (x) => x.name === name,
+  );
   if (!t) throw new Error(`no tool ${name}`);
   return t;
 };
 // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
-const go = (name: string, args: Record<string, unknown>) => tool(name).handler(args as any, {} as any);
+const go = (name: string, args: Record<string, unknown>) =>
+  tool(name).handler(args as any, {} as any);
 
 describe("acsIndicatorDefinitions (ADR-014 §1): the thirteen headline indicators", () => {
   it("registers each indicator with its verified variable, family and a product dimension", () => {
@@ -64,10 +67,15 @@ describe("acsIndicatorDefinitions (ADR-014 §1): the thirteen headline indicator
     for (const [name, [variable, family]] of Object.entries(expected)) {
       const def = byName[name];
       expect(def?.program).toBe("ACS");
-      expect(def?.buildSeriesId("1600000US0820000|729019|160", { seasonallyAdjusted: false, dimensions: { product: "5-year" } })).toBe(
-        `acs:2024:5-year:${family}:${variable}:1600000US0820000`,
-      );
-      expect(def?.dimensions?.find((d) => d.argument === "product")?.vocabulary.map((v) => v.code)).toEqual(["auto", "1-year", "5-year"]);
+      expect(
+        def?.buildSeriesId("1600000US0820000|729019|160", {
+          seasonallyAdjusted: false,
+          dimensions: { product: "5-year" },
+        }),
+      ).toBe(`acs:2024:5-year:${family}:${variable}:1600000US0820000`);
+      expect(
+        def?.dimensions?.find((d) => d.argument === "product")?.vocabulary.map((v) => v.code),
+      ).toEqual(["auto", "1-year", "5-year"]);
     }
   });
 
@@ -79,9 +87,16 @@ describe("acsIndicatorDefinitions (ADR-014 §1): the thirteen headline indicator
 
 describe("census_get_indicator end to end over recorded fixtures", () => {
   it("Denver city population: 1-year by population, controlled estimate with no margin, product stated", async () => {
-    const res = await go("census_get_indicator", { place: "Denver", kind: "city", indicator: "population" });
+    const res = await go("census_get_indicator", {
+      place: "Denver",
+      kind: "city",
+      indicator: "population",
+    });
     expect(res.source.ids).toEqual(["acs:2024:1-year:detailed:B01003_001:1600000US0820000"]);
-    const data = res.data as { latest: { period: string; value: number }; observations: { marginOfError: number | null }[] };
+    const data = res.data as {
+      latest: { period: string; value: number };
+      observations: { marginOfError: number | null }[];
+    };
     expect(data.latest).toEqual({ period: "2024-A01", value: 729019 });
     expect(data.observations[0]?.marginOfError).toBeNull();
     expect(res.limitations?.join(" ")).toMatch(/1-year.*729,019.*65,000/);
@@ -89,37 +104,68 @@ describe("census_get_indicator end to end over recorded fixtures", () => {
   });
 
   it("Sedona median household income: falls to the 5-year product by population, with margin and grade", async () => {
-    const res = await go("census_get_indicator", { place: "Sedona", kind: "city", indicator: "median_household_income" });
+    const res = await go("census_get_indicator", {
+      place: "Sedona",
+      kind: "city",
+      indicator: "median_household_income",
+    });
     expect(res.source.ids).toEqual(["acs:2024:5-year:detailed:B19013_001:1600000US0465350"]);
-    const data = res.data as { latest: { period: string; value: number }; observations: { marginOfError: number; reliability: string }[] };
+    const data = res.data as {
+      latest: { period: string; value: number };
+      observations: { marginOfError: number; reliability: string }[];
+    };
     expect(data.latest).toEqual({ period: "2024-5Y", value: 73738 });
     expect(data.observations[0]).toMatchObject({ marginOfError: 12737, reliability: "high" });
     expect(res.limitations?.join(" ")).toMatch(/5-year.*9,777.*below.*65,000/);
   });
 
   it("a 1-year request below the threshold answers with the 5-year figure and says why", async () => {
-    const res = await go("census_get_indicator", { place: "Sedona", kind: "city", indicator: "median_household_income", product: "1-year" });
+    const res = await go("census_get_indicator", {
+      place: "Sedona",
+      kind: "city",
+      indicator: "median_household_income",
+      product: "1-year",
+    });
     expect(res.source.ids[0]).toContain(":5-year:");
     expect(res.limitations?.join(" ")).toMatch(/1-year.*requested.*below/);
   });
 
   it("Denver County poverty rate from a subject table on an explicit 5-year request", async () => {
-    const res = await go("census_get_indicator", { place: "Denver", kind: "county", indicator: "poverty_rate", product: "5-year" });
+    const res = await go("census_get_indicator", {
+      place: "Denver",
+      kind: "county",
+      indicator: "poverty_rate",
+      product: "5-year",
+    });
     expect((res.data as { latest: { value: number } }).latest.value).toBe(11.2);
     expect(res.limitations?.join(" ")).toMatch(/5-year.*requested/);
   });
 
   it("an uncomputable tract median is null with the Census meaning; a low-reliability tract is graded", async () => {
-    const bad = await go("census_get_indicator", { place: "Census Tract 9800.01", indicator: "median_household_income" });
-    expect((bad.data as { latest: { value: number | null } | null }).latest?.value ?? null).toBeNull();
+    const bad = await go("census_get_indicator", {
+      place: "Census Tract 9800.01",
+      indicator: "median_household_income",
+    });
+    expect(
+      (bad.data as { latest: { value: number | null } | null }).latest?.value ?? null,
+    ).toBeNull();
     expect(bad.footnotes?.map((f) => f.text).join(" ")).toMatch(/could not be computed/);
-    const low = await go("census_get_indicator", { place: "Census Tract 5.03", indicator: "median_household_income" });
-    expect((low.data as { observations: { reliability: string }[] }).observations[0]?.reliability).toBe("low");
+    const low = await go("census_get_indicator", {
+      place: "Census Tract 5.03",
+      indicator: "median_household_income",
+    });
+    expect(
+      (low.data as { observations: { reliability: string }[] }).observations[0]?.reliability,
+    ).toBe("low");
     expect(low.footnotes?.map((f) => f.text).join(" ")).toMatch(/low reliability/);
   });
 
   it("decennial_population reads the 2020 redistricting count with no margin", async () => {
-    const res = await go("census_get_indicator", { place: "Denver", kind: "county", indicator: "decennial_population" });
+    const res = await go("census_get_indicator", {
+      place: "Denver",
+      kind: "county",
+      indicator: "decennial_population",
+    });
     expect(res.source.ids).toEqual(["dec:2020:P1_001N:0500000US08031"]);
     expect((res.data as { latest: { value: number } }).latest.value).toBe(715522);
     expect(res.source.program).toBe("DEC");
@@ -127,10 +173,15 @@ describe("census_get_indicator end to end over recorded fixtures", () => {
 
   it("census_list_indicators lists all fourteen with the product vocabulary; describe_source is available", async () => {
     const res = await go("census_list_indicators", {});
-    const data = res.data as { indicators: { indicator: string; dimensions?: { argument: string }[] }[] };
+    const data = res.data as {
+      indicators: { indicator: string; dimensions?: { argument: string }[] }[];
+    };
     expect(data.indicators).toHaveLength(14);
-    expect(data.indicators.find((i) => i.indicator === "population")?.dimensions?.[0]?.argument).toBe("product");
+    expect(
+      data.indicators.find((i) => i.indicator === "population")?.dimensions?.[0]?.argument,
+    ).toBe("product");
     const d = describeSource();
-    for (const code of ["ACS1", "ACS5", "DEC"]) expect(d.programs.find((p) => p.code === code)?.status).toBe("available");
+    for (const code of ["ACS1", "ACS5", "DEC"])
+      expect(d.programs.find((p) => p.code === code)?.status).toBe("available");
   });
 });

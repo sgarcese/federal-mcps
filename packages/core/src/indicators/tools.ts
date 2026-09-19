@@ -140,6 +140,7 @@ function resolveSeries(
   def: IndicatorDefinition,
   name: string,
   opts: { kind?: string; state?: string },
+  dimensions: DimensionSelection,
 ): SeriesResolution {
   const resolved = resolvePlace(catalog, name, {
     ...(opts.kind === undefined ? {} : { kind: opts.kind }),
@@ -155,7 +156,7 @@ function resolveSeries(
   const top = resolved.candidates[0];
   if (!top) return { status: "not_found" };
   let code = def.agencyCodeOf(top);
-  let caveat: string | undefined = code ? def.caveatOf?.(top) : undefined;
+  let caveat: string | undefined = code ? def.caveatOf?.(top, dimensions) : undefined;
   if (!code && def.fallback) {
     const fb = def.fallback(catalog, top);
     if (fb) {
@@ -350,7 +351,9 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     let reportedName = top.name;
     let reportedParents = top.parents;
     let agencyCode = def.agencyCodeOf(top);
-    let fallbackCaveat: string | undefined = agencyCode ? def.caveatOf?.(top) : undefined;
+    let fallbackCaveat: string | undefined = agencyCode
+      ? def.caveatOf?.(top, dimensions)
+      : undefined;
 
     if (!agencyCode && def.fallback) {
       const fb = def.fallback(catalog, top);
@@ -500,10 +503,16 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         // Resolve each place, then build a series id for the ones that have coverage.
         const resolutions = p.places.map((name) => ({
           name,
-          resolution: resolveSeries(catalog, def, name, {
-            ...(p.kind === undefined ? {} : { kind: p.kind }),
-            ...(p.state === undefined ? {} : { state: p.state }),
-          }),
+          resolution: resolveSeries(
+            catalog,
+            def,
+            name,
+            {
+              ...(p.kind === undefined ? {} : { kind: p.kind }),
+              ...(p.state === undefined ? {} : { state: p.state }),
+            },
+            dimensions,
+          ),
         }));
         const seriesIdByName = new Map<string, string>();
         for (const { name, resolution } of resolutions) {
