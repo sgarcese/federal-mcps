@@ -28,6 +28,9 @@ export interface SearchTablesOptions {
 
 const DEFAULT_LIMIT = 20;
 
+/** When `data/table-index.json.gz` was last regenerated (see `data/README.md`). */
+export const TABLE_INDEX_RETRIEVED_AT = "2026-09-19";
+
 let cached: readonly TableIndexRow[] | undefined;
 
 /** Gunzips and parses the vendored index once; every later call returns the same array. */
@@ -71,9 +74,7 @@ export function rankTables(
   const queryLower = options.query.trim().toLowerCase();
   const limit = options.limit ?? DEFAULT_LIMIT;
 
-  const candidates = options.endpoint
-    ? rows.filter((r) => r.endpoint === options.endpoint)
-    : rows;
+  const candidates = options.endpoint ? rows.filter((r) => r.endpoint === options.endpoint) : rows;
 
   const scored: { row: TableIndexRow; tier: number }[] = [];
   for (const row of candidates) {
