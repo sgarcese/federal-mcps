@@ -108,6 +108,62 @@ describe("assemble", () => {
   });
 });
 
+describe("assemble: ACS population (#172)", () => {
+  it("sets population and populationVintage from sources.acsPopulation, by summary level", () => {
+    const stateJson = JSON.stringify([
+      ["NAME", "B01003_001E", "state"],
+      ["Colorado", "5957493", "08"],
+    ]);
+    const countyJson = JSON.stringify([
+      ["NAME", "B01003_001E", "state", "county"],
+      ["Denver County, Colorado", "715522", "08", "031"],
+    ]);
+    const rows = assemble({
+      gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },
+      acsPopulation: { "040": stateJson, "050": countyJson },
+    });
+    const colorado = rows.entities.find((e) => e.ucgid === ucgidOf("040", "08"));
+    expect(colorado).toMatchObject({ population: 5_957_493, populationVintage: "2024" });
+    const denverCounty = rows.entities.find((e) => e.ucgid === ucgidOf("050", "08031"));
+    expect(denverCounty).toMatchObject({ population: 715_522, populationVintage: "2024" });
+  });
+
+  it("leaves entities with no matching ACS row at null population", () => {
+    const stateJson = JSON.stringify([
+      ["NAME", "B01003_001E", "state"],
+      ["Colorado", "5957493", "08"],
+    ]);
+    const rows = assemble({
+      gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },
+      acsPopulation: { "040": stateJson },
+    });
+    const denverCounty = rows.entities.find((e) => e.ucgid === ucgidOf("050", "08031"));
+    expect(denverCounty?.population ?? null).toBeNull();
+  });
+
+  it("carries a null population through for a sentinel ACS row", () => {
+    const stateJson = JSON.stringify([
+      ["NAME", "B01003_001E", "state"],
+      ["Colorado", "-666666666", "08"],
+    ]);
+    const rows = assemble({
+      gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },
+      acsPopulation: { "040": stateJson },
+    });
+    const colorado = rows.entities.find((e) => e.ucgid === ucgidOf("040", "08"));
+    expect(colorado).toMatchObject({ population: null, populationVintage: "2024" });
+  });
+
+  it("does not touch population when no acsPopulation source is supplied", () => {
+    const rows = assemble({
+      gazetteers: { "040": STATES, "050": COUNTIES, "160": PLACES },
+    });
+    const colorado = rows.entities.find((e) => e.ucgid === ucgidOf("040", "08"));
+    expect(colorado?.population ?? null).toBeNull();
+    expect(colorado?.populationVintage ?? null).toBeNull();
+  });
+});
+
 const ZCTA_TRACT = [
   "GEOID_ZCTA5_20|AREALAND_ZCTA5_20|GEOID_TRACT_20|AREALAND_PART",
   "19104|1000000|42101036900|500000",
