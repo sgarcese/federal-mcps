@@ -19,3 +19,12 @@ output "geo_custom_domain_url" {
   description = "Must equal https://<instances.json → dev → domain.geoDomainName>/mcp."
   value       = module.geo_server.custom_domain_url
 }
+
+output "census_invoke_url" {
+  value = module.census_server.invoke_url
+}
+
+output "census_custom_domain_url" {
+  description = "Must equal https://<instances.json → dev → domain.censusDomainName>/mcp."
+  value       = module.census_server.custom_domain_url
+}

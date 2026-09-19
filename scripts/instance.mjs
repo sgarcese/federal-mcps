@@ -24,9 +24,9 @@ const REQUIRED_STRINGS = ["name", "description", "account", "region", "environme
 /**
  * @typedef {{ name: string; description: string; account: string; region: string;
  *   environmentTag: string;
- *   domain: { blsDomainName: string; geoDomainName: string; hostedZoneId: string; hostedZoneName: string };
+ *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; hostedZoneId: string; hostedZoneName: string };
  *   terraform: { stateBucket: string; stateKey: string };
- *   naming: { blsService: string; geoService: string } }} InstanceRecord
+ *   naming: { blsService: string; geoService: string; censusService: string } }} InstanceRecord
  */
 
 /**
@@ -48,7 +48,13 @@ function assertRecord(value, index) {
   if (typeof domain !== "object" || domain === null) {
     throw new Error(`instances.json: entry ${index} is missing object field "domain"`);
   }
-  for (const key of ["blsDomainName", "geoDomainName", "hostedZoneId", "hostedZoneName"]) {
+  for (const key of [
+    "blsDomainName",
+    "geoDomainName",
+    "censusDomainName",
+    "hostedZoneId",
+    "hostedZoneName",
+  ]) {
     if (typeof (/** @type {Record<string, unknown>} */ (domain)[key]) !== "string") {
       throw new Error(`instances.json: entry ${index} domain is missing string field "${key}"`);
     }
@@ -66,7 +72,7 @@ function assertRecord(value, index) {
   if (typeof naming !== "object" || naming === null) {
     throw new Error(`instances.json: entry ${index} is missing object field "naming"`);
   }
-  for (const key of ["blsService", "geoService"]) {
+  for (const key of ["blsService", "geoService", "censusService"]) {
     if (typeof (/** @type {Record<string, unknown>} */ (naming)[key]) !== "string") {
       throw new Error(`instances.json: entry ${index} naming is missing string field "${key}"`);
     }

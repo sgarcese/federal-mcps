@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-roots=(terraform/modules/bls-server terraform/modules/geo-server terraform/instances/dev)
+roots=(terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/instances/dev)
 
 echo "== terraform fmt -check -recursive terraform/"
 terraform fmt -check -recursive terraform/
@@ -16,7 +16,7 @@ for root in "${roots[@]}"; do
   terraform -chdir="$root" validate
 done
 
-for root in terraform/modules/bls-server terraform/modules/geo-server terraform/instances/dev; do
+for root in terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/instances/dev; do
   echo "== terraform test ($root)"
   terraform -chdir="$root" test
 done

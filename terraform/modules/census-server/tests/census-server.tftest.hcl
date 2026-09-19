@@ -72,7 +72,7 @@ variables {
   lambda_zip_path = "./tests/placeholder.zip"
   domain_name     = "census-mcp.responsive.city"
   hosted_zone_id  = "ZTESTZONE"
-  census_api_key     = "test-key-value"
+  census_api_key  = "test-key-value"
   environment_tag = "dev"
 }
 

@@ -7,9 +7,9 @@
 #
 #   AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh [instance] [server]
 #     instance  fleet-record name          (default: dev)
-#     server    bls | geo                   (default: bls)
+#     server    bls | geo | census          (default: bls)
 #
-# Each server (bls, geo) is a separate Lambda with its own execution role, so run
+# Each server (bls, geo, census) is a separate Lambda with its own execution role, so run
 # this once per server: e.g. `... dev bls` and `... dev geo`.
 #
 # It is idempotent: re-running updates the inline policies in place.
@@ -25,15 +25,20 @@ cd "$(dirname "$0")/.."
 INSTANCE="${1:-dev}"
 SERVER="${2:-bls}"
 case "$SERVER" in
-  bls | geo) ;;
-  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo)"; exit 1 ;;
+  bls | geo | census) ;;
+  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo | census)"; exit 1 ;;
 esac
 
 read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
   FEDERAL_MCPS_INSTANCE="$INSTANCE" SERVER="$SERVER" node --input-type=module -e '
     import { selectInstance } from "./scripts/instance.mjs";
     const i = selectInstance();
-    const service = process.env.SERVER === "geo" ? i.naming.geoService : i.naming.blsService;
+    const service =
+      process.env.SERVER === "geo"
+        ? i.naming.geoService
+        : process.env.SERVER === "census"
+          ? i.naming.censusService
+          : i.naming.blsService;
     const deployRole = "rc-deploy"; // the role scripts/deploy.sh assumes
     // Trailing newline is required: `read` returns non-zero on EOF without one,
     // which `set -euo pipefail` would turn into a silent exit before any output (#90).

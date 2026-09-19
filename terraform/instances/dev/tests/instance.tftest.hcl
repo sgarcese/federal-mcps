@@ -18,6 +18,13 @@ mock_provider "aws" {
     }
   }
 
+  override_data {
+    target = module.census_server.data.aws_iam_role.exec
+    values = {
+      arn = "arn:aws:iam::123456789012:role/rc-census-mcp-dev-role"
+    }
+  }
+
   # aws_acm_certificate.domain_validation_options's element count is only
   # known to the real provider (one per SAN); aws_route53_record.cert_validation
   # for_each's over it, which fails `plan` under the mocked provider without this.
@@ -30,6 +37,22 @@ mock_provider "aws" {
         {
           domain_name           = "bls-mcp.responsive.city"
           resource_record_name  = "_acme-challenge.bls-mcp.responsive.city."
+          resource_record_type  = "CNAME"
+          resource_record_value = "example.acm-validations.aws."
+        },
+      ]
+    }
+  }
+
+  override_resource {
+    target          = module.census_server.aws_acm_certificate.census
+    override_during = plan
+    values = {
+      arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-census"
+      domain_validation_options = [
+        {
+          domain_name           = "census-mcp.responsive.city"
+          resource_record_name  = "_acme-challenge.census-mcp.responsive.city."
           resource_record_type  = "CNAME"
           resource_record_value = "example.acm-validations.aws."
         },
@@ -59,9 +82,11 @@ variables {
   # the module's own committed placeholder stands in so this root's tests
   # don't depend on `npm run bundle` having run first (CI creates the real
   # placeholder for `terraform validate`; see .github/workflows/ci.yml).
-  bls_lambda_zip_path = "../../modules/bls-server/tests/placeholder.zip"
-  geo_lambda_zip_path = "../../modules/geo-server/tests/placeholder.zip"
-  bls_api_key         = "test-key-value"
+  bls_lambda_zip_path    = "../../modules/bls-server/tests/placeholder.zip"
+  geo_lambda_zip_path    = "../../modules/geo-server/tests/placeholder.zip"
+  census_lambda_zip_path = "../../modules/census-server/tests/placeholder.zip"
+  bls_api_key            = "test-key-value"
+  census_api_key         = "test-census-key"
 }
 
 run "fleet_record_drives_the_root" {

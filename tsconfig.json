@@ -12,6 +12,9 @@
       "path": "packages/server-geo"
     },
     {
+      "path": "packages/server-census"
+    },
+    {
       "path": "packages/geography-build"
     },
     {
