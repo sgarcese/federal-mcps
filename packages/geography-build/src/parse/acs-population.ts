@@ -56,7 +56,9 @@ export function parseAcsPopulation(
   for (const rawRow of json.slice(1)) {
     if (!Array.isArray(rawRow)) continue;
     const row = rawRow as (string | number | null)[];
-    const geoid = idIdx.map((i) => (row[i] === null || row[i] === undefined ? "" : String(row[i]))).join("");
+    const geoid = idIdx
+      .map((i) => (row[i] === null || row[i] === undefined ? "" : String(row[i])))
+      .join("");
     if (!geoid) continue;
 
     const raw = row[iValue];

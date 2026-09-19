@@ -106,7 +106,10 @@ describe("buildCatalog", () => {
     expect(county.population_vintage).toBe("2024");
     const city = db
       .prepare("SELECT population, population_vintage FROM entity WHERE ucgid = ?")
-      .get(ucgidOf("160", "0820000")) as { population: number | null; population_vintage: string | null };
+      .get(ucgidOf("160", "0820000")) as {
+      population: number | null;
+      population_vintage: string | null;
+    };
     expect(city.population).toBeNull();
     expect(city.population_vintage).toBeNull();
     db.close();

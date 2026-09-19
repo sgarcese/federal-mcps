@@ -52,10 +52,7 @@ export const SOURCE_URLS = {
     "040": acsPopulationUrl(vintage, "state"),
     "050": acsPopulationUrl(vintage, "county"),
     "160": acsPopulationUrl(vintage, "place"),
-    "310": acsPopulationUrl(
-      vintage,
-      "metropolitan statistical area/micropolitan statistical area",
-    ),
+    "310": acsPopulationUrl(vintage, "metropolitan statistical area/micropolitan statistical area"),
     "860": acsPopulationUrl(vintage, "zip code tabulation area"),
     "020": acsPopulationUrl(vintage, "region"),
     "030": acsPopulationUrl(vintage, "division"),
@@ -71,9 +68,7 @@ function acsPopulationUrl(vintage: string, forLevel: string): string {
  * (ADR-014 §6, #172). `geography:build` must fail before downloading anything when this is
  * unset — a build without a key can silently ship a catalog with no population column.
  */
-export function requireCensusApiKey(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
+export function requireCensusApiKey(env: NodeJS.ProcessEnv = process.env): string {
   const key = env["CENSUS_API_KEY"];
   if (!key) {
     throw new Error(

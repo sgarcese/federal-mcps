@@ -1,8 +1,13 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { fetchCached, fetchCachedWithCensusKey, requireCensusApiKey, SOURCE_URLS } from "./download.js";
+import {
+  fetchCached,
+  fetchCachedWithCensusKey,
+  requireCensusApiKey,
+  SOURCE_URLS,
+} from "./download.js";
 
 let tmp: string | undefined;
 afterEach(() => {
@@ -77,9 +82,12 @@ describe("fetchCachedWithCensusKey", () => {
     expect(requestedUrl).toBe(`${url}&key=SECRETKEY`);
 
     // Cache path is derived from the key-less URL, exactly as fetchCached does normally.
-    const keyless = await fetchCached(url, { cacheDir: tmp, fetchImpl: () => {
-      throw new Error("should not refetch — cache hit expected");
-    } });
+    const keyless = await fetchCached(url, {
+      cacheDir: tmp,
+      fetchImpl: () => {
+        throw new Error("should not refetch — cache hit expected");
+      },
+    });
     expect(keyless.toString("utf-8")).toContain("B01003_001E");
 
     // The key never appears in a cached file's name.
