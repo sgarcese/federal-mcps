@@ -42,7 +42,13 @@ export interface IndicatorFallback {
 }
 
 /** The named picker arguments a tool accepts (ADR-013 §1). Fixed set; each indicator declares which apply. */
-export const DIMENSION_ARGUMENTS = ["item", "industry", "ownership", "occupation"] as const;
+export const DIMENSION_ARGUMENTS = [
+  "item",
+  "industry",
+  "ownership",
+  "occupation",
+  "product",
+] as const;
 export type DimensionArgument = (typeof DIMENSION_ARGUMENTS)[number];
 
 /** One entry a model may pick for a dimension: the code the series id / row picker uses, and its label. */

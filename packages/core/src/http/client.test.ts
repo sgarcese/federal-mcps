@@ -372,3 +372,50 @@ describe("postJson", () => {
     expect(fetchFn).toHaveBeenCalledTimes(2); // A once, B once; A's repeat served from cache
   });
 });
+
+describe("queryAuth (M8.2): a key appended at fetch time only", () => {
+  it("sends the key on the wire but keeps it out of the cache key, the fixture path and errors", async () => {
+    const seen: string[] = [];
+    const fetchImpl = (async (input: string | URL | Request) => {
+      seen.push(String(input));
+      return new Response("[1]", { status: 200, headers: { "content-type": "application/json" } });
+    }) as typeof fetch;
+    const cache = new MemoryCacheStore();
+    const client = createHttpClient({
+      source: "demo",
+      budget: new MemoryBudgetStore(10),
+      cache,
+      fetch: fetchImpl,
+      fixtures: { mode: "off" },
+    });
+    const url = "https://example.invalid/data?get=NAME&ucgid=0500000US08031";
+    const first = await client.getJson<number[]>(url, {
+      freshTtlSeconds: 60,
+      queryAuth: { key: "SECRET-KEY" },
+    });
+    expect(first.value).toEqual([1]);
+    expect(seen).toEqual([`${url}&key=SECRET-KEY`]);
+
+    // A second call with the same clean URL is a cache hit: the key is not part of the identity.
+    const second = await client.getJson<number[]>(url, {
+      freshTtlSeconds: 60,
+      queryAuth: { key: "OTHER" },
+    });
+    expect(second.cache.hit).toBe(true);
+    expect(seen).toHaveLength(1);
+  });
+
+  it("names only the clean URL in an HttpError", async () => {
+    const fetchImpl = (async () => new Response("nope", { status: 500 })) as typeof fetch;
+    const client = createHttpClient({
+      source: "demo",
+      budget: new MemoryBudgetStore(10),
+      cache: new MemoryCacheStore(),
+      fetch: fetchImpl,
+      fixtures: { mode: "off" },
+    });
+    await expect(
+      client.getJson("https://example.invalid/data?get=NAME", { queryAuth: { key: "SECRET-KEY" } }),
+    ).rejects.toMatchObject({ url: "https://example.invalid/data?get=NAME" });
+  });
+});

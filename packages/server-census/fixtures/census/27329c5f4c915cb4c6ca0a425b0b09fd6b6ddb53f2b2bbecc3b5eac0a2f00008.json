@@ -1,0 +1,22 @@
+{
+  "url": "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E,B01003_001M,B01003_001EA,B01003_001MA&ucgid=1600000US0465350",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
+    "access-control-allow-methods": "GET",
+    "access-control-allow-origin": "*",
+    "cache-control": "max-age=60, must-revalidate",
+    "connection": "keep-alive",
+    "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+    "content-type": "application/json;charset=utf-8",
+    "date": "Sat, 19 Sep 2026 23:31:23 GMT",
+    "keep-alive": "timeout=20",
+    "referrer-policy": "same-origin",
+    "set-cookie": "TS010383f0=01283c52a43ee879a41dedbf92fb44d8b5249eb215784000a5e3a62fa9f13518717c81a575cdff02ffe4a2a518936834acc5f800ba; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-content-type-options": "nosniff"
+  },
+  "body": "[[\"NAME\",\"B01003_001E\",\"B01003_001M\",\"B01003_001EA\",\"B01003_001MA\",\"ucgid\"],\n[\"Sedona city, Arizona\",\"9777\",\"24\",null,null,\"1600000US0465350\"]]",
+  "recordedAt": "2026-09-19T23:31:23.935Z"
+}

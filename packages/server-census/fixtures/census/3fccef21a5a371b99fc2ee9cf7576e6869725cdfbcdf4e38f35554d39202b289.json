@@ -1,0 +1,21 @@
+{
+  "url": "https://api.census.gov/data/2024/acs/acs1?get=NAME,B01003_001E,B01003_001M,B01003_001EA,B01003_001MA&ucgid=1600000US0465350",
+  "status": 204,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
+    "access-control-allow-methods": "GET",
+    "access-control-allow-origin": "*",
+    "cache-control": "max-age=60, must-revalidate",
+    "connection": "keep-alive",
+    "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+    "content-type": "application/json;charset=utf-8",
+    "date": "Sat, 19 Sep 2026 23:31:23 GMT",
+    "keep-alive": "timeout=20",
+    "referrer-policy": "same-origin",
+    "set-cookie": "TS010383f0=01283c52a452fafc3302dab38d4e473f5b101029593ce034d49eff9d2dabf61fe4c7fec1bf8437e992ab0d68d7e9d6b16c49120c51; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "strict-transport-security": "max-age=31536000",
+    "x-content-type-options": "nosniff"
+  },
+  "body": "",
+  "recordedAt": "2026-09-19T23:31:23.384Z"
+}

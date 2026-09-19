@@ -1,0 +1,22 @@
+{
+  "url": "https://api.census.gov/data/2024/acs/acs5/subject?get=NAME,S1701_C03_001E,S1701_C03_001M,S1701_C03_001EA,S1701_C03_001MA&ucgid=0500000US08031",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
+    "access-control-allow-methods": "GET",
+    "access-control-allow-origin": "*",
+    "cache-control": "max-age=60, must-revalidate",
+    "connection": "keep-alive",
+    "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+    "content-type": "application/json;charset=utf-8",
+    "date": "Sat, 19 Sep 2026 23:31:25 GMT",
+    "keep-alive": "timeout=20",
+    "referrer-policy": "same-origin",
+    "set-cookie": "TS010383f0=01283c52a4594e4ad15aac3f38b14143fb7ca31e8d728ca551637cecdada15b032bd95a937f7c5f6753f318705cf072cfe102cb3ca; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-content-type-options": "nosniff"
+  },
+  "body": "[[\"NAME\",\"S1701_C03_001E\",\"S1701_C03_001M\",\"S1701_C03_001EA\",\"S1701_C03_001MA\",\"ucgid\"],\n[\"Denver County, Colorado\",\"11.2\",\"0.5\",null,null,\"0500000US08031\"]]",
+  "recordedAt": "2026-09-19T23:31:25.537Z"
+}
