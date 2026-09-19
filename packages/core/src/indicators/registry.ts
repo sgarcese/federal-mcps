@@ -150,7 +150,7 @@ export interface IndicatorDefinition {
    * A caveat that must travel with a DIRECT series for this place (the code exists, but with a
    * condition — e.g. a multi-state metro CES files under one state, #153). Undefined when none.
    */
-  caveatOf?(place: PlaceCandidate): string | undefined;
+  caveatOf?(place: PlaceCandidate, dimensions: DimensionSelection): string | undefined;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
   /**

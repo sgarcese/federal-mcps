@@ -10,11 +10,11 @@ describe("Census describeSource()", () => {
     expect(CENSUS_API_ENDPOINT).toBe("https://api.census.gov/data");
   });
 
-  it("lists ACS 1-year, ACS 5-year and decennial as planned until M8.4 lands", () => {
+  it("lists ACS 1-year, ACS 5-year and decennial as available (M8.4)", () => {
     const d = describeSource();
     const byCode = Object.fromEntries(d.programs.map((p) => [p.code, p]));
     for (const code of ["ACS1", "ACS5", "DEC"]) {
-      expect(byCode[code]?.status).toBe("planned");
+      expect(byCode[code]?.status).toBe("available");
       expect(byCode[code]?.granularity.length).toBeGreaterThan(0);
     }
     expect(byCode.ACS1?.granularity).toContain("65,000");

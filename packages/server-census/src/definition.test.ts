@@ -27,9 +27,14 @@ describe("Census ServerDefinition (M8.1, ADR-014)", () => {
     expect(d.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it("mounts census_resolve_place from the shared resolver and nothing else yet", () => {
+  it("mounts census_resolve_place from the shared resolver plus the generic indicator tools (M8.4)", () => {
     const tools = build().tools;
-    expect(tools.map((t) => t.name)).toEqual(["census_resolve_place"]);
+    expect(tools.map((t) => t.name)).toEqual([
+      "census_resolve_place",
+      "census_get_indicator",
+      "census_compare_places",
+      "census_list_indicators",
+    ]);
     expect(tools[0]?.fromCore).toBe(true);
   });
 
@@ -38,6 +43,7 @@ describe("Census ServerDefinition (M8.1, ADR-014)", () => {
     expect(text).toContain("65,000");
     expect(text.toLowerCase()).toContain("margin of error");
     expect(text).toContain("census_resolve_place");
+    expect(text).toContain("census_get_indicator");
     expect(text).toContain(
       "This product uses the Census Bureau Data API but is not endorsed or certified by the Census Bureau.",
     );
