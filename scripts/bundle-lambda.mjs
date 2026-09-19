@@ -107,6 +107,17 @@ function copyBetterSqlite3() {
   copyFileSync(prebuild, join(dst, "prebuilds", "linux-arm64.node"));
 }
 
+/**
+ * Vendored data assets a server reads at runtime relative to its bundle (`import.meta.dirname`
+ * is the zip root on Lambda): everything under `<package>/src/data/` lands in `<stage>/data/`
+ * (e.g. server-census's table index, #175). Nothing to do for packages without one.
+ */
+function copyDataAssets() {
+  const src = join(pkgRoot, "src", "data");
+  if (!existsSync(src)) return;
+  cpSync(src, join(stageDir, "data"), { recursive: true });
+}
+
 function zip() {
   // Deterministic, directory-aware zip of the staged tree via Python's stdlib.
   execFileSync(
@@ -129,6 +140,7 @@ mkdirSync(stageDir, { recursive: true });
 await esbuildBundle();
 copyBetterSqlite3();
 copyFileSync(catalog, join(stageDir, CATALOG_BASENAME));
+copyDataAssets();
 zip();
 
 process.stdout.write(`bundled ${zipPath} (catalog: ${catalog})\n`);
