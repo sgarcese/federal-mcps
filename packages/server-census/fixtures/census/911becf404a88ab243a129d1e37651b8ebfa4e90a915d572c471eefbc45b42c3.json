@@ -9,14 +9,14 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:31:26 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:06 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a4ca324ad5f401677af4903179995e84f027cac45e2a6a55736410ffd07bbac2355febc4e60331e929093f758dbc0cf66b; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a41476d7c1e4083f73751fadb0695dd7aff37a5526443b72c216326b520356bc3b2ba2543ca4f0452a03b58c9b21513d3a; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "transfer-encoding": "chunked",
     "x-content-type-options": "nosniff"
   },
   "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"B19013_001EA\",\"B19013_001MA\",\"ucgid\"],\n[\"Census Tract 5.03; Denver County; Colorado\",\"121379\",\"82893\",null,null,\"1400000US08031000503\"]]",
-  "recordedAt": "2026-09-19T23:31:27.149Z"
+  "recordedAt": "2026-09-19T23:53:06.617Z"
 }

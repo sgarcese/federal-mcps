@@ -27,15 +27,22 @@ describe("Census ServerDefinition (M8.1, ADR-014)", () => {
     expect(d.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it("mounts census_resolve_place from the shared resolver plus the generic indicator tools (M8.4)", () => {
+  it("mounts census_resolve_place from the shared resolver plus the generic indicator tools (M8.4) and census_get_raw", () => {
     const tools = build().tools;
     expect(tools.map((t) => t.name)).toEqual([
       "census_resolve_place",
       "census_get_indicator",
       "census_compare_places",
       "census_list_indicators",
+      "census_get_raw",
     ]);
     expect(tools[0]?.fromCore).toBe(true);
+  });
+
+  it("census_get_raw has a title and a get_raw-shaped input", () => {
+    const tool = build().tools.find((t) => t.name === "census_get_raw");
+    expect(tool?.title).toBe("Get raw table");
+    expect(tool?.fromCore).toBeFalsy();
   });
 
   it("instructions cover the 65,000 rule, margins of error, and the required Census sentence", () => {

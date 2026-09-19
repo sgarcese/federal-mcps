@@ -12,6 +12,7 @@ import {
   describeSource,
 } from "./describe-source.js";
 import { censusIndicatorDefinitions } from "./indicators.js";
+import { censusGetRawTool } from "./get-raw.js";
 import { CENSUS_SERVER_VERSION } from "./version.js";
 
 /**
@@ -117,6 +118,11 @@ export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinit
         dimensionDescriptions: {
           product: "Which ACS product: auto (default; by population), 1-year, or 5-year.",
         },
+      }),
+      censusGetRawTool({
+        httpClient: () => deps.httpClient,
+        ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
+        ...(deps.now ? { now: deps.now } : {}),
       }),
     ],
     describeSource,

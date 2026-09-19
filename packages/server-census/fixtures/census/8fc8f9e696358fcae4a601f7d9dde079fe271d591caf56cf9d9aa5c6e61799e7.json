@@ -1,5 +1,5 @@
 {
-  "url": "https://api.census.gov/data/2024/acs/acs5?get=NAME,B19013_001E,B19013_001M,B19013_001EA,B19013_001MA&ucgid=0500000US08031",
+  "url": "https://api.census.gov/data/2024/acs/acs5?get=NAME,B19013_001E,B19013_001M&ucgid=0500000US08031",
   "status": 200,
   "headers": {
     "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
@@ -9,14 +9,14 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:53:05 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:07 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a485f27239836c13165a6762799d94e121277a0854f0027fd3de258834948af86def3f1251a77c144f782045322e3b8ba6; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a495dc229baa8fc488ff49e2023acd2ff6ae4f25b40046c94d196d609bba01485fca52ec99904d3ea96ec0ddfee03e4742; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "transfer-encoding": "chunked",
     "x-content-type-options": "nosniff"
   },
-  "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"B19013_001EA\",\"B19013_001MA\",\"ucgid\"],\n[\"Denver County, Colorado\",\"94718\",\"1644\",null,null,\"0500000US08031\"]]",
-  "recordedAt": "2026-09-19T23:53:05.708Z"
+  "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"ucgid\"],\n[\"Denver County, Colorado\",\"94718\",\"1644\",\"0500000US08031\"]]",
+  "recordedAt": "2026-09-19T23:53:07.543Z"
 }

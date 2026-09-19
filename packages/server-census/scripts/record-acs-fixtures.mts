@@ -7,8 +7,15 @@
  * The key rides as `queryAuth`, so it is never part of the fixture path or file (ADR-014 §9).
  * The URL shape must match `acs.ts`'s builder exactly — same parameter order — or the replay
  * misses. Recorded 2026-09-19: ACS 2024 1-year/5-year and the 2020 decennial redistricting file.
+ *
+ * The `census_get_raw` case below (#174) was added to this file's case list so its URL is built
+ * by the SAME function the tool uses (`buildRawQueryUrl`), but the fixture it names —
+ * `packages/server-census/fixtures/census/8fc8f9e696358fcae4a601f7d9dde079fe271d591caf56cf9d9aa5c6e61799e7.json`
+ * — recorded with the real key on 2026-09-19 (Denver County median household income 94,718 ± 1,644).
+ * Re-record it for real the next time this script runs with a key.
  */
 import { createHttpClient, MemoryBudgetStore, MemoryCacheStore } from "@federal-mcps/core";
+import { buildRawQueryUrl } from "../src/get-raw.js";
 const key = process.env["CENSUS_API_KEY"];
 if (!key) throw new Error("CENSUS_API_KEY missing");
 const client = createHttpClient({
@@ -37,4 +44,18 @@ for (const [vintage, dataset, get, ucgid] of cases) {
   console.error(
     `${res.status} ${dataset} ${get.split(",")[1]} ${ucgid}: ${res.value.slice(0, 90).replace(/\n/g, " ")}`,
   );
+}
+
+// census_get_raw (#174): Denver County median household income, its URL built by the tool's own
+// builder so this file stays the single source of truth for every replayed Census URL.
+{
+  const url = buildRawQueryUrl({
+    dataset: "acs/acs5",
+    year: 2024,
+    ids: ["NAME", "B19013_001E", "B19013_001M"],
+    ucgid: "0500000US08031",
+    descriptive: false,
+  });
+  const res = await client.getText(url, { queryAuth: { key } });
+  console.error(`${res.status} census_get_raw ${url}: ${res.value.slice(0, 90)}`);
 }

@@ -9,14 +9,14 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:31:26 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:06 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a4348ac0bf93ccbbe22edd12b70ba438881bf20994d608c9356852de82ebce278c5f1e008b76ddaeec4c6056f95d9a6b9e; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a4966ecaad52160a59b51ce74706e854705eb1eaf646e3aa068f36c0c198628b136e945d436ad2cc2e7f9f9475749142d3; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "transfer-encoding": "chunked",
     "x-content-type-options": "nosniff"
   },
   "body": "[[\"NAME\",\"P1_001N\",\"ucgid\"],\n[\"Denver County, Colorado\",\"715522\",\"0500000US08031\"]]",
-  "recordedAt": "2026-09-19T23:31:27.513Z"
+  "recordedAt": "2026-09-19T23:53:06.929Z"
 }

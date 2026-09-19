@@ -9,14 +9,14 @@
     "connection": "keep-alive",
     "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
     "content-type": "application/json;charset=utf-8",
-    "date": "Sat, 19 Sep 2026 23:31:23 GMT",
+    "date": "Sat, 19 Sep 2026 23:53:04 GMT",
     "keep-alive": "timeout=20",
     "referrer-policy": "same-origin",
-    "set-cookie": "TS010383f0=01283c52a43ee879a41dedbf92fb44d8b5249eb215784000a5e3a62fa9f13518717c81a575cdff02ffe4a2a518936834acc5f800ba; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "set-cookie": "TS010383f0=01283c52a464f0670291729724453936744e347076ea7fdceb5529b42e8d0a3206cd9db1a4e31b21a880a5ef3c7589abd9e64c624e; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
     "strict-transport-security": "max-age=31536000",
     "transfer-encoding": "chunked",
     "x-content-type-options": "nosniff"
   },
   "body": "[[\"NAME\",\"B01003_001E\",\"B01003_001M\",\"B01003_001EA\",\"B01003_001MA\",\"ucgid\"],\n[\"Sedona city, Arizona\",\"9777\",\"24\",null,null,\"1600000US0465350\"]]",
-  "recordedAt": "2026-09-19T23:31:23.935Z"
+  "recordedAt": "2026-09-19T23:53:04.889Z"
 }
