@@ -185,3 +185,27 @@ describe("census_get_indicator end to end over recorded fixtures", () => {
       expect(d.programs.find((p) => p.code === code)?.status).toBe("available");
   });
 });
+
+describe("census_compare_places aligns mixed-size places on one product (ADR-014 §5)", () => {
+  it("uses the 5-year product for every place when one is below 65,000, and says so", async () => {
+    const res = await go("census_compare_places", {
+      indicator: "median_household_income",
+      places: ["Denver County", "Sedona"],
+    });
+    expect(res.source.ids.every((id) => id.includes(":5-year:"))).toBe(true);
+    const data = res.data as { rows: { query: string; value: number | null; marginOfError?: number | null; reliability?: string }[]; period: string | null };
+    expect(data.period).toBe("2024-5Y");
+    expect(data.rows.map((r) => r.value)).toEqual([94718, 73738]);
+    expect(data.rows[1]).toMatchObject({ marginOfError: 12737, reliability: "high" });
+    expect(res.limitations?.join(" ")).toMatch(/5-year.*Sedona.*below 65,000/s);
+  });
+
+  it("keeps the 1-year product when every place qualifies, or when 5-year is requested explicitly", async () => {
+    const explicit = await go("census_compare_places", {
+      indicator: "median_household_income",
+      places: ["Denver County", "Sedona"],
+      product: "5-year",
+    });
+    expect(explicit.limitations ?? []).toEqual([]);
+  });
+});
