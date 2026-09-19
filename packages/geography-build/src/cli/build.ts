@@ -6,7 +6,12 @@ import BetterSqlite3 from "better-sqlite3";
 import { assemble, type Sources } from "../assemble.js";
 import { buildCatalog } from "../catalog.js";
 import { loadVendoredGeocorr } from "../data/geocorr/vendored.js";
-import { fetchCached, SOURCE_URLS } from "../download.js";
+import {
+  fetchCached,
+  fetchCachedWithCensusKey,
+  requireCensusApiKey,
+  SOURCE_URLS,
+} from "../download.js";
 
 /**
  * Builds the catalog end to end: download (cached), unzip the gazetteers, assemble, and
@@ -20,7 +25,12 @@ async function main(): Promise<void> {
   const outDir = join(import.meta.dirname, "..", "..", "dist");
   const outPath = join(outDir, `geo-catalog@${vintage}.sqlite`);
 
-  const sources: Sources = { gazetteers: {} };
+  // Fail loudly before downloading anything (#172, ADR-014 §6): a build with no key would
+  // otherwise silently ship a catalog with no population column.
+  const censusApiKey = requireCensusApiKey();
+
+  const acsPopulation: Record<string, string> = {};
+  const sources: Sources = { gazetteers: {}, acsPopulation };
 
   for (const [sumlevel, url] of Object.entries(SOURCE_URLS.gazetteers)) {
     process.stderr.write(`gazetteer ${sumlevel}: ${url}\n`);
@@ -50,6 +60,18 @@ async function main(): Promise<void> {
   // place→county crosswalk (#141) — the only source of that edge, which the LAUS below-
   // threshold county fallback (ADR-009 §6) depends on. Regenerate with `npm run geocorr:fetch`.
   sources.geocorr = loadVendoredGeocorr();
+
+  // ACS 5-year total population, one summary level at a time (#172, ADR-014 §6). The key
+  // is appended at request time only (fetchCachedWithCensusKey), never logged or cached
+  // under a keyed name — only the key-less URL and a row count reach stderr.
+  const acsUrls = SOURCE_URLS.acsPopulation();
+  for (const [sumlevel, url] of Object.entries(acsUrls)) {
+    process.stderr.write(`acsPopulation ${sumlevel}: ${url}\n`);
+    const text = (await fetchCachedWithCensusKey(url, censusApiKey)).toString("utf-8");
+    acsPopulation[sumlevel] = text;
+    const rowCount = Math.max(0, (JSON.parse(text) as unknown[]).length - 1);
+    process.stderr.write(`  acsPopulation ${sumlevel}: ${rowCount} rows\n`);
+  }
 
   const rows = assemble(sources);
   mkdirSync(outDir, { recursive: true });

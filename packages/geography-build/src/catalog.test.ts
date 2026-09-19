@@ -34,6 +34,8 @@ const denver: CatalogRows = {
       lat: 39.76,
       lon: -104.87,
       aland: 396_915_495,
+      population: 715_522,
+      populationVintage: "2024",
     },
     {
       ucgid: ucgidOf("160", "0820000"),
@@ -91,6 +93,25 @@ describe("buildCatalog", () => {
     expect((db.prepare("SELECT count(*) c FROM entity").get() as { c: number }).c).toBe(3);
     expect((db.prepare("SELECT count(*) c FROM agency_code").get() as { c: number }).c).toBe(1);
     expect(catalogMeta(db, "vintage")).toBe("2025");
+    db.close();
+  });
+
+  it("inserts population and population_vintage, defaulting to null when absent (#172)", () => {
+    const db = new BetterSqlite3(":memory:");
+    buildCatalog(db, denver, { vintage: "2025" });
+    const county = db
+      .prepare("SELECT population, population_vintage FROM entity WHERE ucgid = ?")
+      .get(ucgidOf("050", "08031")) as { population: number; population_vintage: string };
+    expect(county.population).toBe(715_522);
+    expect(county.population_vintage).toBe("2024");
+    const city = db
+      .prepare("SELECT population, population_vintage FROM entity WHERE ucgid = ?")
+      .get(ucgidOf("160", "0820000")) as {
+      population: number | null;
+      population_vintage: string | null;
+    };
+    expect(city.population).toBeNull();
+    expect(city.population_vintage).toBeNull();
     db.close();
   });
 

@@ -16,6 +16,7 @@ export {
   parseOewsArea,
   parseQcewArea,
 } from "./parse/bls-area.js";
+export { parseAcsPopulation } from "./parse/acs-population.js";
 export { parseGazetteer, stripLsad } from "./parse/gazetteer.js";
 export { parseGeocorr } from "./parse/geocorr.js";
 export {

@@ -101,6 +101,16 @@ exists) plus its parents. It handles city-vs-county name collisions, cities belo
 LAUS 25,000 threshold falling back to county, metro vs metro division, consolidated
 cities, and New England NECTAs.
 
+Each entity also carries an ACS 5-year total population (`B01003_001E`) and the vintage
+it reflects (e.g. "2024" meaning the 2020–2024 5-year), populated by `geography-build`
+from the Census Data API at catalog-build time — no runtime call. `PlaceCandidate.population`
+exposes it (null for regions/divisions and any entity the build had no row for). Coverage
+rules that depend on population (e.g. ACS's 1-year-vs-5-year product choice, ADR-014 §2)
+read this column instead of estimating population themselves. Because the Census Data API
+now requires a key on every data query, building the catalog (`npm run geography:build`)
+requires `CENSUS_API_KEY` in the environment; the build fails loudly, before downloading
+anything, when it is unset (sign up free at https://api.census.gov/data/key_signup.html).
+
 **HTTP discipline.** One client: retry with jittered backoff on 5xx/429, timeout,
 per-source daily budget counter (DynamoDB in Lambda, memory locally), two-tier cache
 (fresh TTL by release cadence, stale fallback when the agency is down), batching hooks

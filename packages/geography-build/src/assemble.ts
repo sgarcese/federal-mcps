@@ -1,5 +1,6 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { CENSUS_DIVISIONS, CENSUS_REGIONS, COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
+import { parseAcsPopulation } from "./parse/acs-population.js";
 import {
   parseCesArea,
   parseCpiArea,
@@ -50,7 +51,17 @@ export interface Sources {
   tractLineage?: string;
   /** The vendored Geocorr export (#55); population-weighted, wins over relationship shares. */
   geocorr?: string;
+  /**
+   * ACS 5-year total population API responses (`B01003_001E`, ADR-014 §6, #172), JSON text
+   * keyed by summary level ("040", "050", "160", "310", "860", "020", "030"). Each entity
+   * whose UCGID appears in one of these responses gets `population` and `populationVintage`
+   * set; entities absent from every response keep a null population.
+   */
+  acsPopulation?: Partial<Record<string, string>>;
 }
+
+/** The ACS 5-year vintage `SOURCE_URLS.acsPopulation` defaults to (`download.ts`, ADR-014 §6). */
+const ACS_POPULATION_VINTAGE = "2024";
 
 /**
  * Turns source file contents into the rows a catalog build inserts. Pure and testable —
@@ -110,6 +121,8 @@ export function assemble(sources: Sources): CatalogRows {
 
   const lineage: LineageRow[] = sources.tractLineage ? parseTractLineage(sources.tractLineage) : [];
 
+  applyAcsPopulation(entities, sources.acsPopulation);
+
   return {
     entities,
     aliases,
@@ -123,6 +136,30 @@ export function assemble(sources: Sources): CatalogRows {
     countyChange: [...COUNTY_CHANGES],
     lineage,
   };
+}
+
+/**
+ * Sets `population`/`populationVintage` on every entity whose UCGID appears in one of the
+ * per-summary-level ACS responses (#172); entities absent from every response are left
+ * untouched, so they keep a null population at insert (`catalog.ts`).
+ */
+function applyAcsPopulation(
+  entities: EntityRow[],
+  acsPopulation: Partial<Record<string, string>> | undefined,
+): void {
+  if (!acsPopulation) return;
+  const byUcgid = new Map<string, number | null>();
+  for (const [sumlevel, text] of Object.entries(acsPopulation)) {
+    if (!text) continue;
+    for (const row of parseAcsPopulation(JSON.parse(text), sumlevel)) {
+      byUcgid.set(row.ucgid, row.population);
+    }
+  }
+  for (const e of entities) {
+    if (!byUcgid.has(e.ucgid)) continue;
+    e.population = byUcgid.get(e.ucgid) ?? null;
+    e.populationVintage = ACS_POPULATION_VINTAGE;
+  }
 }
 
 /**

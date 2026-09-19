@@ -40,6 +40,28 @@ describe("createSchema", () => {
     expect(v.value).toBe(String(SCHEMA_VERSION));
   });
 
+  it("carries a nullable population and population_vintage column on entity (#172)", () => {
+    db = new BetterSqlite3(":memory:");
+    createSchema(db);
+    db.prepare(
+      `INSERT INTO entity (ucgid, geoid, sumlevel, name, population, population_vintage)
+       VALUES ('0400000US08', '08', '040', 'Colorado', 5957493, '2024')`,
+    ).run();
+    db.prepare(
+      `INSERT INTO entity (ucgid, geoid, sumlevel, name) VALUES ('0200000US4', '4', '020', 'West')`,
+    ).run();
+    const colorado = db
+      .prepare("SELECT population, population_vintage FROM entity WHERE ucgid = ?")
+      .get("0400000US08") as { population: number; population_vintage: string };
+    expect(colorado.population).toBe(5957493);
+    expect(colorado.population_vintage).toBe("2024");
+    const west = db
+      .prepare("SELECT population, population_vintage FROM entity WHERE ucgid = ?")
+      .get("0200000US4") as { population: number | null; population_vintage: string | null };
+    expect(west.population).toBeNull();
+    expect(west.population_vintage).toBeNull();
+  });
+
   it("indexes names for trigram fuzzy search", () => {
     db = new BetterSqlite3(":memory:");
     createSchema(db);

@@ -19,18 +19,62 @@ import { ucgidOf } from "@federal-mcps/core";
  */
 export function buildFixtureCatalog(): string {
   const entities: EntityRow[] = [
-    ent("4", "020", "West", {}), // Census region (#154)
+    ent("4", "020", "West", {}), // Census region (#154) — no ACS population column (#172)
     ent("8", "030", "Mountain", {}), // Census division with a CPI code (#154)
     ent("9", "030", "Pacific", {}), // Census division WITHOUT a CPI code in this fixture (#154)
-    ent("53", "040", "Washington", { stateFips: "53", aland: 172_000_000_000 }),
-    ent("08", "040", "Colorado", { stateFips: "08", aland: 268_431_000_000 }),
-    ent("08031", "050", "Denver County", { stateFips: "08", lsad: "06", aland: 396_915_495 }),
-    ent("0820000", "160", "Denver city", { stateFips: "08", lsad: "25", aland: 396_000_000 }),
-    ent("19740", "310", "Denver-Aurora-Centennial, CO", { lsad: "M1" }),
-    ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN-WI", { lsad: "M1" }), // multi-state (#153)
-    ent("0899999", "160", "Smallburg town", { stateFips: "08", lsad: "43", aland: 5_000_000 }),
-    ent("0888888", "160", "Bazville CDP", { stateFips: "08", lsad: "57", aland: 2_000_000 }),
-    ent("09001", "050", "Fairfield County", { stateFips: "09", lsad: "06", aland: 1_618_000_000 }),
+    ent("53", "040", "Washington", {
+      stateFips: "53",
+      aland: 172_000_000_000,
+      population: 7_958_180,
+      populationVintage: "2024",
+    }),
+    ent("08", "040", "Colorado", {
+      stateFips: "08",
+      aland: 268_431_000_000,
+      population: 5_957_493,
+      populationVintage: "2024",
+    }),
+    ent("08031", "050", "Denver County", {
+      stateFips: "08",
+      lsad: "06",
+      aland: 396_915_495,
+      population: 715_522,
+      populationVintage: "2024",
+    }),
+    ent("0820000", "160", "Denver city", {
+      stateFips: "08",
+      lsad: "25",
+      aland: 396_000_000,
+      population: 729_019,
+      populationVintage: "2024",
+    }),
+    ent("19740", "310", "Denver-Aurora-Centennial, CO", {
+      lsad: "M1",
+      population: 3_005_131,
+      populationVintage: "2024",
+    }),
+    ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN-WI", { lsad: "M1" }), // multi-state (#153); no population in this fixture (#172)
+    ent("0899999", "160", "Smallburg town", {
+      stateFips: "08",
+      lsad: "43",
+      aland: 5_000_000,
+      population: 4_000,
+      populationVintage: "2024",
+    }),
+    ent("0888888", "160", "Bazville CDP", {
+      stateFips: "08",
+      lsad: "57",
+      aland: 2_000_000,
+      population: 1_500,
+      populationVintage: "2024",
+    }),
+    ent("09001", "050", "Fairfield County", {
+      stateFips: "09",
+      lsad: "06",
+      aland: 1_618_000_000,
+      population: 959_768,
+      populationVintage: "2024",
+    }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),

@@ -207,6 +207,7 @@ function scoreCandidate(catalog: GeographyCatalog, e: EntityRecord, normQuery: s
     agencyCodes,
     availableAt: availabilityFor(catalog, e.sumlevel, agencyCodes),
     flags,
+    population: e.population,
     score,
   };
   if (caveat !== undefined) candidate.caveat = caveat;
