@@ -13,6 +13,7 @@ import {
 } from "./describe-source.js";
 import { censusIndicatorDefinitions } from "./indicators.js";
 import { censusGetRawTool } from "./get-raw.js";
+import { searchTablesTool } from "./search-tables.js";
 import { CENSUS_SERVER_VERSION } from "./version.js";
 
 /**
@@ -124,6 +125,7 @@ export function buildCensusDefinition(deps: CensusDefinitionDeps): ServerDefinit
         ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
         ...(deps.now ? { now: deps.now } : {}),
       }),
+      searchTablesTool,
     ],
     describeSource,
   };

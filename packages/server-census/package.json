@@ -17,7 +17,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && mkdir -p dist/data && cp src/data/table-index.json.gz dist/data/table-index.json.gz",
     "dev:http": "tsx src/http-dev.ts",
     "bundle": "node ../../scripts/bundle-lambda.mjs"
   },

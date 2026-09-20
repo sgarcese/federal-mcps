@@ -20,6 +20,14 @@ describe("Census describeSource()", () => {
     expect(byCode.ACS1?.granularity).toContain("65,000");
   });
 
+  it("lists TABLES (the vendored table index) as available", () => {
+    const d = describeSource();
+    const tables = d.programs.find((p) => p.code === "TABLES");
+    expect(tables?.status).toBe("available");
+    expect(tables?.name).toBe("Table index (ACS and decennial groups)");
+    expect(tables?.granularity).toContain("census_get_raw");
+  });
+
   it("states that a key is required and carries the required Census sentence", () => {
     const d = describeSource();
     expect(d.quota).toContain("key");

@@ -43,7 +43,7 @@ it("meets the family contract", () => assertFamilyContract(definition()));
 it("does not call agencies directly", () => assertServerSources(new URL("./", import.meta.url)));
 
 describe("the live Census server (createServer + InMemoryTransport)", () => {
-  it("lists census_resolve_place and census_describe_source with titles and the family annotations", async () => {
+  it("lists census_resolve_place, census_search_tables and census_describe_source with titles and the family annotations", async () => {
     const server = createServer(definition());
     const client = new Client({ name: "contract-test-client", version: "0.0.0" });
     const [ct, st] = InMemoryTransport.createLinkedPair();
@@ -57,6 +57,7 @@ describe("the live Census server (createServer + InMemoryTransport)", () => {
         "census_get_raw",
         "census_list_indicators",
         "census_resolve_place",
+        "census_search_tables",
       ]);
       for (const tool of tools) {
         expect(tool.title).toMatch(/\S/);
@@ -68,6 +69,12 @@ describe("the live Census server (createServer + InMemoryTransport)", () => {
       }
       const res = await client.callTool({ name: "census_describe_source", arguments: {} });
       expect(JSON.stringify(res.structuredContent)).toContain("not endorsed or certified");
+
+      const search = await client.callTool({
+        name: "census_search_tables",
+        arguments: { query: "median household income" },
+      });
+      expect(JSON.stringify(search.structuredContent)).toContain("B19013");
     } finally {
       await client.close();
     }

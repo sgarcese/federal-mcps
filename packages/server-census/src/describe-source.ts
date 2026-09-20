@@ -1,7 +1,23 @@
 import type { ProgramDescription, SourceDescription } from "@federal-mcps/core";
+import { TABLE_INDEX_RETRIEVED_AT } from "./table-index.js";
 
 /** The Census Data API base (ADR-014 §9); every dataset hangs off `/{vintage}/{dataset}`. */
 export const CENSUS_API_ENDPOINT = "https://api.census.gov/data";
+
+/** The public, keyless dataset catalog `census_search_tables`'s index is derived from (§7). */
+export const CENSUS_DATA_JSON_URL = "https://api.census.gov/data.json";
+
+/**
+ * `census_search_tables`'s citation. Names a fixed retrieval date, not `now()`: the index is a
+ * vendored snapshot (`data/table-index.json.gz`, `data/README.md`), only as fresh as the last
+ * `build-table-index.mts` run.
+ */
+export function censusTableIndexCitation(): string {
+  return (
+    "U.S. Census Bureau Data API dataset and group metadata (api.census.gov/data.json), " +
+    `retrieved ${TABLE_INDEX_RETRIEVED_AT}`
+  );
+}
 
 /** The sentence the Census Data API terms of service require products to display (docs/licensing.md). */
 export const CENSUS_API_REQUIRED_SENTENCE =
@@ -32,6 +48,13 @@ const PROGRAMS: readonly ProgramDescription[] = [
     name: "Decennial Census (2020 redistricting counts)",
     granularity: "every area; total population with no margin of error",
     cadence: "decennial",
+    status: "available",
+  },
+  {
+    code: "TABLES",
+    name: "Table index (ACS and decennial groups)",
+    granularity: "table ids by topic, for census_get_raw",
+    cadence: "regenerated with the index script",
     status: "available",
   },
 ];

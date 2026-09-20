@@ -27,7 +27,7 @@ describe("Census ServerDefinition (M8.1, ADR-014)", () => {
     expect(d.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it("mounts census_resolve_place from the shared resolver plus the generic indicator tools (M8.4) and census_get_raw", () => {
+  it("mounts census_resolve_place from the shared resolver plus the generic indicator tools (M8.4) and census_get_raw and census_search_tables", () => {
     const tools = build().tools;
     expect(tools.map((t) => t.name)).toEqual([
       "census_resolve_place",
@@ -35,6 +35,7 @@ describe("Census ServerDefinition (M8.1, ADR-014)", () => {
       "census_compare_places",
       "census_list_indicators",
       "census_get_raw",
+      "census_search_tables",
     ]);
     expect(tools[0]?.fromCore).toBe(true);
   });
