@@ -29,7 +29,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
-- [spikes/m9-cdc-places.md](spikes/m9-cdc-places.md) — M9 CDC PLACES server: verified Socrata
+- [spikes/opencontext-socrata-benchmark.md](spikes/opencontext-socrata-benchmark.md) — geo
+  resolver + generic OpenContext Socrata connector vs a dedicated PLACES server: 7-question
+  benchmark (naive 5/7, guided 7/7) and the "guide + connector" pattern decision.
+- [spikes/m9-cdc-places.md](spikes/m9-cdc-places.md) (deferred) — M9 CDC PLACES server: verified Socrata
   facts (2025 release datasets, 40 measures, two value types with 95% intervals, per-measure data
   years, suppression) and nine decision questions.
 - [spikes/m8-census.md](spikes/m8-census.md) — M8 Census server: verified ACS facts (key now
