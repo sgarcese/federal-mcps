@@ -47,9 +47,21 @@ form — an agent that must *choose* the right tool for a natural-language quest
 against a rubric — is a future enhancement; the questions here are written to support it (each has a
 natural-language `question` alongside the tool call).
 
+## The Census set (`census.jsonl`, M8)
+
+Each entry names its server (`"server": "census"`; the default is `bls`) and the runner picks the
+URL (`CENSUS_URL`, default `https://census-mcp.responsive.city/mcp`). Cases: a large city's
+population on the 1-year product (flagged as such), median income with a margin of error, a small
+city falling to the 5-year product (flagged, never a bare number), a 1-year request below the
+threshold answered on 5-year with the reason, a subject-table percent, the decennial count
+(footnoted as a count), a mixed-size comparison aligned on 5-year, an ambiguity stop, and the
+required Census sentence in `census_describe_source`.
+
 ## Adding a question
 
 Append a line to `boston.jsonl`: `{ id, area, question, tool, args, rubric }`. Supported rubric
 keys: `expectProgram`, `expectStatus`, `mustHaveValue`, `mustNotHaveValue`, `mustCite`, `mustFlag`
 (regex on caveats), `mustNotFlag`, `mustNotFabricateCity`, `compareAllOk`, `comparePeriodAligned`,
-`listPublished`/`listUnpublished` (`[[indicator, publishedAtLevel], …]`), `describeAllAvailable`.
+`listPublished`/`listUnpublished` (`[[indicator, publishedAtLevel], …]`), `describeAllAvailable`,
+and for Census: `mustFootnote` (regex on footnotes), `mustHaveMargin`, `expectReliability`,
+`mustHaveSentence`. Add `"server": "census"` to route an entry to the Census server.

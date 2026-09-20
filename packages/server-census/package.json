@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/server-census",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server for U.S. Census Bureau statistics by place: ACS headline indicators with margins of error and reliability as first-class data.",
   "license": "Apache-2.0",
   "type": "module",
@@ -22,11 +22,11 @@
     "bundle": "node ../../scripts/bundle-lambda.mjs"
   },
   "dependencies": {
-    "@federal-mcps/core": "0.2.0",
+    "@federal-mcps/core": "0.3.0",
     "@modelcontextprotocol/sdk": "1.30.0"
   },
   "devDependencies": {
-    "@federal-mcps/geography-build": "0.2.0",
+    "@federal-mcps/geography-build": "0.3.0",
     "@types/aws-lambda": "8.10.163",
     "@types/better-sqlite3": "9.6.0",
     "better-sqlite3": "13.0.3",

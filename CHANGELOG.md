@@ -3,6 +3,33 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## 0.3.0 — M8 Census server (2026-09-19)
+
+Added
+- **`server-census`**, the family's second agency server (ADR-014), at `census-mcp.responsive.city`:
+  thirteen ACS headline indicators (population, median age, median household and per capita income,
+  poverty rate, unemployment rate, bachelor's or higher, uninsured share, mean commute, median rent,
+  median home value, owner-occupied share, median housing cost) plus `decennial_population` (2020).
+- **Reliability as data:** every ACS value carries its margin of error and a coefficient-of-variation
+  grade; annotation sentinels return null with the Census meaning; open-ended medians return the
+  bound with a caveat; controlled estimates keep the value with no margin.
+- **Product by population:** 1-year at 65,000 people or more, 5-year below, chosen from a new catalog
+  population column (ACS 2020–2024 totals on every entity) and always stated; a `product` argument
+  overrides; `census_compare_places` aligns mixed-size places on the 5-year product and says so.
+- `census_search_tables` over a vendored index of 3,078 ACS/decennial table groups; `census_get_raw`
+  with the Census Data API's own query grammar.
+- Core: the indicator registry, dimension seam and generic `get_indicator` / `compare_places` /
+  `list_indicators` tools moved to `@federal-mcps/core` (BLS unchanged); `caveatOf` receives the
+  chosen dimensions; an `alignDimensions` hook for comparisons; a `queryAuth` request option that
+  appends credentials at fetch time only; Lambda bundles ship a server's `src/data/` assets.
+
+Changed
+- The Census Data API now requires a key on every data query; `CENSUS_API_KEY` is a build-time
+  requirement for the geography catalog (population column) and a deployed environment variable.
+- The Census API's required sentence ("This product uses the Census Bureau Data API but is not
+  endorsed or certified by the Census Bureau.") is displayed by `census_describe_source`, the README
+  and the connector docs.
+
 ## 0.2.0 — M7 functional completions (2026-09-18)
 
 Added
