@@ -1,5 +1,11 @@
 # Spike: M9 — the CDC PLACES server (model-based health estimates by place, with their intervals)
 
+> **Status (2026-09-20): deferred.** The owner chose to test the geo resolver + OpenContext
+> Socrata connector as a reusable alternative before building a server; see
+> [opencontext-socrata-benchmark.md](opencontext-socrata-benchmark.md) for the result and two
+> corrections to the facts below (suppression is county-only; age-adjusted prevalence is
+> county/place-only — tract and ZCTA files carry crude prevalence only).
+
 The family's third agency server (ADR-001). PLACES ("Local Data for Better Health") is the CDC's
 small-area estimation product: forty chronic-disease, prevention, disability, social-need,
 risk-behavior and health-status measures for every county, incorporated place and CDP, census
