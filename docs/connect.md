@@ -5,10 +5,11 @@ account, no API key, no install — the server answers over the public internet 
 only public Bureau of Labor Statistics data. Developers who want a local stdio process
 instead want [`install.md`](install.md).
 
-The one thing to copy is the URL:
+The one thing to copy is the URL — one per server:
 
 ```
-https://bls-mcp.responsive.city/mcp
+https://bls-mcp.responsive.city/mcp        # BLS: unemployment, jobs, wages, prices
+https://census-mcp.responsive.city/mcp     # Census: population, income, poverty, housing (ACS + 2020 count)
 ```
 
 Add it once, as a **connector**, and Claude can pull federal labor statistics for a place
@@ -29,6 +30,7 @@ One command from any terminal:
 
 ```bash
 claude mcp add --transport http bls https://bls-mcp.responsive.city/mcp
+claude mcp add --transport http census https://census-mcp.responsive.city/mcp
 ```
 
 `bls` is just the local name you'll see it under; call it anything. Check it landed with
@@ -37,8 +39,8 @@ claude mcp add --transport http bls https://bls-mcp.responsive.city/mcp
 ## Any other MCP host
 
 The server speaks **MCP over stateless Streamable HTTP**. Any host that accepts a remote
-MCP endpoint takes the same URL — point it at `https://bls-mcp.responsive.city/mcp`, no
-auth, and you're connected.
+MCP endpoint takes the same URLs — point it at `https://bls-mcp.responsive.city/mcp` or
+`https://census-mcp.responsive.city/mcp`, no auth, and you're connected.
 
 ## What to ask
 
@@ -68,6 +70,13 @@ Boston metro" (CPI by expenditure group); "construction wages in Denver County" 
 "how have lumber and steel prices moved" (PPI — national only, and the answer says so if
 you name a place). The server publishes each vocabulary through `bls_list_indicators`, so
 Claude picks the right code rather than guessing.
+
+The Census server answers the demographic side: "what is the median household income in
+Sedona?", "poverty rate in Suffolk County", "how many people did the 2020 Census count in
+Denver?". Every American Community Survey number comes with its margin of error and a
+reliability grade, and the answer says whether it is a 1-year estimate (places of 65,000 or
+more) or a 5-year one (everywhere else, covering a five-year period). This product uses the
+Census Bureau Data API but is not endorsed or certified by the Census Bureau.
 
 Not sure what's available for your town or state? Ask "what can the BLS server tell me
 about \<place\>?" — that runs `bls_list_indicators` (what publishes at that level) and

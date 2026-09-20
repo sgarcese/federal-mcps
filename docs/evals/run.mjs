@@ -7,21 +7,25 @@
  * wages, prices, peer comparison) plus the judgment cases that are the product's core value
  * (ambiguity stops, no-local-CPI, below-threshold, multi-state metros, unknown places).
  *
- *   node docs/evals/run.mjs            # against https://bls-mcp.responsive.city/mcp
- *   BLS_URL=http://localhost:3000/mcp node docs/evals/run.mjs
+ *   node docs/evals/run.mjs            # every *.jsonl set, against the live servers
+ *   BLS_URL=http://localhost:3000/mcp CENSUS_URL=http://localhost:3002/mcp node docs/evals/run.mjs
  *
  * Grading is deterministic on the server's structured response (does it carry the right value,
  * citation, caveat, or status). Exits 0 if the pass-rate meets the bar (BAR, default 0.9), else 1.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
-const BLS_URL = process.env.BLS_URL ?? "https://bls-mcp.responsive.city/mcp";
+/** One URL per server; an entry's `server` field (default "bls") picks it. */
+const URLS = {
+  bls: process.env.BLS_URL ?? "https://bls-mcp.responsive.city/mcp",
+  census: process.env.CENSUS_URL ?? "https://census-mcp.responsive.city/mcp",
+};
 const BAR = Number.parseFloat(process.env.BAR ?? "0.9");
 const log = (line = "") => process.stdout.write(`${line}\n`);
 
 /** Call one MCP tool over Streamable HTTP and return its structured envelope (or an error marker). */
-async function callTool(name, args) {
-  const res = await fetch(BLS_URL, {
+async function callTool(url, name, args) {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
     body: JSON.stringify({
@@ -65,6 +69,18 @@ function grade(env, rubric) {
     fails.push(`caveat missing /${rubric.mustFlag}/`);
   if (rubric.mustNotFlag && new RegExp(rubric.mustNotFlag, "i").test(limitations))
     fails.push(`unexpected caveat /${rubric.mustNotFlag}/`);
+  // Census (ADR-014): footnotes carry annotation meanings and reliability notes; observations
+  // carry margins of error and grades.
+  const footnotes = (env.footnotes ?? []).map((f) => f.text).join(" ");
+  if (rubric.mustFootnote && !new RegExp(rubric.mustFootnote, "i").test(footnotes))
+    fails.push(`footnote missing /${rubric.mustFootnote}/`);
+  const first = (data.observations ?? [])[0];
+  if (rubric.mustHaveMargin && !has(first?.marginOfError))
+    fails.push("no margin of error on the observation");
+  if (rubric.expectReliability && first?.reliability !== rubric.expectReliability)
+    fails.push(`reliability ${first?.reliability} != ${rubric.expectReliability}`);
+  if (rubric.mustHaveSentence && !JSON.stringify(env).includes(rubric.mustHaveSentence))
+    fails.push("required sentence missing");
 
   // The hard promise for a below-threshold / multi-state place: never a bare city value —
   // either no value (declined) or a value that travels with a caveat.
@@ -99,18 +115,28 @@ function grade(env, rubric) {
   return fails;
 }
 
-const entries = readFileSync(new URL("./boston.jsonl", import.meta.url), "utf-8")
-  .split(/\r?\n/)
-  .filter((l) => l.trim())
-  .map((l) => JSON.parse(l));
+const dir = new URL("./", import.meta.url);
+const sets = readdirSync(dir)
+  .filter((f) => f.endsWith(".jsonl"))
+  .sort();
+const entries = sets.flatMap((f) =>
+  readFileSync(new URL(f, dir), "utf-8")
+    .split(/\r?\n/)
+    .filter((l) => l.trim())
+    .map((l) => ({ server: "bls", ...JSON.parse(l) })),
+);
 
-log(`Running ${entries.length} evals against ${BLS_URL} (bar ${BAR})\n`);
+log(`Running ${entries.length} evals from ${sets.join(", ")} (bar ${BAR})`);
+for (const [name, url] of Object.entries(URLS)) log(`  ${name}: ${url}`);
+log();
 let passed = 0;
 const failures = [];
 for (const e of entries) {
   let fails;
   try {
-    const env = await callTool(e.tool, e.args);
+    const url = URLS[e.server];
+    if (!url) throw new Error(`unknown server "${e.server}"`);
+    const env = await callTool(url, e.tool, e.args);
     fails = env.error ? [`tool error: ${env.error}`] : grade(env, e.rubric);
   } catch (err) {
     fails = [`exception: ${err.message}`];

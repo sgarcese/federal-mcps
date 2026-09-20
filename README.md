@@ -49,7 +49,8 @@ The servers speak MCP over **stateless Streamable HTTP** — add the URL as a cu
 connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 
 ```
-https://bls-mcp.responsive.city/mcp
+https://bls-mcp.responsive.city/mcp        # BLS: labor, wages, prices
+https://census-mcp.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
 ```
 
 New to connectors? [`docs/connect.md`](docs/connect.md) has one-screen, copy-paste steps
@@ -68,7 +69,25 @@ A typical exchange: resolve the place, then read a number.
 // bls_compare_places { "indicator": "occupational_wage",
 //                      "places": ["Colorado","Utah","Nevada"], "kind": "state" }
 //   → one row per state, aligned on the latest shared period
+
+// census_get_indicator { "place": "Sedona", "kind": "city", "state": "AZ",
+//                        "indicator": "median_household_income" }
+//   → $73,738 ± $12,737 (ACS 2020–2024 5-year, reliability high), flagged: Sedona is below
+//     the 65,000-person 1-year threshold — never a five-year figure passed off as one year's
 ```
+
+## What it answers today (Census)
+
+`server-census` (M8, ADR-014) serves thirteen American Community Survey headline indicators —
+population, median age, median household and per capita income, poverty rate, unemployment rate,
+bachelor's or higher, uninsured share, mean commute, median rent, median home value, owner-occupied
+share, median housing cost — plus the 2020 decennial count, for any place in the catalog. Every
+ACS value carries its margin of error and a reliability grade; the 1-year product is used at
+65,000 people and above, the 5-year product below, and the answer says which. Annotation values
+(insufficient sample, not applicable, controlled estimates) come back as null with the Census
+meaning. `census_search_tables` finds table ids by topic and `census_get_raw` runs any Census API
+query. This product uses the Census Bureau Data API but is not endorsed or certified by the Census
+Bureau.
 
 Call `bls_describe_source` to see coverage and cadence, or `bls_list_indicators` for the
 vocabulary and which programs publish at a given place's level.

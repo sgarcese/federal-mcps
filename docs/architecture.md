@@ -216,18 +216,13 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 | **M5 QCEW** | A registry fetch-capability seam (ADR-011 §2) so a non-timeseries program dispatches behind `bls_get_indicator`; a CSV slice client over `data.bls.gov/cew/data/api` with long-TTL cache; `covered_employment` + `average_weekly_wage` at county and state. Metro (`C`-code) and NAICS/ownership pickers deferred | Covered employment and average weekly wage for any county or state answer through the family verbs, with disclosure suppressions carried as caveats |
 | **M6 Release hardening** | Optional LABSTAT observation mirror for LAUS and SM; eval set of real policy questions run against the deployed server; README, install docs for Claude, Claude Code and one third-party host; Anthropic directory submission; tagged v1.0.0 | Eval set passes at an agreed threshold; a new user installs and gets a cited answer without reading source |
 
-**M8 Census (planned, rulings 2026-09-18 on the suitability spike):** a curated ACS indicator
-vocabulary through `census_get_indicator` on the registry seam (population, median household
-income, poverty, rent, home value, educational attainment, commute, health insurance), with
-`census_get_raw` carrying the Census API grammar and `census_search_tables` for discovery; margins
-of error, annotation sentinels and the ACS 1-year → 5-year fallback as first-class caveats from
-the start; geography from the core catalog (county subdivisions added when a story needs them);
-all calls through the core client with a long-TTL cache, no mirror; the Census API's required
-sentence ("This product uses the Census Bureau Data API but is not endorsed or certified by the
-Census Bureau.") displayed. Starts with a spike on the vocabulary and reliability rules → ADR →
-seam-first build, after the M7 deploy is verified.
+## Release 2: Census
 
-Deferred to later releases, deliberately: CDC PLACES server,
+| Milestone | Component | Exit criterion |
+|---|---|---|
+| **M8 Census server** (ADR-014) | `packages/server-census` on the core: thirteen ACS headline indicators plus the 2020 decennial count on the registry seam; an ACS fetch capability choosing 1-year (≥65,000) or 5-year by a catalog population column, with margins of error, coefficient-of-variation reliability grades and annotation sentinels as first-class envelope data; `census_compare_places` aligned on one product; `census_get_raw` carrying the Census API grammar; `census_search_tables` over a vendored table index; the key as `queryAuth` (never cached, recorded or logged); its own Terraform module and hostname | Demographic questions for any place answer with a margin, a grade and the product stated; a small city is never given a one-year figure; the eval set's Census cases pass live at `census-mcp.responsive.city` |
+
+Deferred to later releases, deliberately: sub-dimension pickers for Census (by race, age, tenure), county subdivisions, ACS significance testing, SAIPE/PEP, CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
 
