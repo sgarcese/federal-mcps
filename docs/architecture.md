@@ -179,6 +179,17 @@ spike #51; the QCEW client over
 `data.bls.gov/cew/data/api/{year}/{qtr}/area/{code}.csv` lands in M5;
 preliminary/revised flags are surfaced from footnote codes.
 
+## Two surfaces per source (ADR-015)
+
+Not every source earns a server. A source whose API has an id grammar (BLS series ids, Census
+variable strings), needs quota or caching discipline, or whose contract a host relies on, ships
+as a server on the core. A source hosted on a data portal (Socrata, CKAN, ArcGIS Hub,
+OpenDataSoft) ships as a **source guide**: an Agent Skill under `skills/<source>/` used with
+`geo-mcp` for place resolution and a generic [OpenContext](https://github.com/thealphacubicle/OpenContext)
+connector for the portal. The 2026-09-20 benchmark (`docs/spikes/opencontext-socrata-benchmark.md`)
+showed a guide takes a fresh model from 5/7 to 7/7 on CDC PLACES. CDC PLACES and HUD are guides;
+FEMA and BEA are decided by the same test.
+
 ## Servers two and three
 
 **Census.** Start from the official server. Keep dataset discovery, variable groups and
