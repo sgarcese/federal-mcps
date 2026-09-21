@@ -29,6 +29,11 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
+- [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
+  — guide + generic portal connector is the default surface for portal-hosted sources; servers
+  only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/hud-arcgis-hub-guide.md](spikes/hud-arcgis-hub-guide.md) — verified HUD ArcGIS Hub
+  datasets, join keys and connector limits behind the HUD source guide.
 - [spikes/opencontext-socrata-benchmark.md](spikes/opencontext-socrata-benchmark.md) — geo
   resolver + generic OpenContext Socrata connector vs a dedicated PLACES server: 7-question
   benchmark (naive 5/7, guided 7/7) and the "guide + connector" pattern decision.
@@ -92,3 +97,12 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 ## Stories
 
 `stories/` — backlog source of truth. Empty until Phase 0 issues are cut from rulings.
+
+## Skills (source guides)
+
+`skills/<source>/SKILL.md` are Agent Skills: verified source guides for portal-hosted sources,
+loaded by a host next to `geo-mcp` and an OpenContext deployment of the portal (ADR-015).
+Each ships with a guided-run eval set under `docs/evals/`.
+
+- `skills/cdc-places/` — CDC PLACES on data.cdc.gov (Socrata), #191.
+- `skills/hud-open-data/` — HUD Open Data on ArcGIS Hub, #192.
