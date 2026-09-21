@@ -67,6 +67,39 @@ export function buildFixtureCatalog(): string {
       population: 959_768,
       populationVintage: "2024",
     }),
+    // Same-name places across states (#187): two comparable Springfields, and a tiny
+    // Denver city in Iowa that Denver, CO dominates by population.
+    ent("29", "040", "Missouri", {
+      stateFips: "29",
+      population: 6_200_000,
+      populationVintage: "2024",
+    }),
+    ent("17", "040", "Illinois", {
+      stateFips: "17",
+      population: 12_600_000,
+      populationVintage: "2024",
+    }),
+    ent("2970000", "160", "Springfield city", {
+      stateFips: "29",
+      lsad: "25",
+      aland: 215_000_000,
+      population: 169_000,
+      populationVintage: "2024",
+    }),
+    ent("1772000", "160", "Springfield city", {
+      stateFips: "17",
+      lsad: "25",
+      aland: 170_000_000,
+      population: 114_000,
+      populationVintage: "2024",
+    }),
+    ent("1920035", "160", "Denver city", {
+      stateFips: "19",
+      lsad: "25",
+      aland: 4_000_000,
+      population: 1_800,
+      populationVintage: "2024",
+    }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
@@ -86,6 +119,9 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
     { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
     { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
+    { ucgid: uc("2970000"), alias: "Springfield", source: "lsad-stripped" },
+    { ucgid: uc("1772000"), alias: "Springfield", source: "lsad-stripped" },
+    { ucgid: uc("1920035"), alias: "Denver", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [

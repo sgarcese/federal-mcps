@@ -104,6 +104,49 @@ describe("resolvePlace", () => {
   });
 });
 
+describe("same-name places across states (#187)", () => {
+  it("stops as ambiguous when exact matches of one kind sit in several states and no state is given", () => {
+    const r = resolvePlace(catalog, "Springfield", { kind: "city" });
+    expect(r.status).toBe("ambiguous");
+    if (r.status !== "ambiguous") return;
+    expect(r.explanation).toMatch(/more than one state/);
+    expect(r.explanation).toContain("MO");
+    expect(r.explanation).toContain("IL");
+    expect(r.candidates.every((c) => c.flags.includes("ambiguous"))).toBe(true);
+    expect(new Set(r.candidates.map((c) => c.stateFips)).size).toBeGreaterThan(1);
+  });
+
+  it("resolves when a state is given", () => {
+    expect(only(resolvePlace(catalog, "Springfield", { kind: "city", state: "IL" })).geoid).toBe(
+      "1772000",
+    );
+    expect(only(resolvePlace(catalog, "Springfield", { kind: "city", state: "29" })).geoid).toBe(
+      "2970000",
+    );
+  });
+
+  it("honours a trailing state in the query, as a USPS code or a state name", () => {
+    expect(only(resolvePlace(catalog, "Springfield, MO", { kind: "city" })).geoid).toBe("2970000");
+    expect(only(resolvePlace(catalog, "Springfield, Illinois", { kind: "city" })).geoid).toBe(
+      "1772000",
+    );
+  });
+
+  it("does not stop when one match dominates the others by population (Denver, CO vs Denver, IA)", () => {
+    const r = resolvePlace(catalog, "Denver", { kind: "city" });
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.geoid).toBe("0820000");
+    expect(r.candidates.some((c) => c.geoid === "1920035")).toBe(true);
+  });
+
+  it("still stops on kind before state for a bare name", () => {
+    const r = resolvePlace(catalog, "Denver");
+    expect(r.status).toBe("ambiguous");
+    if (r.status !== "ambiguous") return;
+    expect(r.explanation).toMatch(/kind/);
+  });
+});
+
 describe("containment, overlap, lineage", () => {
   it("returns a place's parents with shares", () => {
     const parents = getContainment(catalog, ucgidOf("160", "0820000"));

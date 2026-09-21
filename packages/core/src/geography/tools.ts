@@ -64,7 +64,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
       title: "Resolve place",
       fromCore: true,
       description:
-        "Resolve a place name to candidates with every identifier (GEOID, UCGID, Data Commons DCID), its parents, which programs publish at its level, and structured flags. Returns status 'ambiguous' when a name means several kinds — pick one with `kind`.",
+        "Resolve a place name to candidates with every identifier (GEOID, UCGID, Data Commons DCID), its parents, which programs publish at its level, and structured flags. Returns status 'ambiguous' when a name means several kinds — pick one with `kind` — or the same kind of place in several states — pick one with `state`, or write 'Springfield, MO'.",
       input,
       examples: [{ title: "Denver, disambiguated", input: { query: "Denver", kind: "county" } }],
       handler: async (args): Promise<ToolHandlerResult> => {
