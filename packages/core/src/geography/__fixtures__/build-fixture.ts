@@ -69,8 +69,16 @@ export function buildFixtureCatalog(): string {
     }),
     // Same-name places across states (#187): two comparable Springfields, and a tiny
     // Denver city in Iowa that Denver, CO dominates by population.
-    ent("29", "040", "Missouri", { stateFips: "29", population: 6_200_000, populationVintage: "2024" }),
-    ent("17", "040", "Illinois", { stateFips: "17", population: 12_600_000, populationVintage: "2024" }),
+    ent("29", "040", "Missouri", {
+      stateFips: "29",
+      population: 6_200_000,
+      populationVintage: "2024",
+    }),
+    ent("17", "040", "Illinois", {
+      stateFips: "17",
+      population: 12_600_000,
+      populationVintage: "2024",
+    }),
     ent("2970000", "160", "Springfield city", {
       stateFips: "29",
       lsad: "25",

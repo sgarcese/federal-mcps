@@ -16,7 +16,9 @@ different levels.
 Denver is the worked example: the city of Denver (place 0820000), Denver County
 (08031), and the Denver metro (CBSA 19740) share much territory but are not
 interchangeable. Elsewhere, city and county boundaries diverge sharply. When a name
-could mean several kinds, resolve_place returns status "ambiguous" — pick a kind.
+could mean several kinds, resolve_place returns status "ambiguous" — pick a kind. The same
+happens when one kind of place shares a name across states with none dominant (Springfield,
+Portland): pick a state, or write "Springfield, MO".
 
 Read the structured flags on each result rather than prose:
 - below_threshold: a place under the LAUS 25,000 cutoff has no city-level unemployment

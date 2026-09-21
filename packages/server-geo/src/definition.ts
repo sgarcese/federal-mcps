@@ -12,7 +12,8 @@ This server resolves U.S. geography for federal statistics and reports how place
 Resolve which KIND of place a question means before answering: a city, its county, and its
 metro area are different geographies that overlap but do not nest, and geo_resolve_place
 returns status "ambiguous" when a name could mean several — pick one with the \`kind\`
-argument. Read the structured flags on each result (below_threshold, non_nesting,
+argument — or when the same kind of place shares a name across states with none dominant
+(Springfield, Portland) — pick one with \`state\`, or write "Springfield, MO". Read the structured flags on each result (below_threshold, non_nesting,
 vintage_mismatch, cdp, consolidated_city) rather than prose. get_containment gives the
 hierarchy (a place's counties, its state, with shares); get_overlap gives areal overlap
 (a ZCTA's tracts with shares); get_lineage maps a 2010 tract to its 2020 successors;

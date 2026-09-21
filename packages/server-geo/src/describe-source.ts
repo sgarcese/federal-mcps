@@ -43,7 +43,7 @@ export function describeGeoSource(catalog: GeographyCatalog): SourceDescription 
     ],
     quota: `Local catalog, vintage ${vintage}; no external API and no rate limit.`,
     caveats: [
-      "A place, its county, and its metro are different geographies; resolve_place returns 'ambiguous' when a name means several.",
+      "A place, its county, and its metro are different geographies; resolve_place returns 'ambiguous' when a name means several kinds, or the same kind in several states with none dominant.",
       "ZCTA is not a ZIP code; PO-box and single-building ZIPs have no ZCTA.",
       "Read the structured flags (below_threshold, non_nesting, vintage_mismatch, cdp, consolidated_city) rather than prose.",
     ],

@@ -66,6 +66,17 @@ const USPS_TO_FIPS: Readonly<Record<string, string>> = Object.freeze({
   WY: "56",
 });
 
+const FIPS_TO_USPS: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(Object.entries(USPS_TO_FIPS).map(([usps, fips]) => [fips, usps])),
+);
+
+/**
+ * Same-name places in other states are rivals unless the leader has at least this many times
+ * the runner-up's population (#187): Springfield MO/IL and Portland OR/ME stop; Denver CO
+ * against a 1,800-person Denver, IA does not.
+ */
+const STATE_DOMINANCE_RATIO = 10;
+
 /** Maps a kind hint (a sumlevel or a label like "county"/"metro"/"city") to sumlevels. */
 const KIND_HINTS: Readonly<Record<string, string[]>> = Object.freeze({
   region: ["020"],
@@ -92,7 +103,9 @@ const MAX_QUERY_LENGTH = 200;
 /**
  * Resolves a place name to ranked candidates, each carrying every identifier, its parents,
  * what data is available at its level, and structured flags. Stops with `status:
- * "ambiguous"` when a query means several kinds of place and no kind was given (ADR-003 §7).
+ * "ambiguous"` when a query means several kinds of place and no kind was given (ADR-003 §7),
+ * or when exact matches of one kind sit in several states, none dominant, and no state was
+ * given (#187). A trailing ", MO" / ", Missouri" in the query counts as the state.
  */
 export function resolvePlace(
   catalog: GeographyCatalog,
@@ -104,15 +117,17 @@ export function resolvePlace(
   const bounded = query.slice(0, MAX_QUERY_LENGTH);
   if (bounded.trim().length < 3) return { status: "ok", candidates: [] };
 
-  const stateFips = normalizeState(options.state);
+  const suffix = splitStateSuffix(catalog, bounded);
+  const stateFips = normalizeState(options.state) ?? suffix.state;
+  const searchText = suffix.state ? suffix.name : bounded;
   const sumlevels = normalizeKind(options.kind);
-  const normQuery = normalizeName(bounded);
+  const normQuery = normalizeName(searchText);
 
   const searchOpts: { stateFips?: string; sumlevels?: string[]; limit: number } = { limit: 50 };
   if (stateFips) searchOpts.stateFips = stateFips;
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
-  const rows = catalog.searchNames(bounded, searchOpts);
+  const rows = catalog.searchNames(searchText, searchOpts);
   const scored = rows
     .map((e) => scoreCandidate(catalog, e, normQuery))
     .sort((a, b) => b.score - a.score);
@@ -127,22 +142,79 @@ export function resolvePlace(
       scored.filter((c) => c.isExact).map((c) => c.candidate.kind.sumlevel),
     );
     if (strongKinds.size > 1) {
-      const flagged = candidates.map((c) => ({
-        ...c.candidate,
-        flags: c.candidate.flags.includes("ambiguous")
-          ? c.candidate.flags
-          : [...c.candidate.flags, "ambiguous" as const],
-      }));
       const kinds = [...strongKinds].map(labelForSumlevel).join(", ");
       return {
         status: "ambiguous",
-        candidates: flagged,
+        candidates: flagAmbiguous(candidates),
         explanation: `"${query}" matches more than one kind of place (${kinds}). Specify a kind to choose.`,
       };
     }
   }
 
+  // Ambiguity by state (#187): exact matches of the top kind in several states, none dominant.
+  if (!stateFips) {
+    const topKind = candidates[0]?.candidate.kind.sumlevel;
+    const rivals = scored.filter(
+      (c) => c.isExact && c.candidate.kind.sumlevel === topKind && c.candidate.stateFips !== null,
+    );
+    const states = [...new Set(rivals.map((c) => c.candidate.stateFips as string))];
+    if (states.length > 1 && !hasDominantState(rivals)) {
+      const label = topKind === undefined ? "place" : labelForSumlevel(topKind);
+      const list = states.map((s) => FIPS_TO_USPS[s] ?? s).join(", ");
+      return {
+        status: "ambiguous",
+        candidates: flagAmbiguous(candidates),
+        explanation: `"${query}" matches a ${label} in more than one state (${list}). Specify a state to choose, e.g. "${searchText}, ${list.split(", ")[0]}".`,
+      };
+    }
+  }
+
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
+}
+
+function flagAmbiguous(candidates: readonly Scored[]): PlaceCandidate[] {
+  return candidates.map((c) => ({
+    ...c.candidate,
+    flags: c.candidate.flags.includes("ambiguous")
+      ? c.candidate.flags
+      : [...c.candidate.flags, "ambiguous" as const],
+  }));
+}
+
+/** True when the most populous rival has STATE_DOMINANCE_RATIO× the best rival in any other state. */
+function hasDominantState(rivals: readonly Scored[]): boolean {
+  const byPop = [...rivals].sort(
+    (a, b) => (b.candidate.population ?? 0) - (a.candidate.population ?? 0),
+  );
+  const lead = byPop[0];
+  if (!lead || lead.candidate.population === null) return false;
+  const runnerUp = byPop.find((c) => c.candidate.stateFips !== lead.candidate.stateFips);
+  if (!runnerUp || runnerUp.candidate.population === null) return false;
+  return lead.candidate.population >= STATE_DOMINANCE_RATIO * runnerUp.candidate.population;
+}
+
+/**
+ * Splits a trailing ", MO" / ", Missouri" off a query into a state FIPS, when the tail is a
+ * USPS code or matches a state in the catalog; otherwise the query is left whole.
+ */
+function splitStateSuffix(
+  catalog: GeographyCatalog,
+  query: string,
+): { name: string; state?: string } {
+  const m = /^(.+?),\s*([A-Za-z][A-Za-z .]{1,30})$/.exec(query.trim());
+  const head = m?.[1]?.trim();
+  const tail = m?.[2]?.trim();
+  if (!head || !tail) return { name: query };
+  if (/^[A-Za-z]{2}$/.test(tail)) {
+    const fips = USPS_TO_FIPS[tail.toUpperCase()];
+    return fips ? { name: head, state: fips } : { name: query };
+  }
+  const norm = normalizeName(tail);
+  const hit = catalog
+    .searchNames(tail, { sumlevels: ["040"], limit: 5 })
+    .find((e) => normalizeName(e.name) === norm);
+  if (!hit) return { name: query };
+  return { name: head, state: hit.state_fips ?? hit.geoid };
 }
 
 /** A place's containment-hierarchy parents with shares (place → county → CBSA → state). */
