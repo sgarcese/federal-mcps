@@ -65,3 +65,13 @@ keys: `expectProgram`, `expectStatus`, `mustHaveValue`, `mustNotHaveValue`, `mus
 `listPublished`/`listUnpublished` (`[[indicator, publishedAtLevel], …]`), `describeAllAvailable`,
 and for Census: `mustFootnote` (regex on footnotes), `mustHaveMargin`, `expectReliability`,
 `mustHaveSentence`. Add `"server": "census"` to route an entry to the Census server.
+
+## Guided-run sets (source guides, ADR-015)
+
+`<source>-guided.jsonl` files hold questions with ground truth and a rubric for a source guide
+(`skills/<source>/SKILL.md`). They are not run by `run.mjs`: a fresh session is given only
+`geo_resolve_place`, the OpenContext connector for the portal, and the skill, answers every
+question, and each answer is scored by hand against `rubric.mustState` / `mustNot`. Release a
+guide only on a clean pass; the ground truth was verified live on the date in the skill.
+
+- `cdc-places-guided.jsonl` — the seven questions of the 2026-09-20 benchmark (naive 5/7, guided 7/7).
