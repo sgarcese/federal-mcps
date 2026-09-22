@@ -3,7 +3,7 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## Unreleased — M10 Deployment wrapper
+## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 
 Added
 - **Short hostnames** `bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp`
@@ -15,6 +15,16 @@ Added
   `opencontext.lock.json` and built at deploy time by `scripts/bundle-opencontext.sh` (ADR-016 §4);
   an optional `SOCRATA_APP_TOKEN` rides as a sensitive variable.
 - Repository rulesets and security settings (ADR-016 §6, `docs/runbooks/repository-settings.md`).
+- Resolver: same-name places across states stop as ambiguous unless one dominates by population;
+  a trailing state in the query is honoured (#187).
+- Source guides as skills (ADR-015, M9): `skills/cdc-places` and `skills/hud-open-data`, each with a
+  guided eval set; both passed 7/7 against the live hostnames on release day.
+
+Fixed
+- The eval runner skips `*-guided.jsonl` sets instead of false-passing tool-less cases (#208).
+
+Verified live (2026-09-22): all four hostnames and the three `*-mcp` aliases answer; runner 34/34
+(BLS + Census sets) on the short names; CDC portal returns PLACES rows.
 
 ## 0.3.0 — M8 Census server (2026-09-19)
 

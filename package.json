@@ -1,6 +1,6 @@
 {
   "name": "federal-mcps",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "Open-source MCP servers that give city and state policy staff federal statistics by place.",

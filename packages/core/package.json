@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Shared runtime for the federal-mcps family: geography resolver, HTTP client, provenance envelope, server shell, test helpers.",
   "license": "Apache-2.0",
   "type": "module",
@@ -33,7 +33,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
-    "@federal-mcps/geography-build": "0.3.0",
+    "@federal-mcps/geography-build": "0.4.0",
     "@types/better-sqlite3": "9.6.0"
   }
 }
