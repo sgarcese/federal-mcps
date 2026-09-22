@@ -9,7 +9,7 @@ this project's core value.
 ## Run it
 
 ```bash
-node docs/evals/run.mjs            # against the live server, https://bls-mcp.responsive.city/mcp
+node docs/evals/run.mjs            # against the live server, https://bls.responsive.city/mcp
 BLS_URL=http://localhost:3000/mcp node docs/evals/run.mjs   # against a local server
 npm run eval                       # same, from the repo root
 ```
@@ -50,7 +50,7 @@ natural-language `question` alongside the tool call).
 ## The Census set (`census.jsonl`, M8)
 
 Each entry names its server (`"server": "census"`; the default is `bls`) and the runner picks the
-URL (`CENSUS_URL`, default `https://census-mcp.responsive.city/mcp`). Cases: a large city's
+URL (`CENSUS_URL`, default `https://census.responsive.city/mcp`). Cases: a large city's
 population on the 1-year product (flagged as such), median income with a margin of error, a small
 city falling to the 5-year product (flagged, never a bare number), a 1-year request below the
 threshold answered on 5-year with the reason, a subject-table percent, the decennial count

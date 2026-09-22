@@ -3,6 +3,14 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## Unreleased — M10 Deployment wrapper
+
+Added
+- **Short hostnames** `bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp`
+  (ADR-016 §2) as aliases served by the same APIs; the `*-mcp` names remain and are advertised as
+  aliases. Configured per fleet record (`domain.aliases`), verified by `scripts/deploy.sh`.
+- Repository rulesets and security settings (ADR-016 §6, `docs/runbooks/repository-settings.md`).
+
 ## 0.3.0 — M8 Census server (2026-09-19)
 
 Added

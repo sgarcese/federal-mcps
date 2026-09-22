@@ -78,7 +78,7 @@ works the same way there.
 The deployed server (ADR-007) answers Streamable HTTP at:
 
 ```
-https://bls-mcp.responsive.city/mcp
+https://bls.responsive.city/mcp
 ```
 
 Add it in Claude as a custom connector (Settings → Connectors → Add custom connector)

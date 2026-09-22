@@ -17,8 +17,8 @@ import { readdirSync, readFileSync } from "node:fs";
 
 /** One URL per server; an entry's `server` field (default "bls") picks it. */
 const URLS = {
-  bls: process.env.BLS_URL ?? "https://bls-mcp.responsive.city/mcp",
-  census: process.env.CENSUS_URL ?? "https://census-mcp.responsive.city/mcp",
+  bls: process.env.BLS_URL ?? "https://bls.responsive.city/mcp",
+  census: process.env.CENSUS_URL ?? "https://census.responsive.city/mcp",
 };
 const BAR = Number.parseFloat(process.env.BAR ?? "0.9");
 const log = (line = "") => process.stdout.write(`${line}\n`);

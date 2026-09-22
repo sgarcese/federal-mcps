@@ -85,8 +85,10 @@ module "bls_server" {
   lambda_zip_path = var.bls_lambda_zip_path
   domain_name     = local.instance.domain.blsDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
-  bls_api_key     = var.bls_api_key
-  environment_tag = local.instance.environmentTag
+  # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
+  alias_domain_names = try(local.instance.domain.aliases.bls, [])
+  bls_api_key        = var.bls_api_key
+  environment_tag    = local.instance.environmentTag
 }
 
 # The hosted geography server (#58, ADR-008). A separate module instance from
@@ -99,7 +101,9 @@ module "geo_server" {
   lambda_zip_path = var.geo_lambda_zip_path
   domain_name     = local.instance.domain.geoDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
-  environment_tag = local.instance.environmentTag
+  # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
+  alias_domain_names = try(local.instance.domain.aliases.geo, [])
+  environment_tag    = local.instance.environmentTag
 }
 
 # The Census server (M8, ADR-014): its own Lambda, API and domain, sharing the fleet record;
@@ -111,6 +115,8 @@ module "census_server" {
   lambda_zip_path = var.census_lambda_zip_path
   domain_name     = local.instance.domain.censusDomainName
   hosted_zone_id  = local.instance.domain.hostedZoneId
-  census_api_key  = var.census_api_key
-  environment_tag = local.instance.environmentTag
+  # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
+  alias_domain_names = try(local.instance.domain.aliases.census, [])
+  census_api_key     = var.census_api_key
+  environment_tag    = local.instance.environmentTag
 }

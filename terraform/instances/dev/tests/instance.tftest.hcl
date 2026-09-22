@@ -75,6 +75,32 @@ mock_provider "aws" {
       ]
     }
   }
+
+  # ADR-016 §2 aliases: one certificate per alias hostname from the fleet record.
+  override_resource {
+    target          = module.bls_server.aws_acm_certificate.alias["bls.responsive.city"]
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/alias-bls"
+      domain_validation_options = [{ domain_name = "bls.responsive.city", resource_record_name = "_acme-challenge.bls.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
+  override_resource {
+    target          = module.geo_server.aws_acm_certificate.alias["geo.responsive.city"]
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/alias-geo"
+      domain_validation_options = [{ domain_name = "geo.responsive.city", resource_record_name = "_acme-challenge.geo.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
+  override_resource {
+    target          = module.census_server.aws_acm_certificate.alias["census.responsive.city"]
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/alias-census"
+      domain_validation_options = [{ domain_name = "census.responsive.city", resource_record_name = "_acme-challenge.census.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
 }
 
 variables {
@@ -130,5 +156,19 @@ run "geo_server_follows_the_rc_naming_pattern_and_records_its_domain" {
   assert {
     condition     = output.geo_custom_domain_url == "https://geo-mcp.responsive.city/mcp"
     error_message = "geo_custom_domain_url must be https://<domain.geoDomainName>/mcp"
+  }
+}
+
+run "short_hostnames_are_served_as_aliases_of_the_live_domains" {
+  command = plan
+
+  assert {
+    condition     = output.bls_alias_urls == ["https://bls.responsive.city/mcp"] && output.geo_alias_urls == ["https://geo.responsive.city/mcp"] && output.census_alias_urls == ["https://census.responsive.city/mcp"]
+    error_message = "each server must serve its short <service>.responsive.city alias from the fleet record (ADR-016 §2)"
+  }
+
+  assert {
+    condition     = output.bls_custom_domain_url == "https://bls-mcp.responsive.city/mcp"
+    error_message = "the primary domain must stay bls-mcp.responsive.city (aliases are additive)"
   }
 }

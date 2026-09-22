@@ -3,7 +3,8 @@
     "EXAMPLE fleet record (ADR-004). Copy to instances.json (gitignored) and fill in your own",
     "AWS account, region, domain and Terraform state bucket. The real instances.json is never",
     "committed; instance.mjs and terraform/instances/dev/locals.tf fall back to this example when",
-    "it is absent (so CI — which uses -backend=false + a mocked provider — runs on placeholders)."
+    "it is absent (so CI \u2014 which uses -backend=false + a mocked provider \u2014 runs on placeholders).",
+    "domain.aliases.<service> lists extra hostnames served by the same API (ADR-016 \u00a72); the short <service>.responsive.city names live here while the *-mcp names stay the primary domain."
   ],
   "instances": [
     {
@@ -17,7 +18,12 @@
         "geoDomainName": "geo-mcp.responsive.city",
         "hostedZoneId": "Z02890412WHZ405FIOT0Y",
         "hostedZoneName": "responsive.city",
-        "censusDomainName": "census-mcp.responsive.city"
+        "censusDomainName": "census-mcp.responsive.city",
+        "aliases": {
+          "bls": ["bls.responsive.city"],
+          "geo": ["geo.responsive.city"],
+          "census": ["census.responsive.city"]
+        }
       },
       "terraform": {
         "stateBucket": "rc-tfstate-123456789012",

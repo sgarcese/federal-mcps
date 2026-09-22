@@ -15,3 +15,8 @@ output "function_name" {
 output "lambda_role_arn" {
   value = data.aws_iam_role.exec.arn
 }
+
+output "alias_urls" {
+  description = "Every alias hostname (ADR-016 §2), at /mcp; empty when no aliases are configured."
+  value       = [for a in var.alias_domain_names : "https://${a}/mcp"]
+}
