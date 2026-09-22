@@ -16,7 +16,9 @@ Health Promotion, Division of Population Health".
 - `geo_resolve_place` (federal-mcps geo server): turns a place name into candidates with a
   `geoid`. PLACES's `locationid` **is** that geoid at every level.
 - An OpenContext Socrata connector on `https://data.cdc.gov` (`socrata__query_dataset`,
-  `socrata__execute_sql`, `socrata__get_dataset`, `socrata__search_datasets`).
+  `socrata__execute_sql`, `socrata__get_dataset`, `socrata__search_datasets`). The family hosts
+  one at **`https://cdc.responsive.city/mcp`** (ADR-016); any OpenContext deployment of
+  data.cdc.gov works the same.
 
 ## Datasets (2025 release — use these, long format)
 

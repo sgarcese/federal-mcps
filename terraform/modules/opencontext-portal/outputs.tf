@@ -20,3 +20,9 @@ output "function_name" {
 output "lambda_role_arn" {
   value = data.aws_iam_role.exec.arn
 }
+
+output "lambda_config_json" {
+  description = "The rendered OPENCONTEXT_CONFIG (for tests); sensitive because it may carry a token."
+  value       = jsonencode(local.config)
+  sensitive   = true
+}

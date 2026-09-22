@@ -11,6 +11,7 @@ The one thing to copy is the URL — one per server:
 https://bls.responsive.city/mcp        # BLS: unemployment, jobs, wages, prices
 https://census.responsive.city/mcp     # Census: population, income, poverty, housing (ACS + 2020 count)
 https://geo.responsive.city/mcp        # Geography: resolve any place name to its identifiers and parents
+https://cdc.responsive.city/mcp        # CDC open data (data.cdc.gov via OpenContext) — load skills/cdc-places for PLACES
 
 (The original `bls-mcp`, `census-mcp` and `geo-mcp` hostnames keep working as aliases; ADR-016.)
 ```

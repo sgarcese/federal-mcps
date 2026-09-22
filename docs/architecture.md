@@ -244,7 +244,9 @@ the Responsive City account (`us-east-1`; the account id lives in the gitignored
 `instances.json`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
 `bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp` (ADR-016 §2; the
-Release 1 `*-mcp` names remain as aliases).
+Release 1 `*-mcp` names remain as aliases). Guide-backed sources this family owns get an
+OpenContext portal Lambda from the same wrapper — `cdc.responsive.city/mcp` for data.cdc.gov —
+built from the commit pinned in `opencontext.lock.json` (ADR-016 §4-5).
 
 Deploys are local, matching the account pattern (ADR-007): the account has no CI deploy
 path, so a person runs `scripts/deploy.sh dev` under `AWS_PROFILE=rc-deploy`. The script

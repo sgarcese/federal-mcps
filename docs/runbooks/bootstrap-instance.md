@@ -28,16 +28,37 @@ servers (ADR-008):
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev bls
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev geo
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev census
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev cdc
 ```
 
 That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role` and `rc-census-mcp-dev-role` (each trust Lambda, inline
 logs + X-Ray) and grants `rc-deploy` `iam:PassRole` on each. Idempotent; re-running only
 updates the policies. The server argument defaults to `bls` if omitted.
 
+## The CDC portal (OpenContext, ADR-016 §4-5)
+
+The instance also deploys `rc-cdc-mcp-<env>` at `cdc.responsive.city/mcp`: an OpenContext
+Socrata Lambda on `data.cdc.gov`, the hosted connector behind the CDC PLACES source guide
+(`skills/cdc-places`). Its fleet-record fields are `domain.cdcDomainName` and
+`naming.cdcService` — add both to your `instances.json` (see the example). Its execution role is
+the fourth `admin-create-exec-role.sh` run above.
+
+- **Source pin.** `opencontext.lock.json` names the OpenContext repository and commit;
+  `scripts/bundle-opencontext.sh` (run by `deploy.sh`) fetches that commit into `build/`, installs
+  the Python dependencies for the Lambda platform and zips them. It needs `git` and `uv` (or
+  `pip3`). To take a newer OpenContext: change the `commit` in the lock file in a PR, then
+  redeploy.
+- **Token (optional).** `SOCRATA_APP_TOKEN` in `.env` becomes `TF_VAR_socrata_app_token` and
+  travels inside the Lambda's `OPENCONTEXT_CONFIG`. Without it the portal still works;
+  data.cdc.gov may throttle heavy untokened use.
+- **Verification.** `deploy.sh` lists the portal's tools and calls `socrata__get_dataset` for the
+  PLACES county dataset (`swc5-untb`), failing the deploy unless "PLACES" comes back.
+
 ## Short hostnames (aliases, ADR-016 §2)
 
 Each server also answers on `<service>.responsive.city/mcp` when the fleet record lists it under
-`domain.aliases` (see `instances.example.json`: `bls`, `geo`, `census`). Add that block to your
+`domain.aliases` (see `instances.example.json`: `bls`, `geo`, `census`; the CDC portal's primary
+name is already the short one). Add that block to your
 `instances.json` before deploying — a record without it deploys no aliases and the `*-mcp`
 primaries alone. Aliases are additive: the primary domain is never recreated, and `deploy.sh`
 verifies every alias URL after the apply.

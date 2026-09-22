@@ -43,3 +43,16 @@ output "census_alias_urls" {
   description = "Alias hostnames for the census server at /mcp (instances.json → domain.aliases.census; ADR-016 §2)."
   value       = module.census_server.alias_urls
 }
+
+output "cdc_invoke_url" {
+  value = module.cdc_portal.invoke_url
+}
+
+output "cdc_custom_domain_url" {
+  description = "Must equal https://<instances.json → dev → domain.cdcDomainName>/mcp."
+  value       = module.cdc_portal.custom_domain_url
+}
+
+output "cdc_alias_urls" {
+  value = module.cdc_portal.alias_urls
+}

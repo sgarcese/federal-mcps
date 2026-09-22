@@ -19,6 +19,13 @@ mock_provider "aws" {
   }
 
   override_data {
+    target = module.cdc_portal.data.aws_iam_role.exec
+    values = {
+      arn = "arn:aws:iam::123456789012:role/rc-cdc-mcp-dev-role"
+    }
+  }
+
+  override_data {
     target = module.census_server.data.aws_iam_role.exec
     values = {
       arn = "arn:aws:iam::123456789012:role/rc-census-mcp-dev-role"
@@ -76,6 +83,15 @@ mock_provider "aws" {
     }
   }
 
+  override_resource {
+    target          = module.cdc_portal.aws_acm_certificate.portal
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-cdc"
+      domain_validation_options = [{ domain_name = "cdc.responsive.city", resource_record_name = "_acme-challenge.cdc.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
+
   # ADR-016 §2 aliases: one certificate per alias hostname from the fleet record.
   override_resource {
     target          = module.bls_server.aws_acm_certificate.alias["bls.responsive.city"]
@@ -108,11 +124,12 @@ variables {
   # the module's own committed placeholder stands in so this root's tests
   # don't depend on `npm run bundle` having run first (CI creates the real
   # placeholder for `terraform validate`; see .github/workflows/ci.yml).
-  bls_lambda_zip_path    = "../../modules/bls-server/tests/placeholder.zip"
-  geo_lambda_zip_path    = "../../modules/geo-server/tests/placeholder.zip"
-  census_lambda_zip_path = "../../modules/census-server/tests/placeholder.zip"
-  bls_api_key            = "test-key-value"
-  census_api_key         = "test-census-key"
+  bls_lambda_zip_path         = "../../modules/bls-server/tests/placeholder.zip"
+  geo_lambda_zip_path         = "../../modules/geo-server/tests/placeholder.zip"
+  census_lambda_zip_path      = "../../modules/census-server/tests/placeholder.zip"
+  opencontext_lambda_zip_path = "../../modules/opencontext-portal/tests/placeholder.zip"
+  bls_api_key                 = "test-key-value"
+  census_api_key              = "test-census-key"
 }
 
 run "fleet_record_drives_the_root" {
@@ -170,5 +187,24 @@ run "short_hostnames_are_served_as_aliases_of_the_live_domains" {
   assert {
     condition     = output.bls_custom_domain_url == "https://bls-mcp.responsive.city/mcp"
     error_message = "the primary domain must stay bls-mcp.responsive.city (aliases are additive)"
+  }
+}
+
+run "cdc_portal_is_an_opencontext_socrata_lambda_on_the_short_hostname" {
+  command = plan
+
+  assert {
+    condition     = module.cdc_portal.function_name == "${local.instance.naming.cdcService}-${local.instance.environmentTag}"
+    error_message = "the CDC portal function must be named <naming.cdcService>-<environmentTag>"
+  }
+
+  assert {
+    condition     = output.cdc_custom_domain_url == "https://cdc.responsive.city/mcp"
+    error_message = "cdc_custom_domain_url must be https://<domain.cdcDomainName>/mcp"
+  }
+
+  assert {
+    condition     = jsondecode(module.cdc_portal.lambda_config_json).plugins.socrata.portal_url == "https://data.cdc.gov"
+    error_message = "the portal must point at data.cdc.gov"
   }
 }
