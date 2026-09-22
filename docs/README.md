@@ -29,6 +29,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
+- [adr/ADR-016-deployment-wrapper-and-repository-safety.md](adr/ADR-016-deployment-wrapper-and-repository-safety.md)
+  — federal-mcps deploys its own fleet (agency servers + OpenContext portals for guide-backed
+  sources) at `<service>.responsive.city/mcp` with the old names as aliases; Terraform public,
+  fleet record and secrets private; OpenContext pinned by commit; repository rulesets.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
@@ -89,6 +93,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 
 ## Runbooks
 
+- [runbooks/repository-settings.md](runbooks/repository-settings.md) — the GitHub rulesets
+  (protected `main`, immutable `v*` tags) and security settings as applied, with the commands
+  to re-apply them (ADR-016 §6).
 - [runbooks/bootstrap-instance.md](runbooks/bootstrap-instance.md) — the
   one-time, human-run steps that deploy `FederalMcpsCiCd` and create an
   instance's agency secrets (ADR-004 §3, the sole exception to CI-only
