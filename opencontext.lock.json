@@ -1,0 +1,6 @@
+{
+  "$comment": "The OpenContext source the portal Lambdas are built from (ADR-016 §4). scripts/bundle-opencontext.sh clones exactly this commit at deploy time; bump it in a reviewed PR. Never vendored.",
+  "repository": "https://github.com/sgarcese/OpenContext-upstream.git",
+  "commit": "b7eae5de67cc055e14887199bf656b34d5af9c2a",
+  "note": "fork main after PR #26 (ArcGIS layer resolution + f=json schema, optional Socrata token), 2026-09-21"
+}
