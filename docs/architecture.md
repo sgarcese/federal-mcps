@@ -243,7 +243,8 @@ Per ADR-004 and ADR-006: `instances.json` is the fleet record; Release 1 has one
 the Responsive City account (`us-east-1`; the account id lives in the gitignored
 `instances.json`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
-`bls-mcp.responsive.city/mcp` in Release 1.
+`bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp` (ADR-016 §2; the
+Release 1 `*-mcp` names remain as aliases).
 
 Deploys are local, matching the account pattern (ADR-007): the account has no CI deploy
 path, so a person runs `scripts/deploy.sh dev` under `AWS_PROFILE=rc-deploy`. The script

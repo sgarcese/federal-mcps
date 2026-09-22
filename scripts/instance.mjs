@@ -24,7 +24,8 @@ const REQUIRED_STRINGS = ["name", "description", "account", "region", "environme
 /**
  * @typedef {{ name: string; description: string; account: string; region: string;
  *   environmentTag: string;
- *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; hostedZoneId: string; hostedZoneName: string };
+ *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; hostedZoneId: string; hostedZoneName: string;
+ *     aliases?: { bls?: string[]; geo?: string[]; census?: string[] } };
  *   terraform: { stateBucket: string; stateKey: string };
  *   naming: { blsService: string; geoService: string; censusService: string } }} InstanceRecord
  */
@@ -57,6 +58,25 @@ function assertRecord(value, index) {
   ]) {
     if (typeof (/** @type {Record<string, unknown>} */ (domain)[key]) !== "string") {
       throw new Error(`instances.json: entry ${index} domain is missing string field "${key}"`);
+    }
+  }
+  // ADR-016 §2: optional extra hostnames per service; each must be a list of strings.
+  const aliases = /** @type {Record<string, unknown>} */ (domain).aliases;
+  if (aliases !== undefined) {
+    if (typeof aliases !== "object" || aliases === null) {
+      throw new Error(`instances.json: entry ${index} domain.aliases must be an object`);
+    }
+    for (const [service, list] of Object.entries(aliases)) {
+      if (!["bls", "geo", "census"].includes(service)) {
+        throw new Error(
+          `instances.json: entry ${index} domain.aliases has unknown service "${service}"`,
+        );
+      }
+      if (!Array.isArray(list) || !list.every((h) => typeof h === "string" && h.length > 0)) {
+        throw new Error(
+          `instances.json: entry ${index} domain.aliases.${service} must be a list of hostnames`,
+        );
+      }
     }
   }
   const terraform = record.terraform;

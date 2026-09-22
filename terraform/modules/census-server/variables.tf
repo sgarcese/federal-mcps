@@ -53,3 +53,9 @@ variable "timeout" {
   type        = number
   default     = 29
 }
+
+variable "alias_domain_names" {
+  description = "Additional hostnames served by the same API (ADR-016 §2), e.g. the short `<service>.responsive.city` name next to the original `*-mcp` name in domain_name; each gets its own certificate, domain name, mapping and records. From instances.json → domain.aliases.<service>."
+  type        = list(string)
+  default     = []
+}

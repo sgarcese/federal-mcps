@@ -6,8 +6,8 @@ Denver metro or Colorado and get numbers that carry their source, vintage and ca
 never a figure without a citation, never a fabricated one.
 
 **Status:** live. The Bureau of Labor Statistics server is deployed and answering
-([`bls-mcp.responsive.city/mcp`](https://bls-mcp.responsive.city/mcp)), on a shared
-geography core ([`geo-mcp.responsive.city/mcp`](https://geo-mcp.responsive.city/mcp)).
+([`bls.responsive.city/mcp`](https://bls.responsive.city/mcp)), on a shared
+geography core ([`geo.responsive.city/mcp`](https://geo.responsive.city/mcp)).
 Apache-2.0. Census and CDC PLACES servers follow on the same core.
 
 ## Why this exists
@@ -49,8 +49,8 @@ The servers speak MCP over **stateless Streamable HTTP** — add the URL as a cu
 connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 
 ```
-https://bls-mcp.responsive.city/mcp        # BLS: labor, wages, prices
-https://census-mcp.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
+https://bls.responsive.city/mcp        # BLS: labor, wages, prices
+https://census.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
 ```
 
 New to connectors? [`docs/connect.md`](docs/connect.md) has one-screen, copy-paste steps

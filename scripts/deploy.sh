@@ -136,6 +136,21 @@ verify_tool_call "$bls_url" bls_resolve_place '{"query":"Denver"}' "Denver"
 verify_tool_call "$geo_url" geo_resolve_place '{"query":"Denver"}' "Denver"
 verify_tool_call "$census_url" census_resolve_place '{"query":"Denver"}' "Denver"
 
+# ADR-016 §2: every alias hostname must answer like its primary (same API, own certificate).
+verify_aliases() {
+  local output_name="$1" expect_tool="$2"
+  terraform -chdir="$ROOT" output -json "$output_name" | node -e '
+    let raw = ""; process.stdin.on("data", (c) => { raw += c; });
+    process.stdin.on("end", () => { for (const u of JSON.parse(raw)) console.log(u); });
+  ' | while read -r alias_url; do
+    verify_server "$alias_url" "$expect_tool"
+    echo "alias ok: $alias_url"
+  done
+}
+verify_aliases bls_alias_urls bls_describe_source
+verify_aliases geo_alias_urls geo_describe_source
+verify_aliases census_alias_urls census_describe_source
+
 sha="$(git rev-parse HEAD)"
 echo "deployed $sha to $bls_url"
 echo "deployed $sha to $geo_url"

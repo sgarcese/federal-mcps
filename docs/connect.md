@@ -8,8 +8,11 @@ instead want [`install.md`](install.md).
 The one thing to copy is the URL — one per server:
 
 ```
-https://bls-mcp.responsive.city/mcp        # BLS: unemployment, jobs, wages, prices
-https://census-mcp.responsive.city/mcp     # Census: population, income, poverty, housing (ACS + 2020 count)
+https://bls.responsive.city/mcp        # BLS: unemployment, jobs, wages, prices
+https://census.responsive.city/mcp     # Census: population, income, poverty, housing (ACS + 2020 count)
+https://geo.responsive.city/mcp        # Geography: resolve any place name to its identifiers and parents
+
+(The original `bls-mcp`, `census-mcp` and `geo-mcp` hostnames keep working as aliases; ADR-016.)
 ```
 
 Add it once, as a **connector**, and Claude can pull federal labor statistics for a place
@@ -19,7 +22,7 @@ straight into the conversation.
 
 1. Open **Settings → Connectors**.
 2. Click **Add custom connector**.
-3. Paste `https://bls-mcp.responsive.city/mcp` and save.
+3. Paste `https://bls.responsive.city/mcp` and save.
 
 Leave the authentication fields blank — there is none. The connector is ready in the same
 conversation.
@@ -29,8 +32,8 @@ conversation.
 One command from any terminal:
 
 ```bash
-claude mcp add --transport http bls https://bls-mcp.responsive.city/mcp
-claude mcp add --transport http census https://census-mcp.responsive.city/mcp
+claude mcp add --transport http bls https://bls.responsive.city/mcp
+claude mcp add --transport http census https://census.responsive.city/mcp
 ```
 
 `bls` is just the local name you'll see it under; call it anything. Check it landed with
@@ -39,8 +42,8 @@ claude mcp add --transport http census https://census-mcp.responsive.city/mcp
 ## Any other MCP host
 
 The server speaks **MCP over stateless Streamable HTTP**. Any host that accepts a remote
-MCP endpoint takes the same URLs — point it at `https://bls-mcp.responsive.city/mcp` or
-`https://census-mcp.responsive.city/mcp`, no auth, and you're connected.
+MCP endpoint takes the same URLs — point it at `https://bls.responsive.city/mcp` or
+`https://census.responsive.city/mcp`, no auth, and you're connected.
 
 ## What to ask
 

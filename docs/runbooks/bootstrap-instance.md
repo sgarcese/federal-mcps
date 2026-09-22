@@ -34,6 +34,14 @@ That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role` and `rc-census-mcp-dev
 logs + X-Ray) and grants `rc-deploy` `iam:PassRole` on each. Idempotent; re-running only
 updates the policies. The server argument defaults to `bls` if omitted.
 
+## Short hostnames (aliases, ADR-016 §2)
+
+Each server also answers on `<service>.responsive.city/mcp` when the fleet record lists it under
+`domain.aliases` (see `instances.example.json`: `bls`, `geo`, `census`). Add that block to your
+`instances.json` before deploying — a record without it deploys no aliases and the `*-mcp`
+primaries alone. Aliases are additive: the primary domain is never recreated, and `deploy.sh`
+verifies every alias URL after the apply.
+
 ## Deploy
 
 ```sh
@@ -80,8 +88,8 @@ so the check exercises the deploy without spending BLS API quota. If you still w
 confirm a live number by hand, or check a server independently, call the tools yourself:
 
 ```sh
-BLS=https://bls-mcp.responsive.city/mcp
-GEO=https://geo-mcp.responsive.city/mcp
+BLS=https://bls.responsive.city/mcp
+GEO=https://geo.responsive.city/mcp
 H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream')
 
 # BLS: resolve a place, then a real number (Denver County unemployment rate).
