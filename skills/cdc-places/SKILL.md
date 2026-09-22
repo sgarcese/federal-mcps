@@ -142,4 +142,7 @@ ACS variables — use the Census server for those.
 - OpenContext's Socrata plugin requires a non-empty `app_token` although data.cdc.gov serves
   untokened requests; a free Socrata app token (Developer Settings → App Tokens) works.
 - The place file's `placename` column holds the FIPS code, not the name; the name is `locationname`.
-- SoQL: `GROUP BY` is required with aggregates; quote ids as strings (`locationid='08031'`).
+- SoQL: `GROUP BY` is required with aggregates; quote ids as strings — single or double quotes
+  both work (`locationid='08031'` or `locationid="08031"`). A "Type mismatch: expected text, but
+  found number" error means an id reached Socrata unquoted (often a shell-quoting slip); re-send
+  it quoted rather than switching tools.
