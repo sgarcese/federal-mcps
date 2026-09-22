@@ -9,6 +9,11 @@ Added
 - **Short hostnames** `bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp`
   (ADR-016 §2) as aliases served by the same APIs; the `*-mcp` names remain and are advertised as
   aliases. Configured per fleet record (`domain.aliases`), verified by `scripts/deploy.sh`.
+- **The CDC portal** `cdc.responsive.city/mcp`: an OpenContext Socrata Lambda on data.cdc.gov deployed
+  by this repository's wrapper (`terraform/modules/opencontext-portal`, ADR-016 §5), the hosted
+  connector behind the CDC PLACES source guide. OpenContext is pinned by commit in
+  `opencontext.lock.json` and built at deploy time by `scripts/bundle-opencontext.sh` (ADR-016 §4);
+  an optional `SOCRATA_APP_TOKEN` rides as a sensitive variable.
 - Repository rulesets and security settings (ADR-016 §6, `docs/runbooks/repository-settings.md`).
 
 ## 0.3.0 — M8 Census server (2026-09-19)

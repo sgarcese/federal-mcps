@@ -32,6 +32,9 @@ export TF_VAR_bls_api_key="$BLS_API_KEY"
 # The Census Data API requires a key for every data query (ADR-014 §9); same pattern.
 [ -n "${CENSUS_API_KEY:-}" ] || { echo "::error:: CENSUS_API_KEY is empty (set it in .env)"; exit 1; }
 export TF_VAR_census_api_key="$CENSUS_API_KEY"
+# The Socrata App Token for the CDC portal is optional (ADR-016 §3): data.cdc.gov serves untokened
+# requests, a token only lifts per-IP throttling. Passed through only when set in .env.
+if [ -n "${SOCRATA_APP_TOKEN:-}" ]; then export TF_VAR_socrata_app_token="$SOCRATA_APP_TOKEN"; fi
 
 echo "== identity"
 aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output json
@@ -51,6 +54,11 @@ fi
 npm run bundle -w packages/server-bls
 npm run bundle -w packages/server-geo
 npm run bundle -w packages/server-census
+
+# The CDC portal is an OpenContext Lambda built from the commit pinned in opencontext.lock.json
+# (ADR-016 §4); the bundle is fetched and built here, never vendored or built in CI.
+echo "== bundle OpenContext (portal Lambdas)"
+scripts/bundle-opencontext.sh
 
 echo "== terraform init"
 # shellcheck disable=SC2046
@@ -131,10 +139,15 @@ census_url="$(terraform -chdir="$ROOT" output -raw census_custom_domain_url)"
 verify_server "$bls_url" bls_describe_source
 verify_server "$geo_url" geo_describe_source
 verify_server "$census_url" census_describe_source
+cdc_url="$(terraform -chdir="$ROOT" output -raw cdc_custom_domain_url)"
+verify_server "$cdc_url" socrata__search_datasets
 # Prove the bundled catalog actually opens on each server (not just that tools are listed).
 verify_tool_call "$bls_url" bls_resolve_place '{"query":"Denver"}' "Denver"
 verify_tool_call "$geo_url" geo_resolve_place '{"query":"Denver"}' "Denver"
 verify_tool_call "$census_url" census_resolve_place '{"query":"Denver"}' "Denver"
+# The CDC portal: prove the OpenContext plugin initialised against data.cdc.gov by reading the
+# PLACES county dataset's metadata (no token needed; one small upstream call).
+verify_tool_call "$cdc_url" socrata__get_dataset '{"dataset_id":"swc5-untb"}' "PLACES"
 
 # ADR-016 §2: every alias hostname must answer like its primary (same API, own certificate).
 verify_aliases() {
@@ -150,6 +163,7 @@ verify_aliases() {
 verify_aliases bls_alias_urls bls_describe_source
 verify_aliases geo_alias_urls geo_describe_source
 verify_aliases census_alias_urls census_describe_source
+verify_aliases cdc_alias_urls socrata__search_datasets
 
 sha="$(git rev-parse HEAD)"
 echo "deployed $sha to $bls_url"

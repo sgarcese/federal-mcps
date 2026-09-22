@@ -7,7 +7,7 @@
 #
 #   AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh [instance] [server]
 #     instance  fleet-record name          (default: dev)
-#     server    bls | geo | census          (default: bls)
+#     server    bls | geo | census | cdc    (default: bls)
 #
 # Each server (bls, geo, census) is a separate Lambda with its own execution role, so run
 # this once per server: e.g. `... dev bls` and `... dev geo`.
@@ -25,8 +25,8 @@ cd "$(dirname "$0")/.."
 INSTANCE="${1:-dev}"
 SERVER="${2:-bls}"
 case "$SERVER" in
-  bls | geo | census) ;;
-  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo | census)"; exit 1 ;;
+  bls | geo | census | cdc) ;;
+  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo | census | cdc)"; exit 1 ;;
 esac
 
 read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
@@ -38,7 +38,9 @@ read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
         ? i.naming.geoService
         : process.env.SERVER === "census"
           ? i.naming.censusService
-          : i.naming.blsService;
+          : process.env.SERVER === "cdc"
+            ? i.naming.cdcService
+            : i.naming.blsService;
     const deployRole = "rc-deploy"; // the role scripts/deploy.sh assumes
     // Trailing newline is required: `read` returns non-zero on EOF without one,
     // which `set -euo pipefail` would turn into a silent exit before any output (#90).

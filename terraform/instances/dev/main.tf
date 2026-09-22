@@ -72,6 +72,25 @@ variable "geo_lambda_zip_path" {
   default     = "../../../packages/server-geo/dist/lambda.zip"
 }
 
+# ADR-016 §3: the optional Socrata App Token for the CDC portal, supplied as
+# TF_VAR_socrata_app_token from .env by scripts/deploy.sh when set. Empty means untokened
+# (data.cdc.gov serves untokened requests; a token only lifts per-IP throttling).
+variable "socrata_app_token" {
+  description = "Socrata App Token for the CDC portal Lambda (optional), carried inside OPENCONTEXT_CONFIG."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+# The OpenContext zip built by scripts/bundle-opencontext.sh from the commit pinned in
+# opencontext.lock.json (ADR-016 §4); a variable so the root's test can point at the
+# module's committed placeholder.
+variable "opencontext_lambda_zip_path" {
+  description = "Path to the OpenContext Lambda zip (build/opencontext-lambda.zip)."
+  type        = string
+  default     = "../../../build/opencontext-lambda.zip"
+}
+
 variable "census_lambda_zip_path" {
   description = "Path to the Census Lambda's esbuild bundle zip (catalog baked in)."
   type        = string
@@ -118,5 +137,24 @@ module "census_server" {
   # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
   alias_domain_names = try(local.instance.domain.aliases.census, [])
   census_api_key     = var.census_api_key
+  environment_tag    = local.instance.environmentTag
+}
+
+# The CDC portal (M10.3, ADR-016 §5): an OpenContext Socrata Lambda on data.cdc.gov, the
+# hosted connector behind the CDC PLACES source guide (skills/cdc-places). Same API and
+# domain shape as the agency servers; configured entirely through OPENCONTEXT_CONFIG.
+module "cdc_portal" {
+  source = "../../modules/opencontext-portal"
+
+  service_name       = local.instance.naming.cdcService
+  display_name       = "CDC"
+  organization       = "Centers for Disease Control and Prevention"
+  portal_type        = "socrata"
+  portal_url         = "https://data.cdc.gov"
+  app_token          = var.socrata_app_token
+  lambda_zip_path    = var.opencontext_lambda_zip_path
+  domain_name        = local.instance.domain.cdcDomainName
+  alias_domain_names = try(local.instance.domain.aliases.cdc, [])
+  hosted_zone_id     = local.instance.domain.hostedZoneId
   environment_tag    = local.instance.environmentTag
 }

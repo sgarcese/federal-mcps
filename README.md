@@ -51,6 +51,7 @@ connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 ```
 https://bls.responsive.city/mcp        # BLS: labor, wages, prices
 https://census.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
+https://cdc.responsive.city/mcp        # CDC open data portal (OpenContext); pair with skills/cdc-places
 ```
 
 New to connectors? [`docs/connect.md`](docs/connect.md) has one-screen, copy-paste steps
