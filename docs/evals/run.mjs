@@ -116,9 +116,16 @@ function grade(env, rubric) {
 }
 
 const dir = new URL("./", import.meta.url);
-const sets = readdirSync(dir)
+// `*-guided.jsonl` sets (ADR-015 §4) hold questions for a session with a source guide loaded;
+// they carry no `tool`, so this runner cannot execute them — and must not count them (before
+// this filter, a tool-less case posted `name: undefined` and graded as a pass).
+const all = readdirSync(dir)
   .filter((f) => f.endsWith(".jsonl"))
   .sort();
+const guided = all.filter((f) => f.endsWith("-guided.jsonl"));
+const sets = all.filter((f) => !f.endsWith("-guided.jsonl"));
+if (guided.length)
+  log(`Skipping guided sets (run by hand with the skill loaded): ${guided.join(", ")}`);
 const entries = sets.flatMap((f) =>
   readFileSync(new URL(f, dir), "utf-8")
     .split(/\r?\n/)
@@ -136,6 +143,7 @@ for (const e of entries) {
   try {
     const url = URLS[e.server];
     if (!url) throw new Error(`unknown server "${e.server}"`);
+    if (typeof e.tool !== "string" || !e.tool) throw new Error("case has no tool to call");
     const env = await callTool(url, e.tool, e.args);
     fails = env.error ? [`tool error: ${env.error}`] : grade(env, e.rubric);
   } catch (err) {
