@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/il/data/1814199999?year=2025",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "662",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:28 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "52",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "{\"data\":{\"county_name\":\"St. Joseph County, IN\",\"counties_msa\":\"\",\"town_name\":\"\",\"metro_status\":\"1.0\",\"metro_name\":\"South Bend-Mishawaka, IN-MI\",\"area_name\":\"South Bend-Mishawaka, IN HUD Metro FMR Area\",\"year\":\"2025\",\"median_income\":88000,\"very_low\":{\"il50_p1\":30800,\"il50_p2\":35200,\"il50_p3\":39600,\"il50_p4\":44000,\"il50_p5\":47550,\"il50_p6\":51050,\"il50_p7\":54600,\"il50_p8\":58100},\"extremely_low\":{\"il30_p1\":18500,\"il30_p2\":21150,\"il30_p3\":26650,\"il30_p4\":32150,\"il30_p5\":37650,\"il30_p6\":43150,\"il30_p7\":48650,\"il30_p8\":54150},\"low\":{\"il80_p1\":49300,\"il80_p2\":56350,\"il80_p3\":63400,\"il80_p4\":70400,\"il80_p5\":76050,\"il80_p6\":81700,\"il80_p7\":87300,\"il80_p8\":92950}}}",
+  "recordedAt": "2026-09-25T03:27:28.582Z"
+}

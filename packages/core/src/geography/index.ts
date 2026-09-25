@@ -11,6 +11,7 @@ export {
   getLineage,
   getOverlap,
   resolvePlace,
+  uspsOfStateFips,
 } from "./resolver.js";
 export * from "./types.js";
 export { geographyTools, type GeographyToolsOptions, type GeographyToolName } from "./tools.js";

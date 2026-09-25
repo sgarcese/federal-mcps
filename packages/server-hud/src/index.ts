@@ -58,3 +58,19 @@ export function createHudServer(options?: CreateServerOptions): McpServer {
   });
   return createServer(definition, options);
 }
+
+export {
+  type ChasEntity,
+  chasEntityOf,
+  chasUrl,
+  fmrEntityOf,
+  fmrUrl,
+  HUD_CACHE_TTL_SECONDS,
+  hudGetJson,
+  ilUrl,
+  mtspUrl,
+  type PictureEntity,
+  pictureCensusFor,
+  pictureEntityOf,
+  pictureUrl,
+} from "./hud-api.js";

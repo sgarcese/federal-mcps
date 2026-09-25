@@ -6,6 +6,10 @@ milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitme
 ## Unreleased — M11 HUD User server
 
 Added
+- **HUD User API seam** (#232, ADR-018 §4): entity ids built from a resolved place (FMR/IL county
+  `SSCCC99999`; CHAS state/county/place; Picture state/county/city/tract/CBSA with USPS state codes from
+  a new core `uspsOfStateFips`), URL builders, and a fetch that sends the token as a header only and
+  turns HUD's 400/404 "no data" into an unavailable answer. Recorded fixtures for St. Joseph County, IN.
 - **Optional per-minute rate limiter on the shared HTTP client** (#231, ADR-018 §5): a
   token bucket configured per client via `createHttpClient({ perMinute, maxWaitMs? })`
   — not hard-coded, since HUD User's published 60 queries/minute/token may be revised.
