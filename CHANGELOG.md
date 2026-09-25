@@ -14,6 +14,17 @@ Added
   the limit instead of calling `fetch`. Only a real upstream request consumes a token —
   cache hits and fixture replay never do. When a response carries
   `x-ratelimit-remaining: 0`, the bucket closes until that minute rolls over.
+- **server-hud shell** (#230, ADR-018 §1, §6, §7): a new agency server package mirroring
+  server-census's structure — `hud_resolve_place` (from core's shared resolver) and the
+  auto-registered `hud_describe_source`, over the bundled geography catalog. No indicator
+  tools yet; `hud_describe_source` lists Fair Market Rents, Income Limits/MTSP, CHAS and
+  Picture of Subsidized Households, all `status: "planned"` until each lands in a later
+  issue. The HUD User API endpoint and its required Terms-of-Service sentence ("This
+  product uses the HUD User Data API but is not endorsed or certified by HUD User.") live
+  only in `describe-source.ts`. Terraform: `terraform/modules/hud-server` (Lambda + HTTP
+  API + custom domain, `HUD_USER_TOKEN` as the sensitive credential) wired into
+  `terraform/instances/dev` alongside bls/geo/census/cdc, plus the fleet-record fields
+  `domain.hudDomainName` and `naming.hudService`.
 
 ## 0.5.0 — M12 Raw access and BLS completions (2026-09-24)
 

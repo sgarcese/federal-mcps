@@ -14,6 +14,8 @@ bucket already exists, and `rc-deploy` can create everything a server needs
   <https://data.bls.gov/registrationEngine/>.
 - `./.env` with `CENSUS_API_KEY=<your key>` when a catalog build is needed (see below;
   register free at <https://api.census.gov/data/key_signup.html>).
+- `./.env` with `HUD_USER_TOKEN=<your token>`. Register free at <https://www.huduser.gov>
+  and generate a token under your account's API access settings.
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
@@ -29,11 +31,13 @@ AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev bls
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev geo
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev census
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev cdc
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev hud
 ```
 
-That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role` and `rc-census-mcp-dev-role` (each trust Lambda, inline
-logs + X-Ray) and grants `rc-deploy` `iam:PassRole` on each. Idempotent; re-running only
-updates the policies. The server argument defaults to `bls` if omitted.
+That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role`, `rc-census-mcp-dev-role` and
+`rc-huduser-mcp-dev-role` (each trust Lambda, inline logs + X-Ray) and grants `rc-deploy`
+`iam:PassRole` on each. Idempotent; re-running only updates the policies. The server
+argument defaults to `bls` if omitted.
 
 ## The CDC portal (OpenContext, ADR-016 §4-5)
 
@@ -53,6 +57,26 @@ the fourth `admin-create-exec-role.sh` run above.
   data.cdc.gov may throttle heavy untokened use.
 - **Verification.** `deploy.sh` lists the portal's tools and calls `socrata__get_dataset` for the
   PLACES county dataset (`swc5-untb`), failing the deploy unless "PLACES" comes back.
+
+## The HUD User server (M11 shell, ADR-018)
+
+The instance also deploys `rc-huduser-mcp-<env>` at `huduser.responsive.city/mcp` — the
+HUD User Data API server (Fair Market Rents, Income Limits, CHAS, Picture of Subsidized
+Households). This release ships the shell only: `hud_resolve_place` and
+`hud_describe_source`; every program lists `status: "planned"` until its indicator tool
+lands in a later issue. Its fleet-record fields are `domain.hudDomainName` and
+`naming.hudService` — add both to your `instances.json` (see the example). Its execution
+role is the fifth `admin-create-exec-role.sh` run above (`dev hud`).
+
+- **Token.** `HUD_USER_TOKEN` in `.env` becomes `TF_VAR_hud_user_token` and is set on the
+  Lambda as the `HUD_USER_TOKEN` environment variable (ADR-006 §3); it is never logged.
+  No indicator tool calls the API yet, so nothing fails without one today — but a
+  misconfigured deployment (`lambda.ts`) warns loudly at cold start regardless.
+- **Rate limit.** The HUD User API allows 60 queries a minute per token
+  (`HUD_USER_PER_MINUTE` in `src/index.ts`); a shared core rate limiter is being added in
+  parallel (#231) and is not yet wired in.
+- **Verification.** `deploy.sh` lists `hud_describe_source` and calls `hud_resolve_place`
+  with `{"query":"Denver"}`, the same catalog-backed check as the other agency servers.
 
 ## Short hostnames (aliases, ADR-016 §2)
 

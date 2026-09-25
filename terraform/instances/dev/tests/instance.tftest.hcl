@@ -32,6 +32,13 @@ mock_provider "aws" {
     }
   }
 
+  override_data {
+    target = module.hud_server.data.aws_iam_role.exec
+    values = {
+      arn = "arn:aws:iam::123456789012:role/rc-huduser-mcp-dev-role"
+    }
+  }
+
   # aws_acm_certificate.domain_validation_options's element count is only
   # known to the real provider (one per SAN); aws_route53_record.cert_validation
   # for_each's over it, which fails `plan` under the mocked provider without this.
@@ -92,6 +99,15 @@ mock_provider "aws" {
     }
   }
 
+  override_resource {
+    target          = module.hud_server.aws_acm_certificate.hud
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-hud"
+      domain_validation_options = [{ domain_name = "huduser.responsive.city", resource_record_name = "_acme-challenge.huduser.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
+
   # ADR-016 §2 aliases: one certificate per alias hostname from the fleet record.
   override_resource {
     target          = module.bls_server.aws_acm_certificate.alias["bls.responsive.city"]
@@ -127,9 +143,11 @@ variables {
   bls_lambda_zip_path         = "../../modules/bls-server/tests/placeholder.zip"
   geo_lambda_zip_path         = "../../modules/geo-server/tests/placeholder.zip"
   census_lambda_zip_path      = "../../modules/census-server/tests/placeholder.zip"
+  hud_lambda_zip_path         = "../../modules/hud-server/tests/placeholder.zip"
   opencontext_lambda_zip_path = "../../modules/opencontext-portal/tests/placeholder.zip"
   bls_api_key                 = "test-key-value"
   census_api_key              = "test-census-key"
+  hud_user_token              = "test-hud-token"
 }
 
 run "fleet_record_drives_the_root" {
@@ -187,6 +205,20 @@ run "short_hostnames_are_served_as_aliases_of_the_live_domains" {
   assert {
     condition     = output.bls_custom_domain_url == "https://bls-mcp.responsive.city/mcp"
     error_message = "the primary domain must stay bls-mcp.responsive.city (aliases are additive)"
+  }
+}
+
+run "hud_server_follows_the_rc_naming_pattern_and_records_its_domain" {
+  command = plan
+
+  assert {
+    condition     = module.hud_server.function_name == "rc-huduser-mcp-dev"
+    error_message = "the HUD function must be named rc-huduser-mcp-dev"
+  }
+
+  assert {
+    condition     = output.hud_custom_domain_url == "https://huduser.responsive.city/mcp"
+    error_message = "hud_custom_domain_url must be https://<domain.hudDomainName>/mcp"
   }
 }
 

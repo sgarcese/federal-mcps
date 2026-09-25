@@ -80,11 +80,12 @@ jobs:
           python3 -c "import zipfile,os; os.makedirs('packages/server-bls/dist',exist_ok=True); zipfile.ZipFile('packages/server-bls/dist/lambda.zip','w').close()"
           python3 -c "import zipfile,os; os.makedirs('packages/server-geo/dist',exist_ok=True); zipfile.ZipFile('packages/server-geo/dist/lambda.zip','w').close()"
           python3 -c "import zipfile,os; os.makedirs('packages/server-census/dist',exist_ok=True); zipfile.ZipFile('packages/server-census/dist/lambda.zip','w').close()"
+          python3 -c "import zipfile,os; os.makedirs('packages/server-hud/dist',exist_ok=True); zipfile.ZipFile('packages/server-hud/dist/lambda.zip','w').close()"
           python3 -c "import zipfile,os; os.makedirs('build',exist_ok=True); zipfile.ZipFile('build/opencontext-lambda.zip','w').close()"
 
       - name: Terraform validate
         run: |
-          for root in terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/modules/opencontext-portal terraform/instances/dev; do
+          for root in terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/modules/hud-server terraform/modules/opencontext-portal terraform/instances/dev; do
             echo "== $root"
             terraform -chdir="$root" init -backend=false -input=false >/dev/null
             terraform -chdir="$root" validate
@@ -92,7 +93,7 @@ jobs:
 
       - name: Terraform test
         run: |
-          for root in terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/modules/opencontext-portal terraform/instances/dev; do
+          for root in terraform/modules/bls-server terraform/modules/geo-server terraform/modules/census-server terraform/modules/hud-server terraform/modules/opencontext-portal terraform/instances/dev; do
             echo "== $root"
             terraform -chdir="$root" test
           done

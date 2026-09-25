@@ -97,6 +97,21 @@ variable "census_lambda_zip_path" {
   default     = "../../../packages/server-census/dist/lambda.zip"
 }
 
+# ADR-018 §7: the HUD User Data API token, required for every data query once an
+# indicator tool lands, supplied as TF_VAR_hud_user_token from .env by scripts/deploy.sh.
+# Never a default, never in git.
+variable "hud_user_token" {
+  description = "HUD User Data API token, set on the Lambda as HUD_USER_TOKEN."
+  type        = string
+  sensitive   = true
+}
+
+variable "hud_lambda_zip_path" {
+  description = "Path to the HUD Lambda's esbuild bundle zip (catalog baked in)."
+  type        = string
+  default     = "../../../packages/server-hud/dist/lambda.zip"
+}
+
 module "bls_server" {
   source = "../../modules/bls-server"
 
@@ -137,6 +152,22 @@ module "census_server" {
   # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
   alias_domain_names = try(local.instance.domain.aliases.census, [])
   census_api_key     = var.census_api_key
+  environment_tag    = local.instance.environmentTag
+}
+
+# The HUD User server (M11 shell, ADR-018): its own Lambda, API and domain, sharing the
+# fleet record; the catalog is baked in like the other agency servers, and the HUD User
+# token rides as HUD_USER_TOKEN.
+module "hud_server" {
+  source = "../../modules/hud-server"
+
+  service_name    = local.instance.naming.hudService
+  lambda_zip_path = var.hud_lambda_zip_path
+  domain_name     = local.instance.domain.hudDomainName
+  hosted_zone_id  = local.instance.domain.hostedZoneId
+  # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
+  alias_domain_names = try(local.instance.domain.aliases.hud, [])
+  hud_user_token     = var.hud_user_token
   environment_tag    = local.instance.environmentTag
 }
 

@@ -44,6 +44,20 @@ output "census_alias_urls" {
   value       = module.census_server.alias_urls
 }
 
+output "hud_invoke_url" {
+  value = module.hud_server.invoke_url
+}
+
+output "hud_custom_domain_url" {
+  description = "Must equal https://<instances.json → dev → domain.hudDomainName>/mcp."
+  value       = module.hud_server.custom_domain_url
+}
+
+output "hud_alias_urls" {
+  description = "Alias hostnames for the hud server at /mcp (instances.json → domain.aliases.hud; ADR-016 §2)."
+  value       = module.hud_server.alias_urls
+}
+
 output "cdc_invoke_url" {
   value = module.cdc_portal.invoke_url
 }
