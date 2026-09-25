@@ -185,3 +185,42 @@ describe("census_get_raw: no rows for that geography (HTTP 204)", () => {
     expect(result.limitations).toEqual(["no rows for that geography in acs/acs5 2024"]);
   });
 });
+
+describe("census_get_raw compact text (#210, ADR-017)", () => {
+  const data = {
+    dataset: "acs/acs5",
+    year: 2024,
+    query: { ids: ["NAME", "B19013_001E", "B19013_001M"], for: "county:*", in: "state:18", descriptive: false },
+    header: ["NAME", "B19013_001E", "B19013_001M", "state", "county"],
+    rows: [
+      ["St. Joseph County, Indiana", "66403", "1728", "18", "141"],
+      ["Elkhart County, Indiana", "71043", "1810", "18", "039"],
+      ["Missing \"Quote\" County", null, "-555555555", "18", "999"],
+    ],
+  };
+
+  it("declares a renderer and the raw budget", () => {
+    const tool = censusGetRawTool({ httpClient: () => { throw new Error("unused"); } });
+    expect(tool.textBudget).toBe(24_000);
+    expect(typeof tool.renderData).toBe("function");
+  });
+
+  it("renders the header once and one CSV line per row, quoting commas and quotes", () => {
+    const tool = censusGetRawTool({ httpClient: () => { throw new Error("unused"); } });
+    const r = tool.renderData?.(data);
+    expect(r?.head).toEqual(["NAME,B19013_001E,B19013_001M,state,county"]);
+    expect(r?.items).toEqual([
+      '"St. Joseph County, Indiana",66403,1728,18,141',
+      '"Elkhart County, Indiana",71043,1810,18,039',
+      '"Missing ""Quote"" County",,-555555555,18,999',
+    ]);
+    expect(r?.unit).toBe("rows");
+    expect(r?.narrowHint).toMatch(/fewer variables|smaller geography/);
+  });
+
+  it("describes the text budget and batching in the tool description", () => {
+    const tool = censusGetRawTool({ httpClient: () => { throw new Error("unused"); } });
+    expect(tool.description).toMatch(/compact table/);
+    expect(tool.description).toMatch(/structuredContent/);
+  });
+});
