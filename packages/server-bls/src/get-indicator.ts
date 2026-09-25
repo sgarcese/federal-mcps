@@ -39,7 +39,19 @@ const SOURCE = {
   url: BLS_TIMESERIES_ENDPOINT,
 };
 
-/** A BLS Public Data API timeseries id from any program this server builds (QCEW keys are not ids). */
+/**
+ * The shape of any BLS Public Data API timeseries id: a two-letter survey prefix, then capitals
+ * and digits, 5–30 characters in all (e.g. `LNU04000000`, `CEU2000000003`, `CUUR0000SA0`). The
+ * API is the authority on whether a series exists; this only keeps garbage and QCEW's internal
+ * `area|own|industry` keys out of the request (#211).
+ */
+const BLS_SERIES_ID_SHAPE = /^[A-Z]{2}[A-Z0-9]{3,28}$/;
+
+/**
+ * A BLS timeseries id: one this server builds (LAUS, CES State & Area, OEWS, CPI, JOLTS, PPI) or
+ * any other id of the BLS shape — national CES (`CE…`), CPS (`LN…`) and the rest of LABSTAT —
+ * since `bls_get_raw` is the escape hatch for exact series (#211).
+ */
 function isBlsTimeseriesId(id: string): boolean {
   return (
     isLausSeriesId(id) ||
@@ -47,7 +59,8 @@ function isBlsTimeseriesId(id: string): boolean {
     isOeSeriesId(id) ||
     isCuSeriesId(id) ||
     isJtSeriesId(id) ||
-    isWpuSeriesId(id)
+    isWpuSeriesId(id) ||
+    BLS_SERIES_ID_SHAPE.test(id)
   );
 }
 
@@ -108,7 +121,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     name: "bls_get_raw",
     title: "Get raw series",
     description:
-      "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI, JOLTS or PPI series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block. The text reply is a compact table, one block per series, up to about 24,000 characters; the full response is always in structuredContent. For long spans, ask for fewer series per call.",
+      "Return the unprocessed BLS Public Data API response for one or more timeseries ids — the escape hatch for exact series. Any BLS id works: the ones bls_get_indicator builds (LAUS, CES State & Area, OEWS, CPI, JOLTS, PPI) and others such as national CES (CEU2000000003) and CPS (LNU04000000). Take ids from a prior bls_get_indicator result's source block. The text reply is a compact table, one block per series, up to about 24,000 characters; the full response is always in structuredContent. For long spans, ask for fewer series per call.",
     input: z.object({
       ids: z
         .array(z.string())
@@ -130,7 +143,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       const bad = q.ids.filter((id) => !isBlsTimeseriesId(id));
       if (bad.length > 0) {
         throw new Error(
-          `not BLS timeseries ids: ${bad.join(", ")}. Take ids from a bls_get_indicator result's source block (LAUS, CES, OEWS, CPI, JOLTS or PPI series).`,
+          `not BLS timeseries ids: ${bad.join(", ")}. A BLS id is a two-letter survey prefix followed by capitals and digits (e.g. LNU04000000, CEU2000000003); take ids from a bls_get_indicator result's source block or from BLS's series lookup.`,
         );
       }
       const responses = await fetchSeriesRaw(options.httpClient(), q.ids, {
