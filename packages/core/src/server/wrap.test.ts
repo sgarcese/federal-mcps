@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildCitation, EnvelopeSchema, envelope, placeRef, type Source } from "../envelope/index.js";
+import {
+  buildCitation,
+  EnvelopeSchema,
+  envelope,
+  placeRef,
+  type Source,
+} from "../envelope/index.js";
 import { MAX_RENDERED_DATA_CHARS, RAW_TEXT_BUDGET, renderText, wrapResult } from "./wrap.js";
 
 const NOW = new Date("2026-09-08T12:00:00.000Z");
@@ -109,7 +115,10 @@ describe("compact rendering for raw tools (#210, ADR-017)", () => {
     url: "https://example.invalid/raw",
     citation: "Demo, Raw. Retrieved 2026-09-08 from https://example.invalid/raw",
   };
-  const rows = Array.from({ length: 50 }, (_, i) => `row-${String(i).padStart(2, "0")},${i},${i * 2}`);
+  const rows = Array.from(
+    { length: 50 },
+    (_, i) => `row-${String(i).padStart(2, "0")},${i},${i * 2}`,
+  );
   const renderData = () => ({
     head: ["name,a,b"],
     items: rows,
@@ -118,10 +127,10 @@ describe("compact rendering for raw tools (#210, ADR-017)", () => {
   });
 
   it("prints the provenance line without the id list, then the head once, then every item that fits", () => {
-    const text = renderText(
-      envelope({ data: { any: true }, source: raw, now: NOW }),
-      { renderData, textBudget: 10_000 },
-    );
+    const text = renderText(envelope({ data: { any: true }, source: raw, now: NOW }), {
+      renderData,
+      textBudget: 10_000,
+    });
     const lines = text.split("\n");
     expect(lines[0]).not.toContain("VAR_A");
     expect(lines[0]).toContain("demo Raw");
@@ -146,7 +155,12 @@ describe("compact rendering for raw tools (#210, ADR-017)", () => {
   });
 
   it("shows the start of a single item that alone exceeds the budget, marked as partial", () => {
-    const big = () => ({ head: [], items: ["x".repeat(500)], unit: "series", narrowHint: "Fewer ids." });
+    const big = () => ({
+      head: [],
+      items: ["x".repeat(500)],
+      unit: "series",
+      narrowHint: "Fewer ids.",
+    });
     const text = renderText(envelope({ data: {}, source: raw, now: NOW }), {
       renderData: big,
       textBudget: 100,

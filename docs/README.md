@@ -29,6 +29,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
+- [adr/ADR-017-raw-tool-rendering-and-bls-completions.md](adr/ADR-017-raw-tool-rendering-and-bls-completions.md)
+  — raw tools render a compact table within a 24,000-character budget (indicator tools keep
+  4,000), enforced by a `raw-rendering` contract rule; the M12 BLS completion order and QCEW
+  history bounds.
 - [adr/ADR-016-deployment-wrapper-and-repository-safety.md](adr/ADR-016-deployment-wrapper-and-repository-safety.md)
   — federal-mcps deploys its own fleet (agency servers + OpenContext portals for guide-backed
   sources) at `<service>.responsive.city/mcp` with the old names as aliases; Terraform public,

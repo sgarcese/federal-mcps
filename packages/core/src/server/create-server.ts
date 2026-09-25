@@ -132,7 +132,9 @@ function registerDefinitionTool(
           now,
           ...(extra.signal === undefined ? {} : { signal: extra.signal }),
         });
-        return asCallToolResult(wrapResult(result, now()));
+        return asCallToolResult(
+          wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),
+        );
       } catch (error) {
         return asCallToolResult(
           toToolError(error, { agency: definition.agency, toolName: tool.name }),

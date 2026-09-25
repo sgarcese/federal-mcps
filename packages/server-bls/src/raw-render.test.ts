@@ -10,7 +10,13 @@ const response = {
       {
         seriesID: "CEU2000000003",
         data: [
-          { year: "2026", period: "M08", periodName: "August", value: "38.12", footnotes: [{ code: "P", text: "preliminary" }] },
+          {
+            year: "2026",
+            period: "M08",
+            periodName: "August",
+            value: "38.12",
+            footnotes: [{ code: "P", text: "preliminary" }],
+          },
           { year: "2026", period: "M07", periodName: "July", value: "38.05", footnotes: [{}] },
         ],
       },
