@@ -83,3 +83,24 @@ export class NetworkError extends HttpClientError {
     this.cause = params.cause;
   }
 }
+
+/**
+ * The per-client rate limiter (`HttpClientOptions.perMinute`, ADR-018 §5) had no token
+ * available and waiting for a refill would exceed `maxWaitMs`. `fetch` was never invoked.
+ */
+export class RateLimitWaitError extends HttpClientError {
+  readonly perMinute: number;
+  readonly waitMs: number;
+  readonly maxWaitMs: number;
+
+  constructor(params: { source: string; perMinute: number; waitMs: number; maxWaitMs: number }) {
+    super(
+      `${params.source}: rate limit of ${params.perMinute}/min would require waiting ` +
+        `${params.waitMs}ms, exceeding maxWaitMs ${params.maxWaitMs}ms`,
+      params.source,
+    );
+    this.perMinute = params.perMinute;
+    this.waitMs = params.waitMs;
+    this.maxWaitMs = params.maxWaitMs;
+  }
+}
