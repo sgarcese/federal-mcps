@@ -3,6 +3,18 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## Unreleased — M11 HUD User server
+
+Added
+- **Optional per-minute rate limiter on the shared HTTP client** (#231, ADR-018 §5): a
+  token bucket configured per client via `createHttpClient({ perMinute, maxWaitMs? })`
+  — not hard-coded, since HUD User's published 60 queries/minute/token may be revised.
+  A request with no token available waits for the refill; a wait that would exceed
+  `maxWaitMs` (default 60,000ms) throws a new `RateLimitWaitError` naming the source and
+  the limit instead of calling `fetch`. Only a real upstream request consumes a token —
+  cache hits and fixture replay never do. When a response carries
+  `x-ratelimit-remaining: 0`, the bucket closes until that minute rolls over.
+
 ## 0.5.0 — M12 Raw access and BLS completions (2026-09-24)
 
 Added

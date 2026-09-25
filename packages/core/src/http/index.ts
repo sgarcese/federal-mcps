@@ -21,6 +21,7 @@ export {
   MissingFixtureError,
   NetworkError,
   QuotaExceededError,
+  RateLimitWaitError,
   TimeoutError,
 } from "./errors.js";
 export type { FixtureMode, FixtureResponse } from "./fixtures.js";

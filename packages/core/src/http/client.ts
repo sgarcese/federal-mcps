@@ -1,7 +1,13 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
 import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
-import { HttpError, NetworkError, QuotaExceededError, TimeoutError } from "./errors.js";
+import {
+  HttpError,
+  NetworkError,
+  QuotaExceededError,
+  RateLimitWaitError,
+  TimeoutError,
+} from "./errors.js";
 import { type FixtureMode, readFixture, resolveFixtureMode, writeFixture } from "./fixtures.js";
 import { DEFAULT_BACKOFF, computeDelayMs, isRetryableStatus, parseRetryAfter } from "./retry.js";
 
@@ -20,6 +26,23 @@ export interface HttpClientOptions {
   readonly now?: () => Date;
   readonly fixtures?: FixtureOptions;
   readonly timeoutMs?: number;
+  /**
+   * Per-client token-bucket rate limit, in requests per minute (ADR-018 §5). Optional and
+   * per-client rather than hard-coded, because an agency's published limit (e.g. HUD User's
+   * 60 queries/minute/token) may be revised later. A request that finds no token waits for
+   * the next refill; only a real upstream fetch consumes a token — cache hits and fixture
+   * replay never do. Omit to leave the client unlimited (unchanged behaviour).
+   */
+  readonly perMinute?: number;
+  /**
+   * Longest a request will wait for a token before giving up, in ms (default 60_000). A
+   * wait that would exceed this throws `RateLimitWaitError` naming the source and the
+   * configured limit; `fetch` is never invoked in that case. Ignored when `perMinute` is
+   * not set.
+   */
+  readonly maxWaitMs?: number;
+  /** Sleep implementation used while waiting for a rate-limit token; defaults to `setTimeout`. Injectable for tests. */
+  readonly sleep?: (ms: number) => Promise<void>;
 }
 
 export interface RequestOptions {
@@ -58,6 +81,7 @@ interface RawResponse {
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_FIXTURE_DIR = "fixtures";
+const DEFAULT_MAX_WAIT_MS = 60_000;
 
 export function createHttpClient(options: HttpClientOptions): HttpClient {
   const { source, budget, cache } = options;
@@ -66,6 +90,74 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
   const fixtureMode = resolveFixtureMode(options.fixtures?.mode);
   const fixtureDir = options.fixtures?.dir ?? DEFAULT_FIXTURE_DIR;
   const defaultTimeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const perMinute = options.perMinute;
+  const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
+  const sleepFn =
+    options.sleep ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
+
+  // Token-bucket state for the optional per-minute rate limiter (ADR-018 §5). Only used
+  // when `perMinute` is set; `tokens` refills continuously (perMinute tokens per 60s) up
+  // to a capacity of `perMinute`. `blockedUntilMs` implements the optional
+  // x-ratelimit-remaining: 0 backoff, holding the bucket closed until the header's minute
+  // rolls over even if the continuous refill would otherwise have produced a token sooner.
+  let tokens = perMinute ?? 0;
+  let lastRefillMs = now().getTime();
+  let blockedUntilMs = 0;
+
+  /**
+   * Checks the bucket for a token without waiting. Returns `null` and consumes a token
+   * when one is available now; otherwise returns the number of ms until one will be.
+   */
+  function checkToken(): { waitMs: number } | null {
+    if (perMinute === undefined) return null;
+
+    const nowMs = now().getTime();
+    const ratePerMs = perMinute / 60_000;
+
+    if (nowMs < blockedUntilMs) {
+      return { waitMs: blockedUntilMs - nowMs };
+    }
+
+    const elapsedMs = nowMs - lastRefillMs;
+    if (elapsedMs > 0) {
+      tokens = Math.min(perMinute, tokens + elapsedMs * ratePerMs);
+      lastRefillMs = nowMs;
+    }
+
+    if (tokens >= 1) {
+      tokens -= 1;
+      return null;
+    }
+
+    const deficit = 1 - tokens;
+    return { waitMs: Math.ceil(deficit / ratePerMs) };
+  }
+
+  /** Waits for a rate-limit token, throwing if the wait would exceed `maxWaitMs`. */
+  async function acquireRateLimitToken(): Promise<void> {
+    for (;;) {
+      const pending = checkToken();
+      if (pending === null) return;
+      if (pending.waitMs > maxWaitMs) {
+        throw new RateLimitWaitError({
+          source,
+          perMinute: perMinute as number,
+          waitMs: pending.waitMs,
+          maxWaitMs,
+        });
+      }
+      await sleepFn(pending.waitMs);
+    }
+  }
+
+  /** Optional back-off (ADR-018 §5): a response reporting no remaining quota closes the
+   * bucket until its minute rolls over, even if the continuous refill would allow sooner. */
+  function noteRateLimitHeaders(headers: Record<string, string>): void {
+    if (perMinute === undefined) return;
+    if (headers["x-ratelimit-remaining"] === "0") {
+      blockedUntilMs = now().getTime() + 60_000;
+    }
+  }
 
   async function doFetchOnce(
     url: string,
@@ -170,12 +262,15 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       return fixture;
     }
 
+    await acquireRateLimitToken();
+
     const budgetResult = await budget.consume(source, 1);
     if (!budgetResult.allowed) {
       throw new QuotaExceededError({ source, resetsAt: budgetResult.resetsAt });
     }
 
     const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth);
+    noteRateLimitHeaders(response.headers);
 
     if (fixtureMode === "record") {
       await writeFixture(fixtureDir, source, url, response, now, body);
