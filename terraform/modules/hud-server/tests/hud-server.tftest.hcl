@@ -50,8 +50,8 @@ mock_provider "aws" {
       arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id"
       domain_validation_options = [
         {
-          domain_name           = "huduser.responsive.city"
-          resource_record_name  = "_acme-challenge.huduser.responsive.city."
+          domain_name           = "hud-user.responsive.city"
+          resource_record_name  = "_acme-challenge.hud-user.responsive.city."
           resource_record_type  = "CNAME"
           resource_record_value = "example.acm-validations.aws."
         },
@@ -70,7 +70,7 @@ mock_provider "aws" {
 
 variables {
   lambda_zip_path = "./tests/placeholder.zip"
-  domain_name     = "huduser.responsive.city"
+  domain_name     = "hud-user.responsive.city"
   hosted_zone_id  = "ZTESTZONE"
   hud_user_token  = "test-token-value"
   environment_tag = "dev"
@@ -209,7 +209,7 @@ run "custom_domain_matches_the_instance_record" {
   command = plan
 
   assert {
-    condition     = aws_acm_certificate.hud.domain_name == "huduser.responsive.city"
+    condition     = aws_acm_certificate.hud.domain_name == "hud-user.responsive.city"
     error_message = "certificate domain must equal var.domain_name"
   }
 
@@ -219,7 +219,7 @@ run "custom_domain_matches_the_instance_record" {
   }
 
   assert {
-    condition     = aws_apigatewayv2_domain_name.hud.domain_name == "huduser.responsive.city"
+    condition     = aws_apigatewayv2_domain_name.hud.domain_name == "hud-user.responsive.city"
     error_message = "apigatewayv2 domain name must equal var.domain_name"
   }
 
@@ -248,7 +248,7 @@ run "outputs_expose_the_invoke_urls" {
   command = plan
 
   assert {
-    condition     = output.custom_domain_url == "https://huduser.responsive.city/mcp"
+    condition     = output.custom_domain_url == "https://hud-user.responsive.city/mcp"
     error_message = "custom_domain_url must be https://<domain_name>/mcp"
   }
 

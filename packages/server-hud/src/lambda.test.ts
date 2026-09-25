@@ -17,7 +17,7 @@ function event(overrides: Partial<APIGatewayProxyEventV2>): APIGatewayProxyEvent
     requestContext: {
       accountId: "123456789012",
       apiId: "test-api",
-      domainName: "huduser.responsive.city",
+      domainName: "hud-user.responsive.city",
       domainPrefix: "huduser",
       http: {
         method: "POST",
@@ -90,7 +90,7 @@ describe("hud lambda handler", () => {
         requestContext: {
           accountId: "123456789012",
           apiId: "test-api",
-          domainName: "huduser.responsive.city",
+          domainName: "hud-user.responsive.city",
           domainPrefix: "huduser",
           http: {
             method: "GET",
