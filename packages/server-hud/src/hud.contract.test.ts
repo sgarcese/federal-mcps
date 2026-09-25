@@ -1,6 +1,13 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
-import { createServer, GeographyCatalog } from "@federal-mcps/core";
+import { fileURLToPath } from "node:url";
+import {
+  createHttpClient,
+  createServer,
+  GeographyCatalog,
+  MemoryBudgetStore,
+  MemoryCacheStore,
+} from "@federal-mcps/core";
 import { assertFamilyContract, assertServerSources } from "@federal-mcps/core/testing";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -20,7 +27,17 @@ afterAll(() => {
   rmSync(dirname(path), { recursive: true, force: true });
 });
 
-const definition = () => buildHudDefinition({ catalog });
+const FIXTURES = fileURLToPath(new URL("../fixtures", import.meta.url));
+const replay = () =>
+  createHttpClient({
+    source: "hud",
+    budget: new MemoryBudgetStore(1000),
+    cache: new MemoryCacheStore(),
+    fixtures: { mode: "replay", dir: FIXTURES },
+  });
+// The indicator tools replay recorded fixtures; the token is a placeholder (never sent).
+const definition = () =>
+  buildHudDefinition({ catalog, httpClient: replay(), token: () => "test-token" });
 
 it("meets the family contract", () => assertFamilyContract(definition()));
 
@@ -34,7 +51,9 @@ describe("the live HUD server (createServer + InMemoryTransport)", () => {
     await Promise.all([client.connect(ct), server.connect(st)]);
     try {
       const { tools } = await client.listTools();
-      expect(tools.map((t) => t.name).sort()).toEqual(["hud_describe_source", "hud_resolve_place"]);
+      expect(tools.map((t) => t.name)).toEqual(
+        expect.arrayContaining(["hud_describe_source", "hud_resolve_place"]),
+      );
       for (const tool of tools) {
         expect(tool.title).toMatch(/\S/);
         expect(tool.annotations).toMatchObject({

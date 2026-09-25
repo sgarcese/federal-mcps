@@ -42,6 +42,43 @@ export function buildFixtureCatalog(): string {
       population: 3_005_131,
       populationVintage: "2024",
     }),
+    // M11 (HUD User): the places the recorded fixtures cover (scripts/record-hud-fixtures.mts).
+    ent("18", "040", "Indiana", {
+      stateFips: "18",
+      population: 6_862_199,
+      populationVintage: "2024",
+    }),
+    ent("18141", "050", "St. Joseph County", {
+      stateFips: "18",
+      lsad: "06",
+      aland: 1_186_000_000,
+      population: 272_912,
+      populationVintage: "2024",
+    }),
+    ent("1871000", "160", "South Bend city", {
+      stateFips: "18",
+      lsad: "25",
+      aland: 107_000_000,
+      population: 103_084,
+      populationVintage: "2024",
+    }),
+    ent("43780", "310", "South Bend-Mishawaka, IN-MI", {
+      lsad: "M1",
+      population: 324_501,
+      populationVintage: "2024",
+    }),
+    ent("17", "040", "Illinois", {
+      stateFips: "17",
+      population: 12_710_158,
+      populationVintage: "2024",
+    }),
+    ent("17031", "050", "Cook County", {
+      stateFips: "17",
+      lsad: "06",
+      aland: 2_448_000_000,
+      population: 5_182_617,
+      populationVintage: "2024",
+    }),
   ];
 
   const uc = (geoid: string): string => {
@@ -54,11 +91,20 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("08031"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("0820000"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("19740"), alias: "Denver", source: "hand" },
+    { ucgid: uc("18141"), alias: "St. Joseph", source: "lsad-stripped" },
+    { ucgid: uc("1871000"), alias: "South Bend", source: "lsad-stripped" },
+    { ucgid: uc("43780"), alias: "South Bend", source: "hand" },
+    { ucgid: uc("17031"), alias: "Cook", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("18141"), parentUcgid: uc("18"), share: 1 },
+    { childUcgid: uc("1871000"), parentUcgid: uc("18141"), share: 1 },
+    { childUcgid: uc("1871000"), parentUcgid: uc("18"), share: 1 },
+    { childUcgid: uc("18141"), parentUcgid: uc("43780"), share: 1 },
+    { childUcgid: uc("17031"), parentUcgid: uc("17"), share: 1 },
   ];
 
   const rows: CatalogRows = {

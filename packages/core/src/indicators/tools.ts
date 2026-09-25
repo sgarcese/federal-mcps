@@ -65,6 +65,10 @@ function dimensionArgumentSchema(
     occupation: `An occupation code from the indicator's vocabulary (${agency}_list_indicators).`,
     product: `A data product from the indicator's vocabulary (${agency}_list_indicators), e.g. an ACS 1-year vs 5-year estimate.`,
     frequency: `A frequency from the indicator's vocabulary (${agency}_list_indicators), e.g. quarterly or annual.`,
+    bedrooms: `A bedroom count from the indicator's vocabulary (${agency}_list_indicators), 0 (efficiency) to 4.`,
+    level: `An income level from the indicator's vocabulary (${agency}_list_indicators), e.g. 30, 50 or 80 percent of area median income.`,
+    household_size: `A household size from the indicator's vocabulary (${agency}_list_indicators), 1 to 8 people.`,
+    program: `A program from the indicator's vocabulary (${agency}_list_indicators), e.g. public housing or housing choice vouchers.`,
   };
   const out: Partial<Record<DimensionArgument, z.ZodOptional<z.ZodString>>> = {};
   for (const arg of DIMENSION_ARGUMENTS) {
