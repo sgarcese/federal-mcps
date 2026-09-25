@@ -75,3 +75,9 @@ question, and each answer is scored by hand against `rubric.mustState` / `mustNo
 guide only on a clean pass; the ground truth was verified live on the date in the skill.
 
 - `cdc-places-guided.jsonl` — the seven questions of the 2026-09-20 benchmark (naive 5/7, guided 7/7).
+
+## M12 set
+
+`bls-m12.jsonl` (run by `run.mjs` with the other sets): QCEW history, a 3-digit NAICS industry,
+annual averages, an unpublished code (must be a note, not a number), the OEWS one-year horizon
+(must say the range was not applied), and national CES/CPS ids through `bls_get_raw`.

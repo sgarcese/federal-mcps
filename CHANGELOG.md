@@ -3,7 +3,7 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## Unreleased — M12 Raw access and BLS completions
+## 0.5.0 — M12 Raw access and BLS completions (2026-09-24)
 
 Added
 - **QCEW history and detailed industries** (#213, ADR-017 §4): with `startYear`/`endYear`, QCEW returns
@@ -31,6 +31,9 @@ Fixed
 - OEWS: `bls_describe_source` documents the series-id layout (area, industry, any 6-digit SOC, data
   type such as 13 annual median) with a worked detailed-occupation example, and `occupational_wage`
   states that the BLS API holds only the current OEWS year when a range is requested (#214).
+
+Verification: `docs/evals/bls-m12.jsonl` adds six live cases (QCEW history, NAICS 236, annual averages,
+an unpublished code, the OEWS horizon, national CES/CPS through `bls_get_raw`); run after deploy.
 
 ## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 
