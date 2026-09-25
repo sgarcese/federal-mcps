@@ -20,6 +20,8 @@ export interface SeriesObservation {
 export interface SeriesResult {
   seriesId: string;
   observations: SeriesObservation[];
+  /** Caveats from the fetch (e.g. a capped range, an unpublished code), carried as limitations (#213). */
+  notes?: string[];
 }
 
 export interface SeriesFetchOptions {
@@ -27,6 +29,12 @@ export interface SeriesFetchOptions {
   endYear?: number;
   /** Agency registration key. Omitted → unregistered limits; used only in production, never in fixtures. */
   apiKey?: string;
+  /**
+   * True when the caller asked for years, false when the tool filled its default range (#213): a
+   * program whose history is costly (QCEW: one file per quarter) returns only its latest period
+   * unless years were asked for.
+   */
+  explicitYears?: boolean;
   /** Cache TTL (seconds) for a batch response; omit to skip caching. */
   freshTtlSeconds?: number;
 }

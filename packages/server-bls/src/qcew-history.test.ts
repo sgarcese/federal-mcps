@@ -1,5 +1,5 @@
 import type { HttpClient, HttpResult } from "@federal-mcps/core";
-import { resolveDimensions } from "@federal-mcps/core";
+import { HttpError, resolveDimensions } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
 import { qcewIndicatorDefinitions } from "./qcew-indicators.js";
 
@@ -49,7 +49,9 @@ const client: HttpClient = {
       if (year < 2026 || (year === 2026 && quarter === 1)) value = quarterCsv(year, quarter);
     } else if (a) {
       const year = Number(a[1]);
-      value = year <= 2025 ? annualCsv(year) : AH;
+      // BLS answers an unpublished annual file with HTTP 404 (verified live 2026-09-24).
+      if (year > 2025) throw new HttpError({ source: "bls", status: 404, url, attempts: 1 });
+      value = annualCsv(year);
     }
     return { value, status: 200, cache: { hit: false } };
   },

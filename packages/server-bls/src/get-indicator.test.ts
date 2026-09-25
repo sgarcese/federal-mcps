@@ -501,7 +501,7 @@ describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
     });
     expect(res.source.ids).toEqual(["08031|5|23"]);
     const data = res.data as { dimensions: unknown; latest: { value: number } | null };
-    expect(data.dimensions).toEqual({ industry: "23", ownership: "5" });
+    expect(data.dimensions).toEqual({ industry: "23", ownership: "5", frequency: "quarterly" });
     expect(data.latest).toEqual({ period: "2024-Q01", value: 1791 });
   });
 
@@ -631,10 +631,11 @@ describe("QCEW: years it cannot honour are stated, and it cites the file it read
     ownership: "5",
   };
 
-  it("adds a limitation when startYear/endYear are given, naming the period actually returned", async () => {
+  it("honours startYear/endYear since #213 (history), so no 'not applied' limitation", async () => {
     const res = await go(0, { ...base, startYear: 2020, endYear: 2021 });
-    expect(res?.limitations?.join(" ")).toMatch(/2020.?2021.*not applied|only its latest/i);
-    expect(res?.limitations?.join(" ")).toMatch(/2024 Q1/);
+    expect((res?.limitations ?? []).join(" ")).not.toMatch(/not applied/);
+    const obs = (res?.data as { observations?: unknown[] } | undefined)?.observations ?? [];
+    expect(obs.length).toBeGreaterThan(1);
   });
 
   it("adds no such limitation when no years are asked for", async () => {

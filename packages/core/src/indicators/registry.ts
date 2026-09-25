@@ -49,6 +49,7 @@ export const DIMENSION_ARGUMENTS = [
   "ownership",
   "occupation",
   "product",
+  "frequency",
 ] as const;
 export type DimensionArgument = (typeof DIMENSION_ARGUMENTS)[number];
 
@@ -68,6 +69,14 @@ export interface DimensionDefinition {
   description: string;
   vocabulary: readonly DimensionVocabularyEntry[];
   default: string;
+  /**
+   * Codes accepted beyond the curated vocabulary (#213): e.g. QCEW takes any 3- to 6-digit NAICS
+   * code its files publish. Still validated — a code this rejects is refused with the vocabulary —
+   * and a code the source does not publish comes back as no observation with a note, never a guess.
+   */
+  acceptsCode?: (code: string) => boolean;
+  /** One line for `list_indicators` describing what `acceptsCode` admits. */
+  openCodes?: string;
 }
 
 /** The resolved codes for an indicator's dimensions, defaults filled: what `buildSeriesId` receives. */
@@ -105,11 +114,11 @@ export function resolveDimensions(
   const selection: DimensionSelection = {};
   for (const dim of declared) {
     const value = args[dim.argument] ?? dim.default;
-    if (!dim.vocabulary.some((v) => v.code === value)) {
+    if (!dim.vocabulary.some((v) => v.code === value) && !dim.acceptsCode?.(value)) {
       const codes = dim.vocabulary.map((v) => `${v.code} (${v.label})`).join(", ");
       return {
         ok: false,
-        message: `${dim.argument} "${value}" is not in ${def.name}'s vocabulary; accepted: ${codes}. See bls_list_indicators.`,
+        message: `${dim.argument} "${value}" is not in ${def.name}'s vocabulary; accepted: ${codes}${dim.openCodes ? `; or ${dim.openCodes}` : ""}. See bls_list_indicators.`,
       };
     }
     selection[dim.argument] = value;

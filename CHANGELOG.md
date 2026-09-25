@@ -5,6 +5,16 @@ milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitme
 
 ## Unreleased — M12 Raw access and BLS completions
 
+Added
+- **QCEW history and detailed industries** (#213, ADR-017 §4): with `startYear`/`endYear`, QCEW returns
+  every published quarter in the range, newest first, from 2014, at most 5 years (20 quarters) per call
+  with a note when capped; a new `frequency` picker (`quarterly` default, `annual` averages from the
+  annual files); `industry` accepts any 3- to 6-digit NAICS code (e.g. 236), picked by its aggregation
+  level, with a note when the area does not publish it. Without years an answer is still the latest
+  quarter, so a plain call stays one file. Core: `DimensionDefinition.acceptsCode`/`openCodes`, a
+  `frequency` dimension argument, `SeriesFetchOptions.explicitYears`, and `SeriesResult.notes` carried
+  as limitations.
+
 Changed
 - **Raw tools reply with a compact table** (ADR-017): `census_get_raw` as CSV lines, `bls_get_raw` as
   one block per series, ids printed once, within 24,000 characters (indicator tools keep 4,000); a cut

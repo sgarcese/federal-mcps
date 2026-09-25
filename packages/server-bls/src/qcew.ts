@@ -1,4 +1,4 @@
-import type { HttpClient, RequestOptions } from "@federal-mcps/core";
+import { type HttpClient, HttpError, type RequestOptions } from "@federal-mcps/core";
 import { QCEW_ENDPOINT } from "./describe-source.js";
 
 /**
@@ -43,9 +43,17 @@ function qcewAreaLevel(areaFips: string): QcewAreaLevel | undefined {
   return undefined;
 }
 
-/** The agglvl_code a (level, own_code, industry_code) selection should land on. */
+/**
+ * The agglvl_code a (level, own_code, industry_code) selection should land on. Detailed NAICS
+ * (#213) sits one level per digit below the sector: verified live 2026-09-24 on St. Joseph County
+ * IN (23 → 74, 236 → 75, 2361 → 76, 23611 → 77, 236118 → 78), Indiana (54–58) and the Denver
+ * metro C1974 (44–48).
+ */
 function expectedAgglvl(level: QcewAreaLevel, ownCode: string, industryCode: string): string {
   const set = level === "state" ? STATE_AGGLVL : level === "msa" ? MSA_AGGLVL : COUNTY_AGGLVL;
+  if (/^\d{3,6}$/.test(industryCode)) {
+    return String(Number(set.sector) + (industryCode.length - 2));
+  }
   if (industryCode !== INDUSTRY_ALL) return set.sector;
   return ownCode === OWN_TOTAL_COVERED ? set.total : set.ownership;
 }
@@ -80,7 +88,12 @@ export interface QcewHeadline {
   establishments: number | null;
   /** QCEW disclosure code: "" when published, otherwise a suppression flag (e.g. "N"). */
   disclosureCode: string;
+  /** True for an annual-averages row (#213); `quarter` is then 0. */
+  annual?: boolean;
 }
+
+/** The first year the QCEW open data slices serve (verified 2026-09-24: 2013 returns 404). */
+export const EARLIEST_QCEW_YEAR = 2014;
 
 /** Plain-language text for QCEW disclosure codes (ADR-011 §5). */
 export function qcewDisclosureText(code: string): string | undefined {
@@ -89,6 +102,11 @@ export function qcewDisclosureText(code: string): string | undefined {
     N: "not disclosable — withheld for employer confidentiality",
   };
   return KNOWN[code] ?? `withheld (QCEW disclosure code ${code})`;
+}
+
+/** The annual-averages CSV for an area and year (#213). */
+export function qcewAnnualUrl(area: string, year: number): string {
+  return `${QCEW_ENDPOINT}/${year}/a/area/${area}.csv`;
 }
 
 /** The CSV slice URL for an area and quarter. */
@@ -128,16 +146,20 @@ export function parseQcewRow(
   const iAgg = idx("agglvl_code");
   if (iOwn < 0 || iInd < 0) return undefined;
 
+  // An annual-averages file (#213) names its measures differently: one employment level, and
+  // annual_avg_* for establishments and the weekly wage.
+  const annual = idx("annual_avg_emplvl") >= 0;
   const at = {
     area: idx("area_fips"),
     year: idx("year"),
     qtr: idx("qtr"),
     disc: idx("disclosure_code"),
-    estabs: idx("qtrly_estabs"),
+    estabs: annual ? idx("annual_avg_estabs") : idx("qtrly_estabs"),
     m1: idx("month1_emplvl"),
     m2: idx("month2_emplvl"),
     m3: idx("month3_emplvl"),
-    wage: idx("avg_wkly_wage"),
+    annualEmp: idx("annual_avg_emplvl"),
+    wage: annual ? idx("annual_avg_wkly_wage") : idx("avg_wkly_wage"),
   };
 
   const rows = lines
@@ -162,12 +184,18 @@ export function parseQcewRow(
   const months = [toNum(f[at.m1]), toNum(f[at.m2]), toNum(f[at.m3])].filter(
     (m): m is number => m !== null,
   );
-  const employment =
-    suppressed || months.length < 3 ? null : Math.round(months.reduce((a, b) => a + b, 0) / 3);
+  const employment = annual
+    ? suppressed
+      ? null
+      : toNum(f[at.annualEmp])
+    : suppressed || months.length < 3
+      ? null
+      : Math.round(months.reduce((a, b) => a + b, 0) / 3);
   return {
+    ...(annual ? { annual: true } : {}),
     areaFips: f[at.area] ?? "",
     year: Number.parseInt(f[at.year] ?? "0", 10),
-    quarter: Number.parseInt(f[at.qtr] ?? "0", 10),
+    quarter: annual ? 0 : Number.parseInt(f[at.qtr] ?? "0", 10),
     employment,
     averageWeeklyWage: suppressed ? null : toNum(f[at.wage]),
     establishments: suppressed ? null : toNum(f[at.estabs]),
@@ -202,6 +230,32 @@ export async function fetchQcewRow(
   const { value } = await client.getText(qcewAreaUrl(area, quarter), reqOptions);
   if (!value || value.trim().length === 0) return undefined;
   return parseQcewRow(value, selection);
+}
+
+/**
+ * Fetch one QCEW CSV (a quarter slice or an annual file) through the core client, long-TTL
+ * cached. Undefined when the period is not published yet: BLS serves those as a header-only file
+ * (e.g. metro slices lag counties; verified 2026-09-24), an empty body, or — for an annual file
+ * — HTTP 404 (#213).
+ */
+export async function fetchQcewCsv(
+  client: HttpClient,
+  url: string,
+  options: { freshTtlSeconds?: number } = {},
+): Promise<string | undefined> {
+  const reqOptions: RequestOptions =
+    options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds };
+  let value: string;
+  try {
+    ({ value } = await client.getText(url, reqOptions));
+  } catch (error) {
+    // An unpublished annual file is a 404 (quarter slices come back header-only instead).
+    if (error instanceof HttpError && error.status === 404) return undefined;
+    throw error;
+  }
+  if (!value) return undefined;
+  const lines = value.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  return lines.length > 1 ? value : undefined;
 }
 
 /**
