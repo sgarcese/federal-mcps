@@ -24,9 +24,9 @@ Changed
 Fixed
 - `bls_get_raw` accepts any BLS timeseries id, including national CES (`CEU2000000003`) and CPS
   (`LNU04000000`); malformed ids are still rejected (#211).
-- QCEW answers state when requested years were not applied (the program serves its latest quarter),
-  naming the quarter returned, and cite the CSV slice actually read
-  (`data.bls.gov/cew/data/api/<year>/<q>/area/<area>.csv`) with the selection in words, not the
+- An indicator that serves only its latest period says so when years were asked for, naming the period
+  returned (used by OEWS, #214); QCEW answers cite the CSV file actually read
+  (`data.bls.gov/cew/data/api/<year>/<q|a>/area/<area>.csv`) with the selection in words, not the
   internal key. Core: `IndicatorDefinition` gains `servesHistory`, `sourceOf` and `sourceHome` (#212).
 - OEWS: `bls_describe_source` documents the series-id layout (area, industry, any 6-digit SOC, data
   type such as 13 annual median) with a worked detailed-occupation example, and `occupational_wage`
