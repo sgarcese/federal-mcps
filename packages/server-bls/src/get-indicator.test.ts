@@ -667,3 +667,42 @@ describe("occupational_wage states when asked-for years were not applied (#214)"
     expect(oews?.servesHistory).toBe(false);
   });
 });
+
+describe("QCEW history reaches the tool: explicit years and series notes travel (#213)", () => {
+  it("passes explicitYears only when the caller gave years", async () => {
+    const seen: Record<string, unknown>[] = [];
+    const qcew = blsIndicatorDefinitions.find((d) => d.name === "average_weekly_wage");
+    if (!qcew) throw new Error("no def");
+    const spy = {
+      ...qcew,
+      fetch: async (_c: HttpClient, keys: readonly string[], opts: Record<string, unknown>) => {
+        seen.push(opts);
+        return keys.map((seriesId) => ({
+          seriesId,
+          observations: [],
+          notes: ["a note from the fetch"],
+        }));
+      },
+    };
+    const tools = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => scriptedBlsClient(),
+      now: NOW,
+      definitions: [spy as IndicatorDefinition],
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: handlers take untyped args in tests.
+    type AnyArgs = any;
+    const go = (args: Record<string, unknown>) => tools[0]?.handler(args as AnyArgs, {} as AnyArgs);
+    const without = await go({ place: "Denver", kind: "county", indicator: "average_weekly_wage" });
+    const withYears = await go({
+      place: "Denver",
+      kind: "county",
+      indicator: "average_weekly_wage",
+      startYear: 2024,
+    });
+    expect(seen[0]?.explicitYears).toBeFalsy();
+    expect(seen[1]?.explicitYears).toBe(true);
+    expect(without?.limitations).toContain("a note from the fetch");
+    expect(withYears?.limitations).toContain("a note from the fetch");
+  });
+});
