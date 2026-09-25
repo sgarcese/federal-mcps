@@ -42,13 +42,19 @@ const HUD_DAILY_BUDGET = 50_000;
 
 /** Builds the configured HUD User `McpServer` over the bundled catalog. */
 export function createHudServer(options?: CreateServerOptions): McpServer {
-  // TODO(#231): swap this budget-only client for core's shared per-minute rate limiter once
-  // it lands, configured with HUD_USER_PER_MINUTE, instead of (or alongside) the daily budget.
-  createHttpClient({
+  // The core client's per-minute limiter (#231, ADR-018 §5) enforces HUD User's 60/minute per
+  // token; revisable here without touching the tools.
+  const httpClient = createHttpClient({
     source: "hud",
     budget: new MemoryBudgetStore(HUD_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
+    perMinute: HUD_USER_PER_MINUTE,
   });
-  const definition = buildHudDefinition({ catalog: openBundledCatalog() });
+  const definition = buildHudDefinition({
+    catalog: openBundledCatalog(),
+    httpClient,
+    // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
+    token: () => process.env["HUD_USER_TOKEN"],
+  });
   return createServer(definition, options);
 }

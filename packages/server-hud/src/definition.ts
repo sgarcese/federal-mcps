@@ -1,4 +1,9 @@
-import { type GeographyCatalog, geographyTools, type ServerDefinition } from "@federal-mcps/core";
+import {
+  type GeographyCatalog,
+  geographyTools,
+  type HttpClient,
+  type ServerDefinition,
+} from "@federal-mcps/core";
 import { HUD_USER_REQUIRED_SENTENCE, describeSource } from "./describe-source.js";
 import { HUD_SERVER_VERSION } from "./version.js";
 
@@ -20,6 +25,13 @@ ${HUD_USER_REQUIRED_SENTENCE} All tools are read-only.
 
 export interface HudDefinitionDeps {
   catalog: GeographyCatalog;
+  /**
+   * The core HTTP client for the HUD User API, rate-limited per minute (ADR-018 §5). Optional
+   * until the indicator tools land (#232+); the shell's tools make no upstream calls.
+   */
+  httpClient?: HttpClient;
+  /** The HUD User bearer token (`HUD_USER_TOKEN`), read lazily; never logged or recorded. */
+  token?: () => string | undefined;
 }
 
 /** The HUD User server's definition: core's resolver mounted as `hud_resolve_place`. */
