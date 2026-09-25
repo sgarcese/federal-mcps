@@ -18,6 +18,9 @@ Fixed
   naming the quarter returned, and cite the CSV slice actually read
   (`data.bls.gov/cew/data/api/<year>/<q>/area/<area>.csv`) with the selection in words, not the
   internal key. Core: `IndicatorDefinition` gains `servesHistory`, `sourceOf` and `sourceHome` (#212).
+- OEWS: `bls_describe_source` documents the series-id layout (area, industry, any 6-digit SOC, data
+  type such as 13 annual median) with a worked detailed-occupation example, and `occupational_wage`
+  states that the BLS API holds only the current OEWS year when a range is requested (#214).
 
 ## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 

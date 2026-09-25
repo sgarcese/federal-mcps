@@ -660,3 +660,10 @@ describe("QCEW: years it cannot honour are stated, and it cites the file it read
     expect(res.source.citation).toMatch(/LAUCN08031/);
   });
 });
+
+describe("occupational_wage states when asked-for years were not applied (#214)", () => {
+  it("OEWS is declared latest-only, so startYear/endYear earn a limitation", () => {
+    const oews = blsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+    expect(oews?.servesHistory).toBe(false);
+  });
+});

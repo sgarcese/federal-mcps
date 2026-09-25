@@ -82,5 +82,7 @@ export const oewsIndicatorDefinitions: IndicatorDefinition[] = [
         ...(dimensions.occupation === undefined ? {} : { occupation: dimensions.occupation }),
       }),
     dimensions: [OCCUPATION_DIMENSION],
+    // The BLS API holds only the current OEWS year: a requested range is stated as not applied (#214).
+    servesHistory: false,
   },
 ];

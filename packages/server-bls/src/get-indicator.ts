@@ -121,7 +121,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     name: "bls_get_raw",
     title: "Get raw series",
     description:
-      "Return the unprocessed BLS Public Data API response for one or more timeseries ids — the escape hatch for exact series. Any BLS id works: the ones bls_get_indicator builds (LAUS, CES State & Area, OEWS, CPI, JOLTS, PPI) and others such as national CES (CEU2000000003) and CPS (LNU04000000). Take ids from a prior bls_get_indicator result's source block. The text reply is a compact table, one block per series, up to about 24,000 characters; the full response is always in structuredContent. For long spans, ask for fewer series per call.",
+      "Return the unprocessed BLS Public Data API response for one or more timeseries ids — the escape hatch for exact series. Any BLS id works: the ones bls_get_indicator builds (LAUS, CES State & Area, OEWS, CPI, JOLTS, PPI) and others such as national CES (CEU2000000003) and CPS (LNU04000000). Take ids from a prior bls_get_indicator result's source block; detailed OEWS occupations and medians work too (id layout in bls_describe_source). The text reply is a compact table, one block per series, up to about 24,000 characters; the full response is always in structuredContent. For long spans, ask for fewer series per call.",
     input: z.object({
       ids: z
         .array(z.string())
