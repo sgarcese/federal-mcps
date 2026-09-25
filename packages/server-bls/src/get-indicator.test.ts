@@ -501,7 +501,7 @@ describe("QCEW NAICS industry + ownership pickers, end-to-end (#151)", () => {
     });
     expect(res.source.ids).toEqual(["08031|5|23"]);
     const data = res.data as { dimensions: unknown; latest: { value: number } | null };
-    expect(data.dimensions).toEqual({ industry: "23", ownership: "5" });
+    expect(data.dimensions).toEqual({ industry: "23", ownership: "5", frequency: "quarterly" });
     expect(data.latest).toEqual({ period: "2024-Q01", value: 1791 });
   });
 
@@ -631,10 +631,11 @@ describe("QCEW: years it cannot honour are stated, and it cites the file it read
     ownership: "5",
   };
 
-  it("adds a limitation when startYear/endYear are given, naming the period actually returned", async () => {
+  it("honours startYear/endYear since #213 (history), so no 'not applied' limitation", async () => {
     const res = await go(0, { ...base, startYear: 2020, endYear: 2021 });
-    expect(res?.limitations?.join(" ")).toMatch(/2020.?2021.*not applied|only its latest/i);
-    expect(res?.limitations?.join(" ")).toMatch(/2024 Q1/);
+    expect((res?.limitations ?? []).join(" ")).not.toMatch(/not applied/);
+    const obs = (res?.data as { observations?: unknown[] } | undefined)?.observations ?? [];
+    expect(obs.length).toBeGreaterThan(1);
   });
 
   it("adds no such limitation when no years are asked for", async () => {
@@ -665,5 +666,44 @@ describe("occupational_wage states when asked-for years were not applied (#214)"
   it("OEWS is declared latest-only, so startYear/endYear earn a limitation", () => {
     const oews = blsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
     expect(oews?.servesHistory).toBe(false);
+  });
+});
+
+describe("QCEW history reaches the tool: explicit years and series notes travel (#213)", () => {
+  it("passes explicitYears only when the caller gave years", async () => {
+    const seen: Record<string, unknown>[] = [];
+    const qcew = blsIndicatorDefinitions.find((d) => d.name === "average_weekly_wage");
+    if (!qcew) throw new Error("no def");
+    const spy = {
+      ...qcew,
+      fetch: async (_c: HttpClient, keys: readonly string[], opts: Record<string, unknown>) => {
+        seen.push(opts);
+        return keys.map((seriesId) => ({
+          seriesId,
+          observations: [],
+          notes: ["a note from the fetch"],
+        }));
+      },
+    };
+    const tools = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => scriptedBlsClient(),
+      now: NOW,
+      definitions: [spy as IndicatorDefinition],
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: handlers take untyped args in tests.
+    type AnyArgs = any;
+    const go = (args: Record<string, unknown>) => tools[0]?.handler(args as AnyArgs, {} as AnyArgs);
+    const without = await go({ place: "Denver", kind: "county", indicator: "average_weekly_wage" });
+    const withYears = await go({
+      place: "Denver",
+      kind: "county",
+      indicator: "average_weekly_wage",
+      startYear: 2024,
+    });
+    expect(seen[0]?.explicitYears).toBeFalsy();
+    expect(seen[1]?.explicitYears).toBe(true);
+    expect(without?.limitations).toContain("a note from the fetch");
+    expect(withYears?.limitations).toContain("a note from the fetch");
   });
 });

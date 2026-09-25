@@ -64,6 +64,7 @@ function dimensionArgumentSchema(
     ownership: `An ownership code from the indicator's vocabulary (${agency}_list_indicators).`,
     occupation: `An occupation code from the indicator's vocabulary (${agency}_list_indicators).`,
     product: `A data product from the indicator's vocabulary (${agency}_list_indicators), e.g. an ACS 1-year vs 5-year estimate.`,
+    frequency: `A frequency from the indicator's vocabulary (${agency}_list_indicators), e.g. quarterly or annual.`,
   };
   const out: Partial<Record<DimensionArgument, z.ZodOptional<z.ZodString>>> = {};
   for (const arg of DIMENSION_ARGUMENTS) {
@@ -106,6 +107,7 @@ function describeDimensions(def: IndicatorDefinition) {
           description: d.description,
           default: d.default,
           vocabulary: d.vocabulary.map((v) => ({ code: v.code, label: v.label })),
+          ...(d.openCodes ? { alsoAccepts: d.openCodes } : {}),
         })),
       };
 }
@@ -275,6 +277,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
       {
         startYear: p.startYear ?? currentYear - 1,
         endYear: p.endYear ?? currentYear,
+        explicitYears: p.startYear !== undefined || p.endYear !== undefined,
         ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
       },
     );
@@ -288,6 +291,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
             `${def.program} is published nationally only; this is not a ${mentionedPlaceName(catalog, p.place, p)} figure.`,
           ]),
       ...[historyNote(def, p, latest)].filter((n): n is string => n !== undefined),
+      ...(series?.notes ?? []),
     ];
     return {
       data: {
@@ -428,15 +432,17 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
       {
         startYear,
         endYear,
+        explicitYears: p.startYear !== undefined || p.endYear !== undefined,
         ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
       },
     );
     const observations = series?.observations ?? [];
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
-    const notes = [fallbackCaveat, historyNote(def, p, latest)].filter(
-      (n): n is string => n !== undefined,
-    );
+    const notes = [
+      ...[fallbackCaveat, historyNote(def, p, latest)].filter((n): n is string => n !== undefined),
+      ...(series?.notes ?? []),
+    ];
 
     return {
       data: {
@@ -581,6 +587,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
           ? await fetchStrategyOf(def, options.defaultFetch)(options.httpClient(), ids, {
               startYear: p.startYear ?? currentYear - 1,
               endYear: p.endYear ?? currentYear,
+              explicitYears: p.startYear !== undefined || p.endYear !== undefined,
               ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
             })
           : [];
@@ -677,6 +684,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
             const all = [...notes];
             const h = historyNote(def, p, series[0]?.observations[0]);
             if (h) all.push(h);
+            for (const n of new Set(series.flatMap((one) => one.notes ?? []))) all.push(n);
             return all.length > 0 ? { limitations: all } : {};
           })(),
         };

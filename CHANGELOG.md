@@ -5,6 +5,16 @@ milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitme
 
 ## Unreleased — M12 Raw access and BLS completions
 
+Added
+- **QCEW history and detailed industries** (#213, ADR-017 §4): with `startYear`/`endYear`, QCEW returns
+  every published quarter in the range, newest first, from 2014, at most 5 years (20 quarters) per call
+  with a note when capped; a new `frequency` picker (`quarterly` default, `annual` averages from the
+  annual files); `industry` accepts any 3- to 6-digit NAICS code (e.g. 236), picked by its aggregation
+  level, with a note when the area does not publish it. Without years an answer is still the latest
+  quarter, so a plain call stays one file. Core: `DimensionDefinition.acceptsCode`/`openCodes`, a
+  `frequency` dimension argument, `SeriesFetchOptions.explicitYears`, and `SeriesResult.notes` carried
+  as limitations.
+
 Changed
 - **Raw tools reply with a compact table** (ADR-017): `census_get_raw` as CSV lines, `bls_get_raw` as
   one block per series, ids printed once, within 24,000 characters (indicator tools keep 4,000); a cut
@@ -14,9 +24,9 @@ Changed
 Fixed
 - `bls_get_raw` accepts any BLS timeseries id, including national CES (`CEU2000000003`) and CPS
   (`LNU04000000`); malformed ids are still rejected (#211).
-- QCEW answers state when requested years were not applied (the program serves its latest quarter),
-  naming the quarter returned, and cite the CSV slice actually read
-  (`data.bls.gov/cew/data/api/<year>/<q>/area/<area>.csv`) with the selection in words, not the
+- An indicator that serves only its latest period says so when years were asked for, naming the period
+  returned (used by OEWS, #214); QCEW answers cite the CSV file actually read
+  (`data.bls.gov/cew/data/api/<year>/<q|a>/area/<area>.csv`) with the selection in words, not the
   internal key. Core: `IndicatorDefinition` gains `servesHistory`, `sourceOf` and `sourceHome` (#212).
 - OEWS: `bls_describe_source` documents the series-id layout (area, industry, any 6-digit SOC, data
   type such as 13 annual median) with a worked detailed-occupation example, and `occupational_wage`

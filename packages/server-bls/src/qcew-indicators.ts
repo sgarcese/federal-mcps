@@ -1,13 +1,16 @@
 import type { HttpClient, PlaceCandidate } from "@federal-mcps/core";
 import { QCEW_ENDPOINT } from "./describe-source.js";
 import {
-  fetchQcewRow,
   INDUSTRY_ALL,
   latestPublishedQuarter,
   OWN_TOTAL_COVERED,
   priorQuarter,
   type QcewHeadline,
   type QcewRowSelection,
+  EARLIEST_QCEW_YEAR,
+  fetchQcewCsv,
+  parseQcewRow,
+  qcewAnnualUrl,
   qcewAreaUrl,
   qcewDisclosureText,
 } from "./qcew.js";
@@ -115,42 +118,157 @@ const OWNERSHIP_DIMENSION: DimensionDefinition = {
 
 const INDUSTRY_DIMENSION: DimensionDefinition = {
   argument: "industry",
-  description: "QCEW NAICS supersector/sector.",
+  description:
+    "QCEW NAICS industry: a supersector/sector from the list, or any 3- to 6-digit NAICS code (e.g. 236 construction of buildings). Detail below the sector is often suppressed for small areas.",
   vocabulary: INDUSTRY_VOCABULARY,
   default: INDUSTRY_ALL,
+  // #213: the files carry every NAICS level; a code the area does not publish returns a note.
+  acceptsCode: (code) => /^\d{3,6}$/.test(code),
+  openCodes: "any 3- to 6-digit NAICS code (e.g. 236, 2361, 236118)",
 };
 
+/** Quarterly slices (default) or annual averages (#213, ADR-017 §4). */
+const FREQUENCY_DIMENSION: DimensionDefinition = {
+  argument: "frequency",
+  description:
+    "quarterly (default) or annual averages. With startYear/endYear, QCEW returns every published period in the range, at most 5 years of quarters per call.",
+  vocabulary: [
+    { code: "quarterly", label: "quarterly" },
+    { code: "annual", label: "annual averages" },
+  ],
+  default: "quarterly",
+};
+
+/** The key suffix marking annual averages; quarterly keys keep their pre-#213 form. */
+const ANNUAL_SUFFIX = "a";
+
 /** Encode the area + resolved ownership/industry dimensions into the opaque series key. */
-function buildQcewKey(area: string, ownCode: string, industryCode: string): string {
+function buildQcewKey(
+  area: string,
+  ownCode: string,
+  industryCode: string,
+  frequency = "quarterly",
+): string {
   assertSectorHasOwnership(industryCode, ownCode);
-  return [area, ownCode, industryCode].join(KEY_SEPARATOR);
+  const parts = [area, ownCode, industryCode];
+  if (frequency === "annual") parts.push(ANNUAL_SUFFIX);
+  return parts.join(KEY_SEPARATOR);
 }
 
 /** Decode a series key back into the area code and row selection. Undefined if malformed. */
-function parseQcewKey(key: string): { area: string; selection: QcewRowSelection } | undefined {
-  const [area, ownCode, industryCode] = key.split(KEY_SEPARATOR);
+function parseQcewKey(
+  key: string,
+): { area: string; selection: QcewRowSelection; annual: boolean } | undefined {
+  const [area, ownCode, industryCode, frequency] = key.split(KEY_SEPARATOR);
   if (!area || !ownCode || !industryCode) return undefined;
-  return { area, selection: { ownCode, industryCode } };
+  return { area, selection: { ownCode, industryCode }, annual: frequency === ANNUAL_SUFFIX };
 }
 
 type QcewMeasure = "employment" | "wage";
 
-/** Fetch the latest published QCEW row for an area/selection, walking back a few quarters if needed. */
-async function fetchLatestRow(
+/** At most this many periods per call (ADR-017 §4: 5 years of quarters). */
+const QCEW_MAX_PERIODS = 20;
+
+type Period = { year: number; quarter: number } | { year: number; annual: true };
+
+const periodUrl = (area: string, p: Period): string =>
+  "annual" in p ? qcewAnnualUrl(area, p.year) : qcewAreaUrl(area, p);
+
+const periodName = (p: Period): string =>
+  "annual" in p ? `${p.year} annual` : `${p.year} Q${p.quarter}`;
+
+/**
+ * The periods to read, newest first. Without explicit years: the latest few candidates (the first
+ * published one wins). With years: every period in the range up to the latest that could be
+ * published, floored at 2014 (where the open data begin), with notes for the floor.
+ */
+function candidatePeriods(
+  annual: boolean,
+  options: { startYear?: number; endYear?: number; explicitYears?: boolean },
+  notes: string[],
+): Period[] {
+  const latestQ = latestPublishedQuarter(new Date());
+  if (!options.explicitYears) {
+    const out: Period[] = [];
+    if (annual) {
+      for (let y = latestQ.year; y > latestQ.year - QCEW_MAX_LOOKBACK; y--)
+        out.push({ year: y, annual: true });
+    } else {
+      let q: { year: number; quarter: number } = latestQ;
+      for (let i = 0; i < QCEW_MAX_LOOKBACK; i++) {
+        out.push(q);
+        q = priorQuarter(q);
+      }
+    }
+    return out;
+  }
+  let startYear = options.startYear ?? options.endYear ?? latestQ.year;
+  const endYear = Math.min(options.endYear ?? latestQ.year, latestQ.year);
+  if (startYear < EARLIEST_QCEW_YEAR) {
+    notes.push(
+      `QCEW open data begin in ${EARLIEST_QCEW_YEAR}; the range was started there instead of ${startYear}.`,
+    );
+    startYear = EARLIEST_QCEW_YEAR;
+  }
+  const out: Period[] = [];
+  if (annual) {
+    for (let y = endYear; y >= startYear; y--) out.push({ year: y, annual: true });
+  } else {
+    let q: { year: number; quarter: number } =
+      endYear < latestQ.year ? { year: endYear, quarter: 4 } : latestQ;
+    while (q.year >= startYear) {
+      out.push(q);
+      q = priorQuarter(q);
+    }
+  }
+  return out;
+}
+
+/**
+ * Read the rows for one key across its periods, newest first: skips unpublished periods, stops at
+ * QCEW_MAX_PERIODS published ones (noting the cap), and in latest-only mode stops at the first.
+ */
+async function fetchRows(
   client: HttpClient,
   area: string,
   selection: QcewRowSelection,
-): Promise<QcewHeadline | undefined> {
-  let q = latestPublishedQuarter(new Date());
-  for (let i = 0; i < QCEW_MAX_LOOKBACK; i++) {
-    const row = await fetchQcewRow(client, area, q, selection, {
-      freshTtlSeconds: QCEW_CACHE_TTL_SECONDS,
-    });
-    if (row) return row;
-    q = priorQuarter(q);
+  periods: readonly Period[],
+  latestOnly: boolean,
+  notes: string[],
+): Promise<{ rows: QcewHeadline[]; anyPublished: boolean }> {
+  const want = latestOnly ? 1 : QCEW_MAX_PERIODS;
+  // Fetch in parallel, a little beyond the cap so unpublished leading periods do not starve it.
+  const window = periods.slice(0, want + QCEW_MAX_LOOKBACK);
+  const csvs = await Promise.all(
+    window.map((p) =>
+      fetchQcewCsv(client, periodUrl(area, p), { freshTtlSeconds: QCEW_CACHE_TTL_SECONDS }),
+    ),
+  );
+  const rows: QcewHeadline[] = [];
+  let anyPublished = false;
+  let consumed = 0;
+  for (const csv of csvs) {
+    consumed++;
+    if (!csv) continue;
+    anyPublished = true;
+    const row = parseQcewRow(csv, selection);
+    if (row) rows.push(row);
+    if (rows.length >= want) break;
   }
-  return undefined;
+  if (!latestOnly && rows.length >= want && periods.length > consumed) {
+    const newest = rows[0];
+    const oldest = rows.at(-1);
+    notes.push(
+      `QCEW history is served at most 5 years (${QCEW_MAX_PERIODS} quarters) per call; returned ${newest ? periodLabel(newest) : ""} back to ${oldest ? periodLabel(oldest) : ""}. Ask for an earlier range separately.`,
+    );
+  }
+  return { rows, anyPublished };
 }
+
+const periodLabel = (r: QcewHeadline): string =>
+  r.annual
+    ? periodName({ year: r.year, annual: true })
+    : periodName({ year: r.year, quarter: r.quarter });
 
 /** Turn a row into one observation for the requested measure (null value + footnote if suppressed). */
 function toObservation(row: QcewHeadline, measure: QcewMeasure): SeriesObservation {
@@ -158,27 +276,47 @@ function toObservation(row: QcewHeadline, measure: QcewMeasure): SeriesObservati
   const disclosure = qcewDisclosureText(row.disclosureCode);
   return {
     year: String(row.year),
-    period: `Q0${row.quarter}`,
-    periodName: `Quarter ${row.quarter}`,
+    period: row.annual ? "A01" : `Q0${row.quarter}`,
+    periodName: row.annual ? "Annual" : `Quarter ${row.quarter}`,
     value,
     footnotes: disclosure ? [{ code: row.disclosureCode, text: disclosure }] : [],
   };
 }
 
-/** A fetch capability for a QCEW measure: one opaque key (area|ownership|industry) → its latest-quarter observation. */
+/**
+ * A fetch capability for a QCEW measure (#213): one opaque key (area|ownership|industry[|a]) → its
+ * latest published period, or — when the caller gave years — every published period in range,
+ * newest first. A code the area does not publish yields no observation and a note, never a guess.
+ */
 function qcewFetch(measure: QcewMeasure): IndicatorFetch {
-  return async (client, keys): Promise<SeriesResult[]> => {
-    const results: SeriesResult[] = [];
-    for (const key of keys) {
-      const parsed = parseQcewKey(key);
-      const row = parsed ? await fetchLatestRow(client, parsed.area, parsed.selection) : undefined;
-      results.push({
-        seriesId: key,
-        observations: row ? [toObservation(row, measure)] : [],
-      });
-    }
-    return results;
-  };
+  return async (client, keys, options): Promise<SeriesResult[]> =>
+    Promise.all(
+      keys.map(async (key): Promise<SeriesResult> => {
+        const parsed = parseQcewKey(key);
+        if (!parsed) return { seriesId: key, observations: [] };
+        const notes: string[] = [];
+        const latestOnly = !options.explicitYears;
+        const periods = candidatePeriods(parsed.annual, options, notes);
+        const { rows, anyPublished } = await fetchRows(
+          client,
+          parsed.area,
+          parsed.selection,
+          periods,
+          latestOnly,
+          notes,
+        );
+        if (rows.length === 0 && anyPublished && parsed.selection.industryCode !== INDUSTRY_ALL) {
+          notes.push(
+            `NAICS ${parsed.selection.industryCode} is not published for area ${parsed.area} in the period asked (the industry may not exist there, or QCEW does not publish that ownership/industry pair).`,
+          );
+        }
+        return {
+          seriesId: key,
+          observations: rows.map((r) => toObservation(r, measure)),
+          ...(notes.length > 0 ? { notes } : {}),
+        };
+      }),
+    );
 }
 
 /** Where the QCEW open data slices live; a comparison across areas cites this (#212). */
@@ -203,12 +341,15 @@ function qcewSourceOf(
     selection.industryCode === INDUSTRY_ALL
       ? "all industries"
       : `NAICS ${selection.industryCode} (${INDUSTRY_VOCABULARY.find((v) => v.code === selection.industryCode)?.label ?? "industry"})`;
-  const label = `area ${area}, ${own}, ${industry}`;
+  const label = `area ${area}, ${own}, ${industry}, ${parsed.annual ? "annual averages" : "quarterly"}`;
   const quarter = latest ? /^Q0?(\d)$/.exec(latest.period)?.[1] : undefined;
-  const url =
-    latest && quarter
-      ? qcewAreaUrl(area, { year: Number(latest.year), quarter: Number(quarter) })
-      : QCEW_DATA_HOME;
+  const url = !latest
+    ? QCEW_DATA_HOME
+    : parsed.annual || latest.period === "A01"
+      ? qcewAnnualUrl(area, Number(latest.year))
+      : quarter
+        ? qcewAreaUrl(area, { year: Number(latest.year), quarter: Number(quarter) })
+        : QCEW_DATA_HOME;
   return { url, label };
 }
 
@@ -225,11 +366,11 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
         code,
         dimensions.ownership ?? OWN_TOTAL_COVERED,
         dimensions.industry ?? INDUSTRY_ALL,
+        dimensions.frequency,
       ),
-    dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
+    dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION, FREQUENCY_DIMENSION],
     fetch: qcewFetch("employment"),
-    // Latest quarter only until #213: asked-for years are stated as not applied (#212).
-    servesHistory: false,
+    // #213: history when years are asked for (latest period otherwise); cites the file read (#212).
     sourceOf: qcewSourceOf,
     sourceHome: QCEW_DATA_HOME,
   },
@@ -244,11 +385,11 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
         code,
         dimensions.ownership ?? OWN_TOTAL_COVERED,
         dimensions.industry ?? INDUSTRY_ALL,
+        dimensions.frequency,
       ),
-    dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
+    dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION, FREQUENCY_DIMENSION],
     fetch: qcewFetch("wage"),
-    // Latest quarter only until #213: asked-for years are stated as not applied (#212).
-    servesHistory: false,
+    // #213: history when years are asked for (latest period otherwise); cites the file read (#212).
     sourceOf: qcewSourceOf,
     sourceHome: QCEW_DATA_HOME,
   },

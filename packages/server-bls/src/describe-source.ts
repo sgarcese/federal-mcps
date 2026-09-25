@@ -51,7 +51,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "QCEW",
     name: "Quarterly Census of Employment and Wages",
     granularity:
-      "county, state and metro; by NAICS sector (industry) and ownership, default all industries total covered",
+      "county, state and metro; by NAICS industry (sector, or any 3- to 6-digit code) and ownership, default all industries total covered; quarterly or annual averages, from 2014",
     cadence: "quarterly, with an annual average release",
     status: "available",
   },
@@ -116,7 +116,10 @@ const CAVEATS: readonly string[] = [
     "the South Bend-Mishawaka metro. The BLS API holds only the current OEWS year; earlier years " +
     "are in BLS's annual OEWS files, not the API, so a year range returns the current year only.",
   "QCEW is distributed as CSV data slices (data.bls.gov/cew/data/api), not the standard BLS timeseries " +
-    "API used by the other programs here; it has its own parsing, suppression codes and update cadence.",
+    "API used by the other programs here; it has its own parsing, suppression codes and update cadence. " +
+    "Without startYear/endYear an answer is the latest published quarter; with them, every published " +
+    "quarter (or, with frequency annual, every annual average) in the range, from 2014, at most five " +
+    "years of quarters per call. Metro and annual files publish later than county and state quarters.",
   "Values may carry preliminary or revised flags in the underlying footnote codes; check a result's " +
     "footnotes before treating a number as final.",
   "BLS.gov cannot vouch for the data or analyses derived from these data after the data have been " +
