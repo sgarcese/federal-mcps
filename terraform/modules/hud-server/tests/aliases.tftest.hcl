@@ -27,8 +27,8 @@ mock_provider "aws" {
     values = {
       arn = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id"
       domain_validation_options = [{
-        domain_name           = "huduser.responsive.city"
-        resource_record_name  = "_acme-challenge.huduser.responsive.city."
+        domain_name           = "hud-user.responsive.city"
+        resource_record_name  = "_acme-challenge.hud-user.responsive.city."
         resource_record_type  = "CNAME"
         resource_record_value = "example.acm-validations.aws."
       }]
@@ -56,7 +56,7 @@ mock_provider "aws" {
 
 variables {
   lambda_zip_path    = "./tests/placeholder.zip"
-  domain_name        = "huduser.responsive.city"
+  domain_name        = "hud-user.responsive.city"
   alias_domain_names = ["hud.responsive.city"]
   hosted_zone_id     = "ZTESTZONE"
   environment_tag    = "dev"
@@ -92,11 +92,11 @@ run "the_primary_domain_is_untouched_by_aliases" {
   command = plan
 
   assert {
-    condition     = aws_acm_certificate.hud.domain_name == "huduser.responsive.city" && aws_apigatewayv2_domain_name.hud.domain_name == "huduser.responsive.city"
+    condition     = aws_acm_certificate.hud.domain_name == "hud-user.responsive.city" && aws_apigatewayv2_domain_name.hud.domain_name == "hud-user.responsive.city"
     error_message = "adding an alias must not change the primary domain (no destroy/recreate of the live hostname)"
   }
   assert {
-    condition     = output.custom_domain_url == "https://huduser.responsive.city/mcp"
+    condition     = output.custom_domain_url == "https://hud-user.responsive.city/mcp"
     error_message = "custom_domain_url stays the primary hostname"
   }
   assert {

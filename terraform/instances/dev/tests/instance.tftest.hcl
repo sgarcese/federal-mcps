@@ -104,7 +104,7 @@ mock_provider "aws" {
     override_during = plan
     values = {
       arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-hud"
-      domain_validation_options = [{ domain_name = "huduser.responsive.city", resource_record_name = "_acme-challenge.huduser.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+      domain_validation_options = [{ domain_name = "hud-user.responsive.city", resource_record_name = "_acme-challenge.hud-user.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
     }
   }
 
@@ -217,7 +217,7 @@ run "hud_server_follows_the_rc_naming_pattern_and_records_its_domain" {
   }
 
   assert {
-    condition     = output.hud_custom_domain_url == "https://huduser.responsive.city/mcp"
+    condition     = output.hud_custom_domain_url == "https://hud-user.responsive.city/mcp"
     error_message = "hud_custom_domain_url must be https://<domain.hudDomainName>/mcp"
   }
 }

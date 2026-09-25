@@ -60,7 +60,7 @@ the fourth `admin-create-exec-role.sh` run above.
 
 ## The HUD User server (M11 shell, ADR-018)
 
-The instance also deploys `rc-huduser-mcp-<env>` at `huduser.responsive.city/mcp` — the
+The instance also deploys `rc-huduser-mcp-<env>` at `hud-user.responsive.city/mcp` — the
 HUD User Data API server (Fair Market Rents, Income Limits, CHAS, Picture of Subsidized
 Households). This release ships the shell only: `hud_resolve_place` and
 `hud_describe_source`; every program lists `status: "planned"` until its indicator tool

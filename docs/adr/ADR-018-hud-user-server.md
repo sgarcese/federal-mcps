@@ -1,6 +1,6 @@
 # ADR-018: The HUD User server
 
-**Status:** accepted (2026-09-24) ·
+**Status:** accepted (2026-09-24); hostname amended to `hud-user.responsive.city` by the owner the same day ·
 **Spikes:** [`hud-surface-cost-benefit`](../spikes/hud-surface-cost-benefit.md),
 [`m11-hud-user-server`](../spikes/m11-hud-user-server.md) · **Epic:** #217 ·
 **Amends:** ADR-015 §2 (HUD is two sources) and §6 (access limits block a guide) ·
@@ -45,7 +45,7 @@ required attribution sentence. The South Bend dashboard needed exactly these and
    (ADR-006), from `.env` by `scripts/deploy.sh`. The required sentence — "This product uses the HUD
    User Data API but is not endorsed or certified by HUD User." — is in `hud_describe_source`, the
    server instructions and every citation.
-7. **Deployment:** `huduser.responsive.city/mcp`, service `rc-huduser-mcp`, its own module, instance
+7. **Deployment:** `hud-user.responsive.city/mcp`, service `rc-huduser-mcp`, its own module, instance
    entry and admin-created execution role (ADR-007, ADR-016).
 8. **Release:** v0.6.0.
 
