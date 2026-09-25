@@ -616,9 +616,17 @@ describe("QCEW: years it cannot honour are stated, and it cites the file it read
   };
   const tools = () =>
     blsIndicatorTools({ catalog: () => catalog, httpClient: () => qcewClient, now: NOW });
-  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
-  const go = (i: number, args: Record<string, unknown>) => tools()[i]?.handler(args as any, {} as any);
-  const base = { place: "Denver", kind: "county", indicator: "average_weekly_wage", industry: "23", ownership: "5" };
+  // biome-ignore lint/suspicious/noExplicitAny: handlers take untyped args in tests.
+  type AnyArgs = any;
+  const go = (i: number, args: Record<string, unknown>) =>
+    tools()[i]?.handler(args as AnyArgs, {} as AnyArgs);
+  const base = {
+    place: "Denver",
+    kind: "county",
+    indicator: "average_weekly_wage",
+    industry: "23",
+    ownership: "5",
+  };
 
   it("adds a limitation when startYear/endYear are given, naming the period actually returned", async () => {
     const res = await go(0, { ...base, startYear: 2020, endYear: 2021 });
@@ -634,7 +642,9 @@ describe("QCEW: years it cannot honour are stated, and it cites the file it read
   it("cites the CSV slice it read, and describes the selection in words, not the internal key", async () => {
     const res = await go(0, base);
     expect(res?.source.url).toBe("https://data.bls.gov/cew/data/api/2024/1/area/08031.csv");
-    expect(res?.source.citation).toContain("https://data.bls.gov/cew/data/api/2024/1/area/08031.csv");
+    expect(res?.source.citation).toContain(
+      "https://data.bls.gov/cew/data/api/2024/1/area/08031.csv",
+    );
     expect(res?.source.citation).not.toContain("|");
     expect(res?.source.citation).toMatch(/area 08031.*private.*NAICS 23/);
     // the machine-readable key stays in ids

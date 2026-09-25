@@ -194,6 +194,13 @@ function mentionedPlaceName(
   return top?.name ?? place;
 }
 
+/** A period for people: "2024 Q1" for a quarter, "2024 June" for a month, the year for annual data. */
+function periodLabel(o: SeriesObservation): string {
+  const q = /^Q0?(\d)$/.exec(o.period);
+  if (q) return `${o.year} Q${q[1]}`;
+  return o.periodName && o.periodName !== o.year ? `${o.year} ${o.periodName}` : o.year;
+}
+
 /**
  * The family's indicator tools — `<agency>_get_indicator`, `<agency>_compare_places` and
  * `<agency>_list_indicators` — over a set of `IndicatorDefinition`s (ADR-010 §1, ADR-011 §2,
@@ -214,6 +221,38 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
    * A national-scope indicator (PPI): no geography to resolve. A mentioned place only names the
    * caveat — the answer is the national series, stated as such, never a fabricated local number.
    */
+  /** Source block for one indicator answer: the definition's own source when it has one (#212). */
+  const sourceFor = (
+    def: IndicatorDefinition,
+    seriesId: string,
+    latest: SeriesObservation | undefined,
+  ) => {
+    const own = def.sourceOf?.(seriesId, latest);
+    const url = own?.url ?? sourceUrl;
+    return {
+      agency,
+      program: def.program,
+      url,
+      ids: [seriesId],
+      citation: buildCitation(
+        { agency, program: def.program, ids: [own?.label ?? seriesId], url },
+        now(),
+      ),
+    };
+  };
+
+  /** A program that serves only its latest period says so when the caller asked for years (#212). */
+  const historyNote = (
+    def: IndicatorDefinition,
+    p: { startYear?: number | undefined; endYear?: number | undefined },
+    latest: SeriesObservation | undefined,
+  ): string | undefined => {
+    if (def.servesHistory !== false) return undefined;
+    if (p.startYear === undefined && p.endYear === undefined) return undefined;
+    const returned = latest ? periodLabel(latest) : "no published period";
+    return `${def.program} serves only its latest published period (${returned}); the requested ${p.startYear ?? "…"}–${p.endYear ?? "…"} range was not applied.`;
+  };
+
   const nationalIndicator = async (
     def: IndicatorDefinition,
     p: {
@@ -227,7 +266,6 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     dimensions: DimensionSelection,
     catalog: GeographyCatalog,
   ): Promise<ToolHandlerResult> => {
-    const sourceBase = { agency, program: def.program, url: sourceUrl };
     const currentYear = now().getFullYear();
     const seasonallyAdjusted = p.seasonallyAdjusted ?? def.defaultSeasonallyAdjusted;
     const seriesId = def.buildSeriesId(UNITED_STATES.geoid, { seasonallyAdjusted, dimensions });
@@ -243,12 +281,14 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     const observations = series?.observations ?? [];
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
-    const limitations =
-      p.place === undefined
+    const limitations = [
+      ...(p.place === undefined
         ? []
         : [
             `${def.program} is published nationally only; this is not a ${mentionedPlaceName(catalog, p.place, p)} figure.`,
-          ];
+          ]),
+      ...[historyNote(def, p, latest)].filter((n): n is string => n !== undefined),
+    ];
     return {
       data: {
         measure: def.name,
@@ -257,14 +297,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         latest: latest ? { period: `${latest.year}-${latest.period}`, value: latest.value } : null,
         observations,
       },
-      source: {
-        ...sourceBase,
-        ids: [seriesId],
-        citation: buildCitation(
-          { agency, program: def.program, ids: [seriesId], url: sourceBase.url },
-          now(),
-        ),
-      },
+      source: sourceFor(def, seriesId, latest),
       place: placeRef(UNITED_STATES),
       ...(footnotes.length > 0 ? { footnotes } : {}),
       ...(latest ? { vintage: `${latest.year}-${latest.period}` } : {}),
@@ -401,9 +434,8 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     const observations = series?.observations ?? [];
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
-    const citation = buildCitation(
-      { agency, program: def.program, ids: [seriesId], url: sourceBase.url },
-      now(),
+    const notes = [fallbackCaveat, historyNote(def, p, latest)].filter(
+      (n): n is string => n !== undefined,
     );
 
     return {
@@ -414,7 +446,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         latest: latest ? { period: `${latest.year}-${latest.period}`, value: latest.value } : null,
         observations,
       },
-      source: { ...sourceBase, ids: [seriesId], citation },
+      source: sourceFor(def, seriesId, latest),
       place: placeRef({
         geoid: reportedGeoid,
         sumlevel: reportedSumlevel,
@@ -431,7 +463,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
       }),
       ...(footnotes.length > 0 ? { footnotes } : {}),
       ...(latest ? { vintage: `${latest.year}-${latest.period}` } : {}),
-      ...(fallbackCaveat ? { limitations: [fallbackCaveat] } : {}),
+      ...(notes.length > 0 ? { limitations: notes } : {}),
     };
   };
 
@@ -613,6 +645,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
               name: resolution.place.name,
             }),
             ...(resolution.caveat ? { caveat: resolution.caveat } : {}),
+            ...(id && def.sourceOf ? { sourceUrl: def.sourceOf(id, obs)?.url } : {}),
           };
         });
 
@@ -625,16 +658,27 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
             period: alignedPeriod,
             rows,
           },
-          source: {
-            ...sourceBase,
-            ids,
-            citation:
-              ids.length > 0
-                ? buildCitation({ agency, program: def.program, ids, url: sourceBase.url }, now())
-                : "",
-          },
+          source: (() => {
+            // One URL for a multi-file answer: the program's home when it cites per file (#212).
+            const url = def.sourceOf ? (def.sourceHome ?? sourceBase.url) : sourceBase.url;
+            const labels = ids.map((id) => def.sourceOf?.(id, undefined)?.label ?? id);
+            return {
+              ...sourceBase,
+              url,
+              ids,
+              citation:
+                ids.length > 0
+                  ? buildCitation({ agency, program: def.program, ids: labels, url }, now())
+                  : "",
+            };
+          })(),
           ...(footnotes.length > 0 ? { footnotes } : {}),
-          ...(notes.length > 0 ? { limitations: notes } : {}),
+          ...(() => {
+            const all = [...notes];
+            const h = historyNote(def, p, series[0]?.observations[0]);
+            if (h) all.push(h);
+            return all.length > 0 ? { limitations: all } : {};
+          })(),
         };
       },
     },

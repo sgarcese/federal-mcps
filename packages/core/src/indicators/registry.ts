@@ -1,3 +1,4 @@
+import type { SeriesObservation } from "./observations.js";
 import type { HttpClient } from "../http/index.js";
 import type { GeographyCatalog, PlaceCandidate } from "../geography/index.js";
 import type { SeriesFetchOptions, SeriesResult } from "./observations.js";
@@ -160,6 +161,23 @@ export interface IndicatorDefinition {
     places: readonly PlaceCandidate[],
     dimensions: DimensionSelection,
   ): { dimensions: DimensionSelection; note?: string } | undefined;
+  /**
+   * False when the program serves only its latest published period (QCEW until #213): a caller's
+   * `startYear`/`endYear` then earn a limitation naming the period returned, instead of being
+   * dropped silently (#212). Default true.
+   */
+  servesHistory?: boolean;
+  /**
+   * The indicator's own source for one answer (#212): the URL actually read and a readable label
+   * for the citation, when the server-wide `sourceUrl` is wrong for this program (QCEW reads CSV
+   * slices, not the timeseries API). `ids` keep the opaque key; the citation uses the label.
+   */
+  sourceOf?(
+    seriesKey: string,
+    latest: SeriesObservation | undefined,
+  ): { url: string; label: string } | undefined;
+  /** Where a multi-file answer (a comparison) points when `sourceOf` gives one URL per series. */
+  sourceHome?: string;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
   /**
