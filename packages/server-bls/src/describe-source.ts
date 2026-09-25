@@ -59,7 +59,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "OEWS",
     name: "Occupational Employment and Wage Statistics",
     granularity:
-      "state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations",
+      "state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations; detailed 6-digit occupations, medians and percentiles through bls_get_raw",
     cadence: "annual",
     status: "available",
   },
@@ -108,6 +108,13 @@ const CAVEATS: readonly string[] = [
     "city series and must fall back to their county.",
   "Most cities have no local CPI: CPI publishes for the U.S. city average, census regions and " +
     "divisions, and roughly 23 named metro areas, not for most municipalities or counties.",
+  "OEWS through bls_get_raw: a series id is OEU + area type (S state, M metro, N national) + a " +
+    "7-digit area (state FIPS + 00000, or 00 + the CBSA) + a 6-digit industry (000000 = all) + a " +
+    "6-digit SOC occupation (any detailed code, e.g. 472031 carpenters) + a 2-digit data type (01 " +
+    "employment, 03 hourly mean, 04 annual mean, 08 hourly median, 13 annual median, 11/12/14/15 " +
+    "annual percentiles). Example: OEUM004378000000047203113 is carpenters' annual median wage in " +
+    "the South Bend-Mishawaka metro. The BLS API holds only the current OEWS year; earlier years " +
+    "are in BLS's annual OEWS files, not the API, so a year range returns the current year only.",
   "QCEW is distributed as CSV data slices (data.bls.gov/cew/data/api), not the standard BLS timeseries " +
     "API used by the other programs here; it has its own parsing, suppression codes and update cadence.",
   "Values may carry preliminary or revised flags in the underlying footnote codes; check a result's " +
