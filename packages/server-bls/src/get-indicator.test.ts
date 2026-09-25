@@ -577,3 +577,26 @@ describe("bls_get_raw accepts any BLS timeseries id, not only LAUS (#155)", () =
     );
   });
 });
+
+describe("bls_get_raw accepts national CES and CPS ids (#211)", () => {
+  it("fetches CEU2000000003 (construction hourly earnings) and LNU04000000 (U.S. unemployment)", async () => {
+    const res = await call(rawTool(), { ids: ["CEU2000000003", "LNU04000000"] });
+    expect((res.data as { ids: string[] }).ids).toEqual(["CEU2000000003", "LNU04000000"]);
+  });
+
+  it.each([
+    ["lowercase", "ceu2000000003"],
+    ["a space", "CEU 2000000003"],
+    ["SQL-ish", "LNU04000000;DROP"],
+    ["too long", `LN${"0".repeat(40)}`],
+    ["too short", "LN1"],
+    ["the QCEW key form", "08031|0|10"],
+  ])("still rejects %s", async (_label, id) => {
+    await expect(call(rawTool(), { ids: [id] })).rejects.toThrow(/not BLS timeseries ids/);
+  });
+
+  it("names national CES and CPS in the description", () => {
+    expect(byName.get("bls_get_raw")?.description).toMatch(/CES/);
+    expect(byName.get("bls_get_raw")?.description).toMatch(/CPS|LN/);
+  });
+});
