@@ -1,9 +1,11 @@
+import { renderBlsRaw } from "./raw-render.js";
 import {
   buildCitation,
   type GeographyCatalog,
   type HttpClient,
   type IndicatorDefinition,
   indicatorTools,
+  RAW_TEXT_BUDGET,
   type ToolDefinition,
   type ToolHandlerResult,
 } from "@federal-mcps/core";
@@ -106,7 +108,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     name: "bls_get_raw",
     title: "Get raw series",
     description:
-      "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI, JOLTS or PPI series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block.",
+      "Return the unprocessed BLS Public Data API response for one or more timeseries ids (LAUS, CES, OEWS, CPI, JOLTS or PPI series) — the escape hatch for exact series. Take ids from a prior bls_get_indicator result's source block. The text reply is a compact table, one block per series, up to about 24,000 characters; the full response is always in structuredContent. For long spans, ask for fewer series per call.",
     input: z.object({
       ids: z
         .array(z.string())
@@ -116,6 +118,8 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       endYear: z.number().int().optional().describe("Last year (optional)."),
     }),
     examples: [{ title: "raw Denver County rate", input: { ids: ["LAUCN080310000000003"] } }],
+    renderData: renderBlsRaw,
+    textBudget: RAW_TEXT_BUDGET,
     handler: async (args): Promise<ToolHandlerResult> => {
       const rawInput = z.object({
         ids: z.array(z.string()).min(1),

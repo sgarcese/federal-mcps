@@ -110,3 +110,8 @@ export const slowHandler: ServerDefinition = withTools([
     },
   }),
 ]);
+
+/** `raw-rendering`: a `get_raw` tool with no compact renderer or text budget (#210). */
+export const rawWithoutRenderer: ServerDefinition = withTools([
+  { ...getRaw, renderData: undefined, textBudget: undefined } as ToolDefinition,
+]);

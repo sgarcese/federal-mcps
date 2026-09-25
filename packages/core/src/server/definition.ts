@@ -1,3 +1,4 @@
+import type { CompactRendering } from "./wrap.js";
 import type { z } from "zod";
 import type { CacheInfo } from "../cache.js";
 import type { Footnote, PlaceRef, Source } from "../envelope/index.js";
@@ -95,6 +96,14 @@ export interface ToolDefinition<TInput extends z.ZodType = z.ZodType, TData = un
    * lookup (ADR-003 §8), but may mount core's.
    */
   readonly fromCore?: boolean;
+  /**
+   * The tool's compact text form of its data (#210, ADR-017): required on `*_get_raw` tools by
+   * the `raw-rendering` contract rule; others use the JSON rendering. Returning `undefined`
+   * falls back to JSON for that call.
+   */
+  readonly renderData?: ((data: TData) => CompactRendering | undefined) | undefined;
+  /** Characters of data the text rendering may carry (default `MAX_RENDERED_DATA_CHARS`). */
+  readonly textBudget?: number | undefined;
 }
 
 /** A read-only MCP resource a server exposes (e.g. `geography://guide`). */

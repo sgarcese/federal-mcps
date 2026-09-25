@@ -183,3 +183,16 @@ describe("assertFamilyContract", () => {
     }
   });
 });
+
+describe("raw-rendering (#210, ADR-017)", () => {
+  it("rejects a get_raw tool without a compact renderer and a text budget", async () => {
+    const report = await checkFamilyContract(broken.rawWithoutRenderer);
+    const violation = report.violations.find((each) => each.rule === "raw-rendering");
+    expect(violation?.tool).toBe("demo_get_raw");
+  });
+
+  it("is among the checked rules", async () => {
+    const report = await checkFamilyContract(compliantDefinition);
+    expect(report.checked).toContain("raw-rendering");
+  });
+});

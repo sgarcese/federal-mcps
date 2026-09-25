@@ -73,6 +73,14 @@ const getRaw: ToolDefinition<typeof rawInput, { ids: readonly string[] }> = {
   input: rawInput,
   examples: [{ title: "hello", input: { ids: ["ECHO"] } }],
   handler: async (input, context) => demoResult(input.ids, context.now()),
+  // Raw tools render compactly and declare their text budget (#210, ADR-017).
+  renderData: (data) => ({
+    head: ["id"],
+    items: [...data.ids],
+    unit: "ids",
+    narrowHint: "Ask for fewer ids.",
+  }),
+  textBudget: 24_000,
 };
 
 /** A tool whose name ends in no family verb: the verb rule must leave it alone. */

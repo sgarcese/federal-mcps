@@ -1,6 +1,8 @@
 import {
   buildCitation,
+  type CompactRendering,
   type HttpClient,
+  RAW_TEXT_BUDGET,
   type ToolDefinition,
   type ToolHandlerResult,
 } from "@federal-mcps/core";
@@ -114,6 +116,27 @@ export interface CensusGetRawToolOptions {
   now?: () => Date;
 }
 
+/** One CSV field: quoted when it holds a comma, quote or newline; null renders empty. */
+function csvField(value: string | null): string {
+  if (value === null) return "";
+  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/**
+ * `census_get_raw`'s compact text (#210, ADR-017 §1): the header row once, then one CSV line per
+ * row. The query itself (with its variable list) stays in structuredContent and the citation.
+ */
+export function renderCensusRaw(value: unknown): CompactRendering | undefined {
+  const data = value as Partial<RawQueryData> | null;
+  if (!data || !Array.isArray(data.header) || !Array.isArray(data.rows)) return undefined;
+  return {
+    head: [data.header.map(csvField).join(",")],
+    items: data.rows.map((row) => row.map(csvField).join(",")),
+    unit: "rows",
+    narrowHint: "Narrow the call: fewer variables in `ids`, or a smaller geography in `for`/`in`.",
+  };
+}
+
 /** `census_get_raw`: one Census Data API query, run through the core client, rows unchanged. */
 export function censusGetRawTool(options: CensusGetRawToolOptions): ToolDefinition {
   const now = options.now ?? (() => new Date());
@@ -124,8 +147,12 @@ export function censusGetRawTool(options: CensusGetRawToolOptions): ToolDefiniti
       "The escape hatch: run one Census Data API query by dataset, vintage and variables or a " +
       "table group id (from census_search_tables), for a geography given as `ucgid` (preferred " +
       "— from census_resolve_place) or `for`/`in`. Returns the API's rows unchanged, header row " +
-      "first.",
+      "first. The text reply is a compact table (one header, one line per row) up to about " +
+      "24,000 characters; the full result is always in structuredContent. For wide pulls, ask " +
+      "for fewer variables or a smaller geography per call.",
     input: CensusGetRawInput,
+    renderData: renderCensusRaw,
+    textBudget: RAW_TEXT_BUDGET,
     examples: [
       {
         title: "Denver County median household income and its margin of error",

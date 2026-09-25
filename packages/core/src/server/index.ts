@@ -15,4 +15,12 @@ export * from "./definition.js";
 export { type ToolErrorContext, type ToolErrorResult, toToolError } from "./errors.js";
 export { createHttpHandler, type HttpHandlerOptions, type NodeHttpHandler } from "./http.js";
 export { runStdio, type StdioOptions } from "./stdio.js";
-export { MAX_RENDERED_DATA_CHARS, renderText, type WrappedToolResult, wrapResult } from "./wrap.js";
+export {
+  type CompactRendering,
+  MAX_RENDERED_DATA_CHARS,
+  RAW_TEXT_BUDGET,
+  type RenderOptions,
+  renderText,
+  type WrappedToolResult,
+  wrapResult,
+} from "./wrap.js";

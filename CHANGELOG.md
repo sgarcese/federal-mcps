@@ -3,6 +3,14 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## Unreleased — M12 Raw access and BLS completions
+
+Changed
+- **Raw tools reply with a compact table** (ADR-017): `census_get_raw` as CSV lines, `bls_get_raw` as
+  one block per series, ids printed once, within 24,000 characters (indicator tools keep 4,000); a cut
+  says "showing N of M" and how to narrow the call. The full result is unchanged in
+  `structuredContent`. A new `raw-rendering` contract rule requires this of every `*_get_raw` tool (#210).
+
 ## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 
 Added
