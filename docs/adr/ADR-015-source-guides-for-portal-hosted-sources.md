@@ -1,6 +1,6 @@
 # ADR-015: Source guides (skills) + a generic portal connector for portal-hosted sources
 
-**Status:** accepted (2026-09-20) ·
+**Status:** accepted (2026-09-20); amended by ADR-018 (2026-09-24) ·
 **Spikes:** [`m9-cdc-places`](../spikes/m9-cdc-places.md) (deferred),
 [`opencontext-socrata-benchmark`](../spikes/opencontext-socrata-benchmark.md),
 [`hud-arcgis-hub-guide`](../spikes/hud-arcgis-hub-guide.md) ·
@@ -31,7 +31,8 @@ the same way.
    OpenDataSoft). A server is built only when at least one holds: the API has an id grammar
    the model should never type; upstream quota or caching needs the core client's discipline;
    or a host depends on the family contract (envelope, contract suite) for that source.
-   BLS and Census stay servers. CDC PLACES and HUD are guides. FEMA and BEA are decided by the
+   BLS and Census stay servers. CDC PLACES and HUD Open Data (ArcGIS Hub) are guides; the HUD
+   User API is a server (ADR-018: an id grammar, a quota and a citation contract). FEMA and BEA are decided by the
    same test when reached.
 3. **What a guide must contain**, in this order: the datasets (ids, level, join key, vintage,
    key fields); the resolve-then-query recipe with `geo_resolve_place`; defaults (which value
@@ -50,6 +51,9 @@ the same way.
    (Socrata plugin requires an app token for untokened portals; ArcGIS plugin's `get_schema`
    failure and layer-0 assumption) are filed upstream by the owner and noted in the guide
    until fixed; guides route around them only by naming a reachable alternative dataset.
+   *(Amended by ADR-018.)* A limitation that blocks **access** (not policy) is a release blocker for
+   the guide that depends on it: it is filed upstream and gets a guided-run eval case that fails
+   until it is fixed.
 
 ## Consequences
 
