@@ -50,6 +50,11 @@ export const DIMENSION_ARGUMENTS = [
   "occupation",
   "product",
   "frequency",
+  // HUD User (ADR-018 §3): FMR bedrooms, income-limit level and household size, Picture program.
+  "bedrooms",
+  "level",
+  "household_size",
+  "program",
 ] as const;
 export type DimensionArgument = (typeof DIMENSION_ARGUMENTS)[number];
 
