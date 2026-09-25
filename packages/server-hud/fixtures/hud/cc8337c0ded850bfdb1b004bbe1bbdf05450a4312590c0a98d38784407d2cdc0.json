@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/chas?type=5&stateId=18&entityId=71000",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "1837",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:31 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "46",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "[{\"geoname\":\"South Bend city, Indiana\",\"sumlevel\":\"City\",\"year\":\"2018-2022\",\"A1\":\"2590.0\",\"A2\":\"4875.0\",\"A3\":\"7465.0\",\"A4\":\"2550.0\",\"A5\":\"3110.0\",\"A6\":\"5660.0\",\"A7\":\"4570.0\",\"A8\":\"3780.0\",\"A9\":\"8350.0\",\"A10\":\"3095.0\",\"A11\":\"1845.0\",\"A12\":\"4940.0\",\"A13\":\"10925.0\",\"A14\":\"3220.0\",\"A15\":\"14145.0\",\"A16\":\"23730.0\",\"A17\":\"16830.0\",\"A18\":\"40560.0\",\"B1\":\"4710.0\",\"B2\":\"8310.0\",\"B3\":\"13020.0\",\"B4\":\"19020.0\",\"B5\":\"8520.0\",\"B6\":\"27540.0\",\"B7\":null,\"B8\":null,\"B9\":null,\"C1\":\"2520.0\",\"C2\":\"4870.0\",\"C3\":\"7390.0\",\"C4\":\"21210.0\",\"C5\":\"11960.0\",\"C6\":\"33170.0\",\"D1\":\"19365.0\",\"D2\":\"8460.0\",\"D3\":\"27825.0\",\"D4\":\"2215.0\",\"D5\":\"3685.0\",\"D6\":\"5900.0\",\"D7\":\"1980.0\",\"D8\":\"4244.0\",\"D9\":\"6224.0\",\"D10\":\"165.0\",\"D11\":\"430.0\",\"D12\":\"595.0\",\"E1\":\"5955.0\",\"E2\":\"1505.0\",\"E3\":null,\"E5\":\"3290.0\",\"E6\":\"2370.0\",\"E7\":null,\"E9\":\"2540.0\",\"E10\":\"5810.0\",\"E11\":null,\"E13\":\"635.0\",\"E14\":\"4310.0\",\"E15\":null,\"E17\":\"595.0\",\"E18\":\"13555.0\",\"E19\":null,\"E21\":\"13020.0\",\"E22\":\"27540.0\",\"E23\":null,\"F1\":\"4045.0\",\"F2\":\"825.0\",\"F3\":null,\"F5\":\"2345.0\",\"F6\":\"765.0\",\"F7\":null,\"F9\":\"1560.0\",\"F10\":\"2220.0\",\"F11\":null,\"F13\":\"140.0\",\"F14\":\"1705.0\",\"F15\":null,\"F17\":\"215.0\",\"F18\":\"3005.0\",\"F19\":null,\"F21\":\"8310.0\",\"F22\":\"8520.0\",\"F23\":null,\"G1\":\"1910.0\",\"G2\":\"680.0\",\"G3\":null,\"G5\":\"945.0\",\"G6\":\"1605.0\",\"G7\":null,\"G9\":\"980.0\",\"G10\":\"3590.0\",\"G11\":null,\"G13\":\"495.0\",\"G14\":\"2605.0\",\"G15\":null,\"G17\":\"380.0\",\"G18\":\"10550.0\",\"G19\":null,\"H1\":\"5880.0\",\"H2\":\"4860.0\",\"H4\":\"3175.0\",\"H5\":\"900.0\",\"H7\":\"2280.0\",\"H8\":\"290.0\",\"H10\":\"535.0\",\"H11\":\"150.0\",\"H13\":\"265.0\",\"H14\":\"25.0\",\"H16\":\"12135.0\",\"I1\":\"4030.0\",\"I2\":\"3330.0\",\"I4\":\"2250.0\",\"I5\":\"680.0\",\"I7\":\"1465.0\",\"I8\":\"210.0\",\"I10\":\"100.0\",\"I11\":\"20.0\",\"I13\":\"84.0\",\"I14\":\"4.0\",\"I16\":\"7929.0\",\"J1\":\"1845.0\",\"J2\":\"1530.0\",\"J4\":\"930.0\",\"J5\":\"225.0\",\"J7\":\"810.0\",\"J8\":\"75.0\",\"J10\":\"430.0\",\"J11\":\"130.0\",\"J13\":\"180.0\",\"J14\":\"20.0\",\"J16\":\"4195.0\"}]",
+  "recordedAt": "2026-09-25T03:27:31.795Z"
+}

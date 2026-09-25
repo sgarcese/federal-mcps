@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/chas?type=3&stateId=18&entityId=141&year=2017-2021",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "1879",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:30 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "48",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "[{\"geoname\":\"St. Joseph County, Indiana\",\"sumlevel\":\"County\",\"year\":\"2017-2021\",\"A1\":\"5320.0\",\"A2\":\"7720.0\",\"A3\":\"13040.0\",\"A4\":\"5935.0\",\"A5\":\"6265.0\",\"A6\":\"12200.0\",\"A7\":\"11205.0\",\"A8\":\"7255.0\",\"A9\":\"18460.0\",\"A10\":\"8205.0\",\"A11\":\"3770.0\",\"A12\":\"11975.0\",\"A13\":\"42125.0\",\"A14\":\"8535.0\",\"A15\":\"50660.0\",\"A16\":\"72790.0\",\"A17\":\"33540.0\",\"A18\":\"106330.0\",\"B1\":\"11280.0\",\"B2\":\"15095.0\",\"B3\":\"26375.0\",\"B4\":\"61510.0\",\"B5\":\"18445.0\",\"B6\":\"79955.0\",\"B7\":null,\"B8\":null,\"B9\":null,\"C1\":\"5390.0\",\"C2\":\"8330.0\",\"C3\":\"13720.0\",\"C4\":\"67400.0\",\"C5\":\"25210.0\",\"C6\":\"92610.0\",\"D1\":\"62030.0\",\"D2\":\"18535.0\",\"D3\":\"80565.0\",\"D4\":\"5945.0\",\"D5\":\"7045.0\",\"D6\":\"12990.0\",\"D7\":\"4425.0\",\"D8\":\"7095.0\",\"D9\":\"11520.0\",\"D10\":\"405.0\",\"D11\":\"870.0\",\"D12\":\"1275.0\",\"E1\":\"10085.0\",\"E2\":\"2955.0\",\"E3\":null,\"E5\":\"7600.0\",\"E6\":\"4590.0\",\"E7\":null,\"E9\":\"5535.0\",\"E10\":\"12915.0\",\"E11\":null,\"E13\":\"1600.0\",\"E14\":\"10375.0\",\"E15\":null,\"E17\":\"1555.0\",\"E18\":\"49110.0\",\"E19\":null,\"E21\":\"26375.0\",\"E22\":\"79955.0\",\"E23\":null,\"F1\":\"6000.0\",\"F2\":\"1720.0\",\"F3\":null,\"F5\":\"4900.0\",\"F6\":\"1360.0\",\"F7\":null,\"F9\":\"3100.0\",\"F10\":\"4150.0\",\"F11\":null,\"F13\":\"550.0\",\"F14\":\"3220.0\",\"F15\":null,\"F17\":\"545.0\",\"F18\":\"7990.0\",\"F19\":null,\"F21\":\"15095.0\",\"F22\":\"18445.0\",\"F23\":null,\"G1\":\"4085.0\",\"G2\":\"1235.0\",\"G3\":null,\"G5\":\"2700.0\",\"G6\":\"3230.0\",\"G7\":null,\"G9\":\"2435.0\",\"G10\":\"8765.0\",\"G11\":null,\"G13\":\"1050.0\",\"G14\":\"7155.0\",\"G15\":null,\"G17\":\"1010.0\",\"G18\":\"41120.0\",\"G19\":null,\"H1\":\"9975.0\",\"H2\":\"8005.0\",\"H4\":\"7360.0\",\"H5\":\"2635.0\",\"H7\":\"5035.0\",\"H8\":\"570.0\",\"H10\":\"1365.0\",\"H11\":\"245.0\",\"H13\":\"765.0\",\"H14\":\"65.0\",\"H16\":\"24500.0\",\"I1\":\"5965.0\",\"I2\":\"4930.0\",\"I4\":\"4740.0\",\"I5\":\"1835.0\",\"I7\":\"2835.0\",\"I8\":\"250.0\",\"I10\":\"420.0\",\"I11\":\"60.0\",\"I13\":\"180.0\",\"I14\":\"20.0\",\"I16\":\"14140.0\",\"J1\":\"4010.0\",\"J2\":\"3075.0\",\"J4\":\"2620.0\",\"J5\":\"800.0\",\"J7\":\"2200.0\",\"J8\":\"320.0\",\"J10\":\"950.0\",\"J11\":\"185.0\",\"J13\":\"590.0\",\"J14\":\"45.0\",\"J16\":\"10370.0\"}]",
+  "recordedAt": "2026-09-25T03:27:30.621Z"
+}

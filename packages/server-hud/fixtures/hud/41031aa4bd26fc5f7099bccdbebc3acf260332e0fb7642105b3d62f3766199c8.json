@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/il/data/1814199999?year=2017",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "664",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:28 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "51",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "{\"data\":{\"county_name\":\"St. Joseph County, IN\",\"counties_msa\":\"\",\"town_name\":\"\",\"metro_status\":\"1\",\"metro_name\":\"South Bend-Mishawaka, IN-MI MSA\",\"area_name\":\"South Bend-Mishawaka, IN HUD Metro FMR Area\",\"year\":\"2017\",\"median_income\":61500,\"very_low\":{\"il50_p1\":21350,\"il50_p2\":24400,\"il50_p3\":27450,\"il50_p4\":30500,\"il50_p5\":32950,\"il50_p6\":35400,\"il50_p7\":37850,\"il50_p8\":40300},\"extremely_low\":{\"il30_p1\":12850,\"il30_p2\":16240,\"il30_p3\":20420,\"il30_p4\":24600,\"il30_p5\":28780,\"il30_p6\":32960,\"il30_p7\":37140,\"il30_p8\":40300},\"low\":{\"il80_p1\":34200,\"il80_p2\":39050,\"il80_p3\":43950,\"il80_p4\":48800,\"il80_p5\":52750,\"il80_p6\":56650,\"il80_p7\":60550,\"il80_p8\":64450}}}",
+  "recordedAt": "2026-09-25T03:27:28.975Z"
+}

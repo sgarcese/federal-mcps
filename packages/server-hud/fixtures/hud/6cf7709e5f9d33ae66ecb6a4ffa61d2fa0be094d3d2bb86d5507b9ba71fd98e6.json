@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/mtspil/data/1814199999",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "1751",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:29 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "50",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "{\"data\":{\"county_name\":\"St. Joseph County, IN\",\"counties_msa\":\"\",\"town_name\":\"\",\"metro_status\":\"1.0\",\"metro_name\":\"South Bend-Mishawaka, IN-MI\",\"area_name\":\"South Bend-Mishawaka, IN HUD Metro FMR Area\",\"year\":\"2026\",\"median_income\":88100,\"80percent\":{\"il80_p1\":49360,\"il80_p2\":56400,\"il80_p3\":63440,\"il80_p4\":70480,\"il80_p5\":76160,\"il80_p6\":81760,\"il80_p7\":87440,\"il80_p8\":93040},\"70percent\":{\"il70_p1\":43190,\"il70_p2\":49350,\"il70_p3\":55510,\"il70_p4\":61670,\"il70_p5\":66640,\"il70_p6\":71540,\"il70_p7\":76510,\"il70_p8\":81410},\"60percent\":{\"il60_p1\":37020,\"il60_p2\":42300,\"il60_p3\":47580,\"il60_p4\":52860,\"il60_p5\":57120,\"il60_p6\":61320,\"il60_p7\":65580,\"il60_p8\":69780},\"50percent\":{\"il50_p1\":30850,\"il50_p2\":35250,\"il50_p3\":39650,\"il50_p4\":44050,\"il50_p5\":47600,\"il50_p6\":51100,\"il50_p7\":54650,\"il50_p8\":58150},\"40percent\":{\"il40_p1\":24680,\"il40_p2\":28200,\"il40_p3\":31720,\"il40_p4\":35240,\"il40_p5\":38080,\"il40_p6\":40880,\"il40_p7\":43720,\"il40_p8\":46520},\"30percent\":{\"il30_p1\":18510,\"il30_p2\":21150,\"il30_p3\":23790,\"il30_p4\":26430,\"il30_p5\":28560,\"il30_p6\":30660,\"il30_p7\":32790,\"il30_p8\":34890},\"20percent\":{\"il20_p1\":12340,\"il20_p2\":14100,\"il20_p3\":15860,\"il20_p4\":17620,\"il20_p5\":19040,\"il20_p6\":20440,\"il20_p7\":21860,\"il20_p8\":23260},\"hera_special_50percent\":{\"hera_special_il50_p1\":31150,\"hera_special_il50_p2\":35600,\"hera_special_il50_p3\":40050,\"hera_special_il50_p4\":44500,\"hera_special_il50_p5\":48100,\"hera_special_il50_p6\":51650,\"hera_special_il50_p7\":55200,\"hera_special_il50_p8\":58750},\"hera_special_60percent\":{\"hera_special_il60_p1\":37380,\"hera_special_il60_p2\":42720,\"hera_special_il60_p3\":48060,\"hera_special_il60_p4\":53400,\"hera_special_il60_p5\":57720,\"hera_special_il60_p6\":61980,\"hera_special_il60_p7\":66240,\"hera_special_il60_p8\":70500}}}",
+  "recordedAt": "2026-09-25T03:27:29.465Z"
+}

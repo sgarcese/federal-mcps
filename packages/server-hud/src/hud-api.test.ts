@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 import {
   createHttpClient,
+  type HttpClient,
+  HttpError,
   MemoryBudgetStore,
   MemoryCacheStore,
   type PlaceCandidate,
@@ -112,7 +114,16 @@ describe("hudGetJson over recorded fixtures (the token never reaches disk)", () 
   });
 
   it("returns undefined when HUD has no data for the entity or year (404/400), never a guess", async () => {
-    expect(await hudGetJson(replay(), fmrUrl("1814199999", 2016), () => "test-token")).toBeUndefined();
+    // FY2016 answers 400 live (verified 2026-09-24); errors are not recorded, so stub the client.
+    const noData = (status: number): HttpClient =>
+      ({
+        getJson: async (url: string) => {
+          throw new HttpError({ source: "hud", status, url, attempts: 1 });
+        },
+      }) as unknown as HttpClient;
+    expect(await hudGetJson(noData(400), fmrUrl("1814199999", 2016), () => "t")).toBeUndefined();
+    expect(await hudGetJson(noData(404), fmrUrl("2502599999"), () => "t")).toBeUndefined();
+    await expect(hudGetJson(noData(500), fmrUrl("1814199999"), () => "t")).rejects.toThrow();
   });
 
   it("refuses to call without a token, naming HUD_USER_TOKEN", async () => {
@@ -121,12 +132,18 @@ describe("hudGetJson over recorded fixtures (the token never reaches disk)", () 
     );
   });
 
-  it("no fixture file contains the token or an Authorization header", async () => {
+  it("no fixture records a request credential (the token rides as a request header only)", async () => {
     const { readdirSync, readFileSync } = await import("node:fs");
     const dir = `${FIXTURES}/hud`;
     for (const f of readdirSync(dir)) {
-      const text = readFileSync(`${dir}/${f}`, "utf8");
-      expect(text).not.toMatch(/authorization|bearer/i);
+      const record = JSON.parse(readFileSync(`${dir}/${f}`, "utf8")) as {
+        headers: Record<string, string>;
+      };
+      // HUD's CORS header lists "Authorization" as an allowed header name; no value may appear.
+      expect(Object.keys(record.headers).map((k) => k.toLowerCase())).not.toContain(
+        "authorization",
+      );
+      expect(JSON.stringify(record)).not.toMatch(/bearer\s/i);
     }
   });
 });

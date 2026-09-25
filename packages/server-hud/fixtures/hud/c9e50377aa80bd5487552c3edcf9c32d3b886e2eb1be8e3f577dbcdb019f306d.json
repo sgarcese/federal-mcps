@@ -1,0 +1,22 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/fmr/data/1814199999?year=2017",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "access-control-allow-origin": "*",
+    "cache-control": "no-cache, private",
+    "connection": "keep-alive",
+    "content-length": "327",
+    "content-security-policy": "form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' *.huduser.gov *.awswaf.com *.arcgis.com *.google.com *.gstatic.com *.googleapis.com *.jquery.com *.cloudflare.com *.jsdelivr.net *.datatables.net *.cloudfront.net *.bootstrapcdn.com *.fontawesome.com *.google-analytics.com *.googletagmanager.com mailchimp.com chimpstatic.com *.digitalgov.gov *.highcharts.com; worker-src 'self' blob:; frame-ancestors 'self' https://www.hud.gov https://hud.gov;",
+    "content-type": "application/json",
+    "date": "Fri, 25 Sep 2026 03:27:26 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "SAMEORIGIN",
+    "x-ratelimit-limit": "60",
+    "x-ratelimit-remaining": "56",
+    "x-xss-protection": "1; mode=block"
+  },
+  "body": "{\"data\":{\"county_name\":\"St. Joseph County, IN\",\"counties_msa\":\"\",\"town_name\":\"\",\"metro_status\":\"1\",\"metro_name\":\"South Bend-Mishawaka, IN-MI MSA\",\"area_name\":\"South Bend-Mishawaka, IN HUD Metro FMR Area\",\"basicdata\":{\"Efficiency\":502,\"One-Bedroom\":635,\"Two-Bedroom\":792,\"Three-Bedroom\":1014,\"Four-Bedroom\":1092,\"year\":\"2017\"}}}",
+  "recordedAt": "2026-09-25T03:27:26.711Z"
+}
