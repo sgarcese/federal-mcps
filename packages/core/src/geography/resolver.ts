@@ -71,6 +71,15 @@ const FIPS_TO_USPS: Readonly<Record<string, string>> = Object.freeze(
 );
 
 /**
+ * The two-letter USPS abbreviation for a 2-digit state FIPS code (e.g. "18" → "IN"), for agency
+ * APIs keyed by state code (HUD User's Picture of Subsidized Households, M11). Geography stays in
+ * core: servers ask here instead of carrying their own table.
+ */
+export function uspsOfStateFips(fips: string): string | undefined {
+  return FIPS_TO_USPS[fips];
+}
+
+/**
  * Same-name places in other states are rivals unless the leader has at least this many times
  * the runner-up's population (#187): Springfield MO/IL and Portland OR/ME stop; Denver CO
  * against a 1,800-person Denver, IA does not.
