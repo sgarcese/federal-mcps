@@ -29,6 +29,9 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   and retrieval interface for the geography catalog (feeds ADR-008 decision 1).
 - [spikes/m7-functional-completions.md](spikes/m7-functional-completions.md) — M7 inventory of
   every deferred BLS item (pickers, metro/region completions, PPI) with nine decision questions.
+- [adr/ADR-018-hud-user-server.md](adr/ADR-018-hud-user-server.md) — the HUD User API as a
+  dedicated server (`hud_*`, `huduser.responsive.city`): FMR, Income Limits/MTSP, CHAS, Picture of
+  Subsidized Households; a per-minute limiter in core; amends ADR-015 (HUD is two sources).
 - [adr/ADR-017-raw-tool-rendering-and-bls-completions.md](adr/ADR-017-raw-tool-rendering-and-bls-completions.md)
   — raw tools render a compact table within a 24,000-character budget (indicator tools keep
   4,000), enforced by a `raw-rendering` contract rule; the M12 BLS completion order and QCEW
