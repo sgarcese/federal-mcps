@@ -36,6 +36,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/hud-surface-cost-benefit.md](spikes/hud-surface-cost-benefit.md) — HUD surface after
+  the South Bend field report: 17 issues classified (7 generic connector, 7 HUD data, 2 missing
+  sources), options costed; recommends a hybrid — fixed OpenContext connector + guide for the Hub
+  layers, a dedicated server for the HUD User API; eight owner decisions.
 - [spikes/hud-arcgis-hub-guide.md](spikes/hud-arcgis-hub-guide.md) — verified HUD ArcGIS Hub
   datasets, join keys and connector limits behind the HUD source guide.
 - [spikes/opencontext-socrata-benchmark.md](spikes/opencontext-socrata-benchmark.md) — geo
