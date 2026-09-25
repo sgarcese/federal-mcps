@@ -57,3 +57,26 @@ describe("BLS terms of service (docs/licensing.md)", () => {
     );
   });
 });
+
+describe("OEWS: detailed occupations and the one-year API horizon are documented (#214)", () => {
+  const d = describeSource();
+  const text = JSON.stringify(d);
+
+  it("explains the OEWS series-id layout with a worked detailed-occupation example", () => {
+    expect(text).toMatch(/OEUM004378000000047203113/);
+    expect(text).toMatch(/6-digit SOC/);
+    expect(text).toMatch(/01 employment/);
+    expect(text).toMatch(/04 annual mean/);
+    expect(text).toMatch(/08 hourly median/);
+    expect(text).toMatch(/13 annual median/);
+  });
+
+  it("says the API carries only the current OEWS year", () => {
+    expect(text).toMatch(/only the (current|latest) OEWS year/i);
+  });
+
+  it("the OEWS program entry points to bls_get_raw for detailed occupations", () => {
+    const oews = d.programs.find((p) => p.code === "OEWS");
+    expect(oews?.granularity).toMatch(/bls_get_raw/);
+  });
+});
