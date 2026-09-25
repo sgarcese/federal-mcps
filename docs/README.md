@@ -40,6 +40,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/m11-hud-user-server.md](spikes/m11-hud-user-server.md) — the HUD User API verified with a
+  token: FMR (FY2017–FY2027, Small Area FMRs), Income Limits and MTSP, CHAS (to 2018–2022), Picture of
+  Subsidized Households (2012–2025), the ZIP crosswalk; 60 queries/minute and the required sentence;
+  eight decision questions and an eight-issue build cut.
 - [spikes/hud-surface-cost-benefit.md](spikes/hud-surface-cost-benefit.md) — HUD surface after
   the South Bend field report: 17 issues classified (7 generic connector, 7 HUD data, 2 missing
   sources), options costed; recommends a hybrid — fixed OpenContext connector + guide for the Hub
