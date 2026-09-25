@@ -6,10 +6,10 @@
 # this account (ADR-007). Everything after this is a normal `scripts/deploy.sh`.
 #
 #   AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh [instance] [server]
-#     instance  fleet-record name          (default: dev)
-#     server    bls | geo | census | cdc    (default: bls)
+#     instance  fleet-record name                (default: dev)
+#     server    bls | geo | census | cdc | hud    (default: bls)
 #
-# Each server (bls, geo, census) is a separate Lambda with its own execution role, so run
+# Each server (bls, geo, census, hud) is a separate Lambda with its own execution role, so run
 # this once per server: e.g. `... dev bls` and `... dev geo`.
 #
 # It is idempotent: re-running updates the inline policies in place.
@@ -25,8 +25,8 @@ cd "$(dirname "$0")/.."
 INSTANCE="${1:-dev}"
 SERVER="${2:-bls}"
 case "$SERVER" in
-  bls | geo | census | cdc) ;;
-  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo | census | cdc)"; exit 1 ;;
+  bls | geo | census | cdc | hud) ;;
+  *) echo "::error:: unknown server '${SERVER}' (expected: bls | geo | census | cdc | hud)"; exit 1 ;;
 esac
 
 read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
@@ -40,7 +40,9 @@ read -r ACCOUNT REGION SERVICE ENVTAG DEPLOY_ROLE < <(
           ? i.naming.censusService
           : process.env.SERVER === "cdc"
             ? i.naming.cdcService
-            : i.naming.blsService;
+            : process.env.SERVER === "hud"
+              ? i.naming.hudService
+              : i.naming.blsService;
     const deployRole = "rc-deploy"; // the role scripts/deploy.sh assumes
     // Trailing newline is required: `read` returns non-zero on EOF without one,
     // which `set -euo pipefail` would turn into a silent exit before any output (#90).
