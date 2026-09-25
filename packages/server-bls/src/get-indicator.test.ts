@@ -600,3 +600,63 @@ describe("bls_get_raw accepts national CES and CPS ids (#211)", () => {
     expect(rawTool().description).toMatch(/CPS/);
   });
 });
+
+describe("QCEW: years it cannot honour are stated, and it cites the file it read (#212)", () => {
+  const CSV = [
+    '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
+    '"08031","0","10","70","0","2024","1","",45970,559807,561820,561041,15497545518,7590975514,149132980,2125',
+    '"08031","5","23","74","0","2024","1","",2131,21963,22241,22192,515298275,382512168,9375302,1791',
+  ].join("\n");
+  const notUsed = () => {
+    throw new Error("only getText");
+  };
+  const qcewClient: HttpClient = {
+    getJson: notUsed,
+    postJson: notUsed,
+    async getText(): Promise<HttpResult<string>> {
+      return { value: CSV, status: 200, cache: { hit: false } };
+    },
+  };
+  const tools = () =>
+    blsIndicatorTools({ catalog: () => catalog, httpClient: () => qcewClient, now: NOW });
+  // biome-ignore lint/suspicious/noExplicitAny: handlers take untyped args in tests.
+  type AnyArgs = any;
+  const go = (i: number, args: Record<string, unknown>) =>
+    tools()[i]?.handler(args as AnyArgs, {} as AnyArgs);
+  const base = {
+    place: "Denver",
+    kind: "county",
+    indicator: "average_weekly_wage",
+    industry: "23",
+    ownership: "5",
+  };
+
+  it("adds a limitation when startYear/endYear are given, naming the period actually returned", async () => {
+    const res = await go(0, { ...base, startYear: 2020, endYear: 2021 });
+    expect(res?.limitations?.join(" ")).toMatch(/2020.?2021.*not applied|only its latest/i);
+    expect(res?.limitations?.join(" ")).toMatch(/2024 Q1/);
+  });
+
+  it("adds no such limitation when no years are asked for", async () => {
+    const res = await go(0, base);
+    expect((res?.limitations ?? []).join(" ")).not.toMatch(/latest/i);
+  });
+
+  it("cites the CSV slice it read, and describes the selection in words, not the internal key", async () => {
+    const res = await go(0, base);
+    expect(res?.source.url).toBe("https://data.bls.gov/cew/data/api/2024/1/area/08031.csv");
+    expect(res?.source.citation).toContain(
+      "https://data.bls.gov/cew/data/api/2024/1/area/08031.csv",
+    );
+    expect(res?.source.citation).not.toContain("|");
+    expect(res?.source.citation).toMatch(/area 08031.*private.*NAICS 23/);
+    // the machine-readable key stays in ids
+    expect(res?.source.ids).toEqual(["08031|5|23"]);
+  });
+
+  it("timeseries programs keep the Public Data API url and id citation", async () => {
+    const res = await run({ place: "Denver", kind: "county", indicator: "unemployment_rate" });
+    expect(res.source.url).toMatch(/api\.bls\.gov\/publicAPI\/v2\/timeseries/);
+    expect(res.source.citation).toMatch(/LAUCN08031/);
+  });
+});

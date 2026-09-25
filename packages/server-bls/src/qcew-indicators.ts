@@ -1,4 +1,5 @@
 import type { HttpClient, PlaceCandidate } from "@federal-mcps/core";
+import { QCEW_ENDPOINT } from "./describe-source.js";
 import {
   fetchQcewRow,
   INDUSTRY_ALL,
@@ -7,6 +8,7 @@ import {
   priorQuarter,
   type QcewHeadline,
   type QcewRowSelection,
+  qcewAreaUrl,
   qcewDisclosureText,
 } from "./qcew.js";
 import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
@@ -179,6 +181,37 @@ function qcewFetch(measure: QcewMeasure): IndicatorFetch {
   };
 }
 
+/** Where the QCEW open data slices live; a comparison across areas cites this (#212). */
+const QCEW_DATA_HOME = `${QCEW_ENDPOINT}/`;
+
+/**
+ * The source a QCEW answer actually read (#212): the area's CSV slice for the quarter returned
+ * (the timeseries API is not involved), and the selection in words for the citation instead of
+ * the opaque `area|ownership|industry` key.
+ */
+function qcewSourceOf(
+  key: string,
+  latest: SeriesObservation | undefined,
+): { url: string; label: string } | undefined {
+  const parsed = parseQcewKey(key);
+  if (!parsed) return undefined;
+  const { area, selection } = parsed;
+  const own =
+    OWNERSHIP_VOCABULARY.find((v) => v.code === selection.ownCode)?.label ??
+    `ownership ${selection.ownCode}`;
+  const industry =
+    selection.industryCode === INDUSTRY_ALL
+      ? "all industries"
+      : `NAICS ${selection.industryCode} (${INDUSTRY_VOCABULARY.find((v) => v.code === selection.industryCode)?.label ?? "industry"})`;
+  const label = `area ${area}, ${own}, ${industry}`;
+  const quarter = latest ? /^Q0?(\d)$/.exec(latest.period)?.[1] : undefined;
+  const url =
+    latest && quarter
+      ? qcewAreaUrl(area, { year: Number(latest.year), quarter: Number(quarter) })
+      : QCEW_DATA_HOME;
+  return { url, label };
+}
+
 /** QCEW covered employment and average weekly wage (county + state), not seasonally adjusted. */
 export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
   {
@@ -195,6 +228,10 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
       ),
     dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
     fetch: qcewFetch("employment"),
+    // Latest quarter only until #213: asked-for years are stated as not applied (#212).
+    servesHistory: false,
+    sourceOf: qcewSourceOf,
+    sourceHome: QCEW_DATA_HOME,
   },
   {
     name: "average_weekly_wage",
@@ -210,5 +247,9 @@ export const qcewIndicatorDefinitions: IndicatorDefinition[] = [
       ),
     dimensions: [INDUSTRY_DIMENSION, OWNERSHIP_DIMENSION],
     fetch: qcewFetch("wage"),
+    // Latest quarter only until #213: asked-for years are stated as not applied (#212).
+    servesHistory: false,
+    sourceOf: qcewSourceOf,
+    sourceHome: QCEW_DATA_HOME,
   },
 ];
