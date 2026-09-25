@@ -11,6 +11,10 @@ Changed
   says "showing N of M" and how to narrow the call. The full result is unchanged in
   `structuredContent`. A new `raw-rendering` contract rule requires this of every `*_get_raw` tool (#210).
 
+Fixed
+- `bls_get_raw` accepts any BLS timeseries id, including national CES (`CEU2000000003`) and CPS
+  (`LNU04000000`); malformed ids are still rejected (#211).
+
 ## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 
 Added

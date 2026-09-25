@@ -596,7 +596,7 @@ describe("bls_get_raw accepts national CES and CPS ids (#211)", () => {
   });
 
   it("names national CES and CPS in the description", () => {
-    expect(byName.get("bls_get_raw")?.description).toMatch(/CES/);
-    expect(byName.get("bls_get_raw")?.description).toMatch(/CPS|LN/);
+    expect(rawTool().description).toMatch(/national CES/);
+    expect(rawTool().description).toMatch(/CPS/);
   });
 });
