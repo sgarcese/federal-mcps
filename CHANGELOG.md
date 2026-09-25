@@ -5,12 +5,6 @@ milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitme
 
 ## Unreleased — M12 Raw access and BLS completions
 
-Fixed
-- QCEW answers state when requested years were not applied (the program serves its latest quarter),
-  naming the quarter returned, and cite the CSV slice actually read
-  (`data.bls.gov/cew/data/api/<year>/<q>/area/<area>.csv`) with the selection in words, not the
-  internal key. Core: `IndicatorDefinition` gains `servesHistory`, `sourceOf` and `sourceHome` (#212).
-
 Changed
 - **Raw tools reply with a compact table** (ADR-017): `census_get_raw` as CSV lines, `bls_get_raw` as
   one block per series, ids printed once, within 24,000 characters (indicator tools keep 4,000); a cut
@@ -20,6 +14,10 @@ Changed
 Fixed
 - `bls_get_raw` accepts any BLS timeseries id, including national CES (`CEU2000000003`) and CPS
   (`LNU04000000`); malformed ids are still rejected (#211).
+- QCEW answers state when requested years were not applied (the program serves its latest quarter),
+  naming the quarter returned, and cite the CSV slice actually read
+  (`data.bls.gov/cew/data/api/<year>/<q>/area/<area>.csv`) with the selection in words, not the
+  internal key. Core: `IndicatorDefinition` gains `servesHistory`, `sourceOf` and `sourceHome` (#212).
 
 ## 0.4.0 — M10 Deployment wrapper (2026-09-22)
 

@@ -598,6 +598,9 @@ describe("bls_get_raw accepts national CES and CPS ids (#211)", () => {
   it("names national CES and CPS in the description", () => {
     expect(rawTool().description).toMatch(/national CES/);
     expect(rawTool().description).toMatch(/CPS/);
+  });
+});
+
 describe("QCEW: years it cannot honour are stated, and it cites the file it read (#212)", () => {
   const CSV = [
     '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
