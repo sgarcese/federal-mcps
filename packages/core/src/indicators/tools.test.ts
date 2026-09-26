@@ -218,3 +218,41 @@ describe("every dimension argument reaches the indicator (#213, ADR-018 §3)", (
     expect((res?.source.ids ?? []).every((id: string) => id.endsWith("/picked"))).toBe(true);
   });
 });
+
+describe("citationSuffix (#237): an attribution the agency's terms require rides every citation", () => {
+  const attributed = indicatorTools({
+    agency: "demo",
+    definitions: [countyThing],
+    catalog: () => catalog,
+    httpClient: () => noClient,
+    now: () => new Date("2025-02-01T00:00:00Z"),
+    defaultFetch: echoFetch,
+    sourceUrl: "https://example.invalid/api",
+    citationSuffix: "Uses the Demo API; not endorsed by Demo.",
+    descriptions: { getIndicator: "get", comparePlaces: "compare", listIndicators: "list" },
+    examples: {
+      getIndicator: [{ title: "x", input: { place: "Denver", kind: "county" } }],
+      comparePlaces: [{ title: "y", input: { places: ["Denver County", "Fairfield County"] } }],
+      listIndicators: [{ title: "z", input: {} }],
+    },
+  });
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+  type AnyArgs = any;
+  const run = (n: string, args: Record<string, unknown>) =>
+    attributed.find((t) => t.name === n)?.handler(args as AnyArgs, {} as AnyArgs);
+
+  it("appends the suffix to a get_indicator citation", async () => {
+    const res = await run("demo_get_indicator", { place: "Denver", kind: "county" });
+    expect(res?.source.citation).toMatch(/Retrieved 2025-02-01 from \S+ Uses the Demo API; not endorsed by Demo\.$/);
+  });
+
+  it("appends the suffix to a compare_places citation", async () => {
+    const res = await run("demo_compare_places", { places: ["Denver County", "Fairfield County"] });
+    expect(res?.source.citation).toMatch(/Uses the Demo API; not endorsed by Demo\.$/);
+  });
+
+  it("leaves citations unchanged without a suffix", async () => {
+    const res = await go("demo_get_indicator", { place: "Denver", kind: "county", indicator: "county_thing" });
+    expect(res.source.citation).toMatch(/from https:\/\/example\.invalid\/api$/);
+  });
+});
