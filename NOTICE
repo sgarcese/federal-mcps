@@ -15,6 +15,11 @@ U.S. Bureau of Labor Statistics — LABSTAT area code tables, the Public Data AP
   date be cited and states that "BLS.gov cannot vouch for the data or analyses derived from these
   data after the data have been retrieved from BLS.gov."
 
+U.S. Department of Housing and Urban Development, HUD User — the HUD User Data API (Fair Market
+  Rents, Income Limits, MTSP limits, CHAS, Picture of Subsidized Households). Works of the United
+  States Government; no copyright. This product uses the HUD User Data API but is not endorsed or
+  certified by HUD User.
+
 Missouri Census Data Center (MCDC), University of Missouri — Geocorr 2022 place-to-county
   correlation output, vendored as packages/geography-build/src/data/geocorr/*. Geocorr is produced
   by MCDC (a Census Bureau State Data Center partner, sponsored by the Missouri State Library,

@@ -3,7 +3,31 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## Unreleased — M11 HUD User server
+## 0.6.0 — M11 HUD User server (2026-09-26)
+
+Live at `https://hud-user.responsive.city/mcp`. This product uses the HUD User Data API but is not
+endorsed or certified by HUD User.
+
+Added
+- **Fair Market Rents** (#233): `fair_market_rent` with a `bedrooms` picker (0–4, default two-bedroom),
+  fiscal-year history from FY2017, the effective date of a published-ahead year stated, Small Area FMR
+  counties answered at the county area with the ZIP detail named, and a city answering with its
+  county's FMR area, flagged.
+- **Income Limits and MTSP limits** (#234): `income_limit` (`level` 30/50/80, `household_size` 1–8,
+  default 80% for four people), `area_median_income`, and `mtsp_limit` (20–80% plus the HERA special
+  50/60 limits, default 60%), with history and the same city→county fallback.
+- **CHAS cost burden** (#235): renter and owner cost-burdened share and count at `level` 30 or 50 (over
+  30% or over 50% of income) for states, counties and places, the release named in the citation and
+  the denominator stated.
+- **Picture of Subsidized Households** (#236): units, households, occupancy, rent, income and wait
+  indicators by HUD `program`, 2012 on, with HUD's census vintage rule stated and negative sentinels
+  returned as null with a "not reported" footnote — never a number.
+- **`hud_get_raw`** (#237, ADR-017): one of the five HUD User endpoints (`fmr`, `il`, `mtspil`, `chas`,
+  `picture`) for up to 10 entity ids, HUD's JSON unchanged, rendered compactly — Small Area FMR ZIPs and
+  Picture program rows as CSV rows, single records as one line per field.
+- **HUD User's required sentence on every citation** (#237): a `citationSuffix` option on the core
+  indicator tools; citations name the U.S. Department of Housing and Urban Development in full.
+- **Evals** (#237): the runner's `hud` server (`HUD_URL`), per-family sets and `hud-user.jsonl`.
 
 Fixed
 - Every picker argument now reaches the indicator: the core copied only `item`, `industry`,
@@ -26,10 +50,9 @@ Added
   `x-ratelimit-remaining: 0`, the bucket closes until that minute rolls over.
 - **server-hud shell** (#230, ADR-018 §1, §6, §7): a new agency server package mirroring
   server-census's structure — `hud_resolve_place` (from core's shared resolver) and the
-  auto-registered `hud_describe_source`, over the bundled geography catalog. No indicator
-  tools yet; `hud_describe_source` lists Fair Market Rents, Income Limits/MTSP, CHAS and
-  Picture of Subsidized Households, all `status: "planned"` until each lands in a later
-  issue. The HUD User API endpoint and its required Terms-of-Service sentence ("This
+  auto-registered `hud_describe_source`, over the bundled geography catalog;
+  `hud_describe_source` lists Fair Market Rents, Income Limits/MTSP, CHAS and Picture of
+  Subsidized Households, each `available` as of this release. The HUD User API endpoint and its required Terms-of-Service sentence ("This
   product uses the HUD User Data API but is not endorsed or certified by HUD User.") live
   only in `describe-source.ts`. Terraform: `terraform/modules/hud-server` (Lambda + HTTP
   API + custom domain, `HUD_USER_TOKEN` as the sensitive credential) wired into

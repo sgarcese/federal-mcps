@@ -1,6 +1,6 @@
 ---
 name: hud-open-data
-description: Answer housing questions for a U.S. county, city, tract or ZIP from HUD's ArcGIS Hub open data (Fair Market Rents and Small Area FMRs, Housing Choice Vouchers by tract, low-and-moderate-income shares, Qualified Census Tracts, Difficult Development Areas, LIHTC properties, public housing, assisted multifamily, Continuum of Care areas) with the right dataset, layer, join key and vintage. Use with geo_resolve_place and an OpenContext ArcGIS connector for data.hud.gov.
+description: Answer housing questions for a U.S. county, city, tract or ZIP from HUD's ArcGIS Hub open data (Fair Market Rents and Small Area FMRs, Housing Choice Vouchers by tract, low-and-moderate-income shares, Qualified Census Tracts, Difficult Development Areas, LIHTC properties, public housing, assisted multifamily, Continuum of Care areas) with the right dataset, layer, join key and vintage. Use with geo_resolve_place and an OpenContext ArcGIS connector for data.hud.gov. For Fair Market Rents, Income Limits and MTSP limits, CHAS cost burden and the Picture of Subsidized Households by place, use the HUD User server (hud-user.responsive.city, hud_get_indicator) instead.
 ---
 
 # HUD Open Data (ArcGIS Hub) source guide
@@ -9,6 +9,19 @@ HUD publishes its geospatial open data on ArcGIS Hub (`data.hud.gov`,
 `hudgis-hud.opendata.arcgis.com`; 103 feature services). Verified live on 2026-09-20. Federal
 public data; every item carries HUD's no-warranty statement — cite "U.S. Department of Housing
 and Urban Development, <dataset name>, HUD Open Data (ArcGIS Hub), accessed <date>".
+
+## Which source answers
+
+HUD is two sources. **The HUD User server** (`https://hud-user.responsive.city/mcp`,
+`hud_resolve_place` → `hud_get_indicator` / `hud_compare_places`) answers Fair Market Rents by
+bedroom count, Income Limits and area median income, MTSP limits, CHAS cost burden (renters and
+owners, over 30% or over 50% of income) and the Picture of Subsidized Households, each with its
+fiscal year or release and HUD User's citation; `hud_get_raw` returns an endpoint's JSON unchanged
+(every Small Area FMR ZIP in a county: `{endpoint: "fmr", ids: ["<county FIPS>99999"]}`). Prefer it
+for those questions — it builds HUD's ids for you. **This guide** covers the Hub's geospatial
+datasets: vouchers by tract, low-mod shares, QCTs, DDAs, LIHTC, public housing, assisted
+multifamily, Opportunity Zones and Continuum of Care areas. FMR rows below remain for sessions
+without the HUD User server.
 
 ## Tools you need
 
@@ -25,7 +38,7 @@ and Urban Development, <dataset name>, HUD Open Data (ArcGIS Hub), accessed <dat
 | Dataset | Item id | Key | Key fields | Vintage |
 |---|---|---|---|---|
 | Fair Market Rents | `12d2516901f947b5bb4da4e780e35f07` | `FMR_CODE` (see below); no FIPS column | `FMR_AREANAME`, `FMR_0BDR`…`FMR_4BDR` | FY2026 (effective 2025-10-01) |
-| Small Area FMRs (ZIP) | `6458c67bad2a4cc7aa97514ef7ba8a0e` | values are in **table layer 1** keyed `ID` = ZIP, `HUD_CODE`; layer 0 is ZCTA geometry only, and the connector resolves the first *layer*, so SAFMR values are still not reachable — use FMR or the HUD SAFMR page | `SAFMR_2BR`, `*_90_Payment_Standard`, `*_110_Payment_Standard` | FY2026 |
+| Small Area FMRs (ZIP) | `6458c67bad2a4cc7aa97514ef7ba8a0e` | values are in **table layer 1** keyed `ID` = ZIP, `HUD_CODE`; layer 0 is ZCTA geometry only, and the connector resolves the first *layer*, so SAFMR values are still not reachable here — use `hud_get_raw` on the HUD User server | `SAFMR_2BR`, `*_90_Payment_Standard`, `*_110_Payment_Standard` | FY2026 |
 | Housing Choice Vouchers by Tract | `8d45c34f7f64433586ef6a448d00ca12` | `GEOID` (11-digit tract) | `HCV_PUBLIC` voucher households; `HCV_PUBLIC_PCT` = % of renter-occupied units (2020 Census DHC H4) | current PIH extract |
 | Low-Mod Income Population by Block Group | `09eceb08d95d429dae9f88fe39826bf1` | `GEOID` (12-digit) | `Lowmod`, `Lowmoduniv` (strings with commas), `Lowmod_pct` (0–1), `MOE_LOWMOD_PCT` (+/-x%), `Source` | "ACS 2020-2016" (2016–2020 ACS) |
 | Low-Mod Income Population by Tract | `3bd6767dcc5e4937a6232d9db04dd447` | `GEOID` | `LOWMODPCT` (0–100) | its only layer is id 4; reachable since the 2026-09-22 connector fix (tract 08031000800 → 100) |
@@ -37,8 +50,8 @@ and Urban Development, <dataset name>, HUD Open Data (ArcGIS Hub), accessed <dat
 | Opportunity Zones | `ef143299845841f8abb95969c01f88b5` | `GEOID10` (2010 tracts) | — | only layer is id 13; reachable since the 2026-09-22 connector fix |
 | Continuum of Care Grantee Areas | `c930d736b1764c259371fc7111e02740` | `COCNUM` (`CO-503`), `COCNAME` | PIT counts `SH_PERS_HWAC`, `UNSH_PERS_HWAC`, `SH_VETS`, `UNSH_VETS`, `SH_CH`, `UNSH_CH` | **`YEAR` is null** in the layer — say the count year is not stated; HUD Exchange has dated PIT reports |
 
-**Not on the Hub** (say so; do not substitute): Income Limits (huduser.gov API), PIT counts by
-year (HUD Exchange), Picture of Subsidized Households.
+**Not on the Hub** (say so; do not substitute): Income Limits, MTSP limits and the Picture of
+Subsidized Households (all on the HUD User server above); PIT counts by year (HUD Exchange).
 
 ## FMR area codes (built from the resolved place, never typed from memory)
 

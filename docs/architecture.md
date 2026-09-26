@@ -84,6 +84,7 @@ federal-mcps/
     geography-build/      generates the SQLite catalog (see geography spike)
     server-bls/           Bureau of Labor Statistics
     server-census/        Census server on the core (M8, ADR-014): ACS indicators with reliability data
+    server-hud/           HUD User API server (M11, ADR-018): FMR, Income Limits/MTSP, CHAS, Picture
     server-cdc-places/    CDC PLACES via data.cdc.gov (Socrata SODA)
     server-composite/     one endpoint mounting several servers, shared resolve_place
   terraform/              bootstrap/, modules/, instances/<name>/ (ADR-005)
@@ -187,8 +188,9 @@ as a server on the core. A source hosted on a data portal (Socrata, CKAN, ArcGIS
 OpenDataSoft) ships as a **source guide**: an Agent Skill under `skills/<source>/` used with
 `geo-mcp` for place resolution and a generic [OpenContext](https://github.com/thealphacubicle/OpenContext)
 connector for the portal. The 2026-09-20 benchmark (`docs/spikes/opencontext-socrata-benchmark.md`)
-showed a guide takes a fresh model from 5/7 to 7/7 on CDC PLACES. CDC PLACES and HUD are guides;
-FEMA and BEA are decided by the same test.
+showed a guide takes a fresh model from 5/7 to 7/7 on CDC PLACES. CDC PLACES and HUD Open Data
+(the ArcGIS Hub) are guides; the HUD User API, token-gated and rate-limited, is a server
+(ADR-018 amends ADR-015: HUD is two sources). FEMA and BEA are decided by the same test.
 
 ## Servers two and three
 
@@ -201,7 +203,7 @@ is a natural second phase.
 **CDC PLACES.** Model-based health estimates for every county, place, tract and ZCTA,
 ~40 measures, via the Socrata SODA API on data.cdc.gov. Annual release, long cache TTL.
 
-Later, with no core changes: HUD (FMR, CHAS), BEA regional (county GDP, personal
+Later, with no core changes: BEA regional (county GDP, personal
 income), FEMA National Risk Index, County Health Rankings, Census QWI and Building
 Permits.
 
@@ -233,6 +235,12 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 |---|---|---|
 | **M8 Census server** (ADR-014) | `packages/server-census` on the core: thirteen ACS headline indicators plus the 2020 decennial count on the registry seam; an ACS fetch capability choosing 1-year (≥65,000) or 5-year by a catalog population column, with margins of error, coefficient-of-variation reliability grades and annotation sentinels as first-class envelope data; `census_compare_places` aligned on one product; `census_get_raw` carrying the Census API grammar; `census_search_tables` over a vendored table index; the key as `queryAuth` (never cached, recorded or logged); its own Terraform module and hostname | Demographic questions for any place answer with a margin, a grade and the product stated; a small city is never given a one-year figure; the eval set's Census cases pass live at `census-mcp.responsive.city` |
 
+## Release 3: HUD User
+
+| Milestone | Component | Exit criterion |
+|---|---|---|
+| **M11 HUD User server** (ADR-018) | `packages/server-hud` on the core: a per-minute limiter in the core HTTP client; the bearer token as a header (never cached, recorded or logged); entity ids built from the catalog; `fair_market_rent`, `income_limit`, `area_median_income`, `mtsp_limit`, CHAS cost-burden share and count, Picture of Subsidized Households indicators with city→county fallback; `hud_get_raw` over the five endpoints; HUD User's required sentence on every citation; its own Terraform module and hostname | Rent, income-limit, cost-burden and subsidized-housing questions answer through the family verbs with the fiscal year or release stated; the HUD eval sets pass live at `hud-user.responsive.city` |
+
 Deferred to later releases, deliberately: sub-dimension pickers for Census (by race, age, tenure), county subdivisions, ACS significance testing, SAIPE/PEP, CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
@@ -243,7 +251,8 @@ Per ADR-004 and ADR-006: `instances.json` is the fleet record; Release 1 has one
 the Responsive City account (`us-east-1`; the account id lives in the gitignored
 `instances.json`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
-`bls.responsive.city/mcp`, `census.responsive.city/mcp`, `geo.responsive.city/mcp` (ADR-016 §2; the
+`bls.responsive.city/mcp`, `census.responsive.city/mcp`, `hud-user.responsive.city/mcp`,
+`geo.responsive.city/mcp` (ADR-016 §2; the
 Release 1 `*-mcp` names remain as aliases). Guide-backed sources this family owns get an
 OpenContext portal Lambda from the same wrapper — `cdc.responsive.city/mcp` for data.cdc.gov —
 built from the commit pinned in `opencontext.lock.json` (ADR-016 §4-5).
