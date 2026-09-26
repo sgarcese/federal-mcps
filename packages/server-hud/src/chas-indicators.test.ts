@@ -13,7 +13,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
-import { chasAgencyCodeOf, chasBuildSeriesId, chasIndicatorDefinitions } from "./chas-indicators.js";
+import {
+  chasAgencyCodeOf,
+  chasBuildSeriesId,
+  chasIndicatorDefinitions,
+} from "./chas-indicators.js";
 import { buildHudDefinition } from "./definition.js";
 
 /** A resolved-place stand-in: only the fields the builders read (mirrors hud-api.test.ts). */
@@ -48,6 +52,18 @@ const def = (name: string) => {
   return found;
 };
 
+const fetchOf = (name: string) => {
+  const capability = def(name).fetch;
+  if (!capability) throw new Error(`CHAS indicator ${name} has no fetch capability`);
+  return capability;
+};
+
+const sourceOfFn = (name: string) => {
+  const fn = def(name).sourceOf;
+  if (!fn) throw new Error(`CHAS indicator ${name} has no sourceOf`);
+  return fn;
+};
+
 describe("CHAS fetch capabilities over recorded fixtures (#235)", () => {
   const FIXTURES = fileURLToPath(new URL("../fixtures", import.meta.url));
   const replay = () =>
@@ -62,7 +78,7 @@ describe("CHAS fetch capabilities over recorded fixtures (#235)", () => {
     key: string,
     options: { endYear?: number; explicitYears?: boolean } = {},
   ) => {
-    const [result] = await def(indicator).fetch!(replay(), [key], {
+    const [result] = await fetchOf(indicator)(replay(), [key], {
       apiKey: "test-token",
       ...options,
     });
@@ -166,7 +182,7 @@ describe("CHAS fetch capabilities over recorded fixtures (#235)", () => {
     // the release HUD actually answered with (from the response's own "year" field) so it stays
     // reproducible after HUD publishes a newer one (see chasSourceOf's comment).
     const latest = (await fetchOne("cost_burdened_renter_share", "3:18:141|30")).observations[0];
-    const sourceOf = def("cost_burdened_renter_share").sourceOf!;
+    const sourceOf = sourceOfFn("cost_burdened_renter_share");
     expect(sourceOf("3:18:141|30", latest)?.url).toBe(
       "https://www.huduser.gov/hudapi/public/chas?type=3&stateId=18&entityId=141&year=2018-2022",
     );
@@ -185,7 +201,7 @@ describe("CHAS fetch capabilities over recorded fixtures (#235)", () => {
   it("no data (an entity/level HUD returns nothing for) yields no observation and a note, never a guess", async () => {
     // A stub client returning an empty array, the "no data" shape HUD sometimes answers with a 200.
     const emptyClient = { getJson: async () => ({ value: [], cacheHit: false }) } as never;
-    const [result] = await def("cost_burdened_renter_share").fetch!(emptyClient, ["3:18:141|30"], {
+    const [result] = await fetchOf("cost_burdened_renter_share")(emptyClient, ["3:18:141|30"], {
       apiKey: "test-token",
     });
     expect(result.observations).toHaveLength(0);
