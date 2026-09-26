@@ -6,7 +6,13 @@ import type {
   SeriesResult,
 } from "@federal-mcps/core";
 import { HUD_USER_API_ENDPOINT } from "./describe-source.js";
-import { hudGetJson, pictureCensusFor, pictureEntityOf, pictureUrl, type PictureEntity } from "./hud-api.js";
+import {
+  hudGetJson,
+  pictureCensusFor,
+  pictureEntityOf,
+  pictureUrl,
+  type PictureEntity,
+} from "./hud-api.js";
 
 /**
  * Picture of Subsidized Households (#236, ADR-018 §3): five indicators (subsidized_units,
@@ -103,7 +109,12 @@ interface PictureResponse {
   results: PictureRow[];
 }
 
-type PictureField = "total_units" | "people_total" | "hh_income" | "pct_lt30_median" | "months_waiting";
+type PictureField =
+  | "total_units"
+  | "people_total"
+  | "hh_income"
+  | "pct_lt30_median"
+  | "months_waiting";
 
 /** sub_program values HUD uses for a program's own total row: "NA" (2024) and "N/A" (2025 on). */
 const TOTAL_SUB_PROGRAM = new Set(["na", "n/a"]);
@@ -134,7 +145,10 @@ function toNumber(raw: unknown): number | null {
 }
 
 /** A negative value (e.g. -1, -4, -5) is HUD's sentinel for not-reported/suppressed — never a number. */
-function normalizeField(raw: unknown): { value: number | null; footnotes: { code: string; text: string }[] } {
+function normalizeField(raw: unknown): {
+  value: number | null;
+  footnotes: { code: string; text: string }[];
+} {
   const n = toNumber(raw);
   if (n === null) return { value: null, footnotes: [] };
   if (n < 0) {
@@ -247,7 +261,8 @@ function pictureSourceOf(
   const parsed = parseKey(key);
   if (!parsed) return undefined;
   const year = latest ? Number(latest.year) : undefined;
-  const url = year !== undefined ? pictureUrl(parsed.entity, year) : `${HUD_USER_API_ENDPOINT}/picture`;
+  const url =
+    year !== undefined ? pictureUrl(parsed.entity, year) : `${HUD_USER_API_ENDPOINT}/picture`;
   const label = `Picture of Subsidized Households, ${programLabelOf(parsed.program)}${
     year !== undefined ? `, ${year}` : ""
   }`;
@@ -257,7 +272,11 @@ function pictureSourceOf(
 /** Where a multi-file Picture comparison points (#212). */
 const PICTURE_DATA_HOME = `${HUD_USER_API_ENDPOINT}/picture`;
 
-function pictureIndicator(name: string, field: PictureField, description: string): IndicatorDefinition {
+function pictureIndicator(
+  name: string,
+  field: PictureField,
+  description: string,
+): IndicatorDefinition {
   return {
     name,
     program: PICTURE_PROGRAM,
@@ -279,8 +298,16 @@ function pictureIndicator(name: string, field: PictureField, description: string
 
 /** Picture of Subsidized Households (ADR-018 §3): units, people, income, share below 30% AMI, wait. */
 export const pictureIndicatorDefinitions: IndicatorDefinition[] = [
-  pictureIndicator("subsidized_units", "total_units", "Total subsidized housing units reported to HUD."),
-  pictureIndicator("subsidized_people", "people_total", "Total people housed in subsidized units reported to HUD."),
+  pictureIndicator(
+    "subsidized_units",
+    "total_units",
+    "Total subsidized housing units reported to HUD.",
+  ),
+  pictureIndicator(
+    "subsidized_people",
+    "people_total",
+    "Total people housed in subsidized units reported to HUD.",
+  ),
   pictureIndicator(
     "average_household_income",
     "hh_income",
