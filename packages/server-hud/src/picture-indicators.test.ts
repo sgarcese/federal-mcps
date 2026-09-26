@@ -149,7 +149,6 @@ describe("picture indicators over recorded fixtures, via the mounted HUD tools (
   it("South Bend-Mishawaka CBSA, 2024: average household income for the program summary", async () => {
     const res = await getIndicator().handler({
       place: "South Bend",
-      state: "IN",
       kind: "metro",
       indicator: "average_household_income",
       startYear: 2024,
