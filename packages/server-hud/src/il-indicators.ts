@@ -58,8 +58,18 @@ interface LevelEntry {
 
 /** Income Limits bands (verified against the recorded fixture, #234). */
 const IL_LEVELS: readonly LevelEntry[] = [
-  { code: "30", label: "extremely low income (30% of area median income)", block: "extremely_low", prefix: "il30" },
-  { code: "50", label: "very low income (50% of area median income)", block: "very_low", prefix: "il50" },
+  {
+    code: "30",
+    label: "extremely low income (30% of area median income)",
+    block: "extremely_low",
+    prefix: "il30",
+  },
+  {
+    code: "50",
+    label: "very low income (50% of area median income)",
+    block: "very_low",
+    prefix: "il50",
+  },
   { code: "80", label: "low income (80% of area median income)", block: "low", prefix: "il80" },
 ];
 
@@ -147,7 +157,10 @@ function connecticutPlanningRegionCaveat(place: PlaceCandidate): string | undefi
 }
 
 /** Encode entity + resolved level/household_size into the opaque series key. */
-function buildLevelSizeKey(entity: string, dimensions: { level?: string; household_size?: string }): string {
+function buildLevelSizeKey(
+  entity: string,
+  dimensions: { level?: string; household_size?: string },
+): string {
   return [entity, dimensions.level ?? "", dimensions.household_size ?? ""].join(KEY_SEPARATOR);
 }
 
@@ -236,6 +249,7 @@ async function fetchYears(
     urlOf(entity),
     apiKey,
   );
+  // biome-ignore lint/complexity/useLiteralKeys: tsc's noPropertyAccessFromIndexSignature requires brackets here
   const latestYearField = latestBody?.data?.["year"];
   const latestYear = typeof latestYearField === "string" ? Number(latestYearField) : undefined;
   const out: { year: number; body: IlBody }[] = [];
@@ -260,7 +274,7 @@ async function fetchYears(
 function observationsFrom(
   program: string,
   yearBodies: readonly { year: number | undefined; body: IlBody }[],
-  valueOf: (data: Record<string, unknown>) => number | null,
+  readValue: (data: Record<string, unknown>) => number | null,
 ): { observations: SeriesObservation[]; notes: string[] } {
   const observations: SeriesObservation[] = [];
   const notes: string[] = [];
@@ -276,18 +290,21 @@ function observationsFrom(
     }
     const data = body.data;
     if (!areaNamed) {
+      // biome-ignore lint/complexity/useLiteralKeys: tsc's noPropertyAccessFromIndexSignature requires brackets here
       const areaName = data["area_name"];
       if (typeof areaName === "string" && areaName.length > 0) {
         notes.push(`Income-limit area: ${areaName}.`);
         areaNamed = true;
       }
     }
-    const fiscalYear = typeof data["year"] === "string" ? (data["year"] as string) : String(year);
+    // biome-ignore lint/complexity/useLiteralKeys: tsc's noPropertyAccessFromIndexSignature requires brackets here
+    const yearField = data["year"];
+    const fiscalYear = typeof yearField === "string" ? yearField : String(year);
     observations.push({
       year: fiscalYear,
       period: "A01",
       periodName: `FY${fiscalYear}`,
-      value: valueOf(data),
+      value: readValue(data),
       footnotes: [],
     });
   }
@@ -344,6 +361,7 @@ async function fetchMedianIncome(
     const yearBodies =
       years.length > 0 ? await fetchYears(client, ilUrl, entity, () => options.apiKey, years) : [];
     const { observations, notes } = observationsFrom("IL", yearBodies, (data) => {
+      // biome-ignore lint/complexity/useLiteralKeys: tsc's noPropertyAccessFromIndexSignature requires brackets here
       const median = data["median_income"];
       return typeof median === "number" ? median : null;
     });
@@ -397,7 +415,8 @@ export const ilIndicatorDefinitions: IndicatorDefinition[] = [
   {
     name: "area_median_income",
     program: "IL",
-    description: "HUD's area median income (AMI) for the income-limit area, the basis for every Income Limit and MTSP band.",
+    description:
+      "HUD's area median income (AMI) for the income-limit area, the basis for every Income Limit and MTSP band.",
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: ilAgencyCodeOf,
     fallback: ilCountyFallback,

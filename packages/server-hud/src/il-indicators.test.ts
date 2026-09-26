@@ -60,12 +60,21 @@ describe("ilIndicatorDefinitions (#234)", () => {
 
 describe("hud_get_indicator: income_limit (St. Joseph County, IN)", () => {
   it("defaults to level 80, household_size 4 — FY2026 low income limit for 4 people", async () => {
-    const result = await getIndicator({ place: "St. Joseph County", state: "IN", indicator: "income_limit" });
-    const data = result.data as { dimensions: { level: string; household_size: string }; latest: { value: number } };
+    const result = await getIndicator({
+      place: "St. Joseph County",
+      state: "IN",
+      indicator: "income_limit",
+    });
+    const data = result.data as {
+      dimensions: { level: string; household_size: string };
+      latest: { value: number };
+    };
     expect(data.dimensions).toEqual({ level: "80", household_size: "4" });
     expect(data.latest.value).toBe(70500);
     expect(result.vintage).toBe("2026-A01");
-    expect(result.limitations?.some((l) => l.includes("South Bend-Mishawaka, IN HUD Metro FMR Area"))).toBe(true);
+    expect(
+      result.limitations?.some((l) => l.includes("South Bend-Mishawaka, IN HUD Metro FMR Area")),
+    ).toBe(true);
   });
 
   it("level 50 (very low), household_size 3", async () => {
@@ -81,14 +90,24 @@ describe("hud_get_indicator: income_limit (St. Joseph County, IN)", () => {
   });
 
   it("rejects a level outside the vocabulary, naming what is accepted", async () => {
-    await expect(getIndicator({ place: "St. Joseph County", state: "IN", indicator: "income_limit", level: "60" }))
-      .rejects.toThrow(/income_limit's vocabulary/);
+    await expect(
+      getIndicator({
+        place: "St. Joseph County",
+        state: "IN",
+        indicator: "income_limit",
+        level: "60",
+      }),
+    ).rejects.toThrow(/income_limit's vocabulary/);
   });
 });
 
 describe("hud_get_indicator: area_median_income", () => {
   it("St. Joseph County, IN, FY2026", async () => {
-    const result = await getIndicator({ place: "St. Joseph County", state: "IN", indicator: "area_median_income" });
+    const result = await getIndicator({
+      place: "St. Joseph County",
+      state: "IN",
+      indicator: "area_median_income",
+    });
     const data = result.data as { latest: { value: number } };
     expect(data.latest.value).toBe(88100);
     expect(result.vintage).toBe("2026-A01");
@@ -97,8 +116,15 @@ describe("hud_get_indicator: area_median_income", () => {
 
 describe("hud_get_indicator: mtsp_limit (St. Joseph County, IN)", () => {
   it("defaults to level 60, household_size 4", async () => {
-    const result = await getIndicator({ place: "St. Joseph County", state: "IN", indicator: "mtsp_limit" });
-    const data = result.data as { dimensions: { level: string; household_size: string }; latest: { value: number } };
+    const result = await getIndicator({
+      place: "St. Joseph County",
+      state: "IN",
+      indicator: "mtsp_limit",
+    });
+    const data = result.data as {
+      dimensions: { level: string; household_size: string };
+      latest: { value: number };
+    };
     expect(data.dimensions).toEqual({ level: "60", household_size: "4" });
     expect(data.latest.value).toBe(52860);
   });
@@ -118,12 +144,18 @@ describe("hud_get_indicator: mtsp_limit (St. Joseph County, IN)", () => {
 
 describe("hud_get_indicator: South Bend city falls back to St. Joseph County", () => {
   it("carries a caveat naming the county substitution", async () => {
-    const result = await getIndicator({ place: "South Bend", state: "IN", indicator: "income_limit" });
+    const result = await getIndicator({
+      place: "South Bend",
+      state: "IN",
+      indicator: "income_limit",
+    });
     const data = result.data as { latest: { value: number } };
     expect(data.latest.value).toBe(70500);
     expect(result.place?.name).toBe("St. Joseph County");
     expect(
-      result.limitations?.some((l) => l.includes("HUD publishes Income Limits and MTSP limits per income-limit area")),
+      result.limitations?.some((l) =>
+        l.includes("HUD publishes Income Limits and MTSP limits per income-limit area"),
+      ),
     ).toBe(true);
   });
 });
@@ -167,7 +199,9 @@ describe("hud_get_indicator: floored at FY2017", () => {
       endYear: 2017,
     });
     const data = result.data as { observations: { year: string; value: number }[] };
-    expect(data.observations).toEqual([{ year: "2017", value: 48800 }].map((o) => expect.objectContaining(o)));
+    expect(data.observations).toEqual(
+      [{ year: "2017", value: 48800 }].map((o) => expect.objectContaining(o)),
+    );
     expect(result.limitations?.some((l) => l.includes("begin at fiscal year 2017"))).toBe(true);
   });
 
