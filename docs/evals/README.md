@@ -57,6 +57,17 @@ threshold answered on 5-year with the reason, a subject-table percent, the decen
 (footnoted as a count), a mixed-size comparison aligned on 5-year, an ambiguity stop, and the
 required Census sentence in `census_describe_source`.
 
+## The HUD User sets (`hud-*.jsonl`, M11)
+
+Entries carry `"server": "hud"`; the runner's URL is `HUD_URL` (default
+`https://hud-user.responsive.city/mcp`). One file per family — `hud-fmr.jsonl`, `hud-il.jsonl`,
+`hud-chas.jsonl`, `hud-picture.jsonl` — and `hud-user.jsonl` for the server as a whole: every program
+available in `hud_describe_source`, a two-county comparison, HUD User's required sentence on a
+citation, `hud_get_raw` for Small Area FMR ZIPs and CHAS fields, and a New England county id
+answered as no data (HUD publishes FMR there by town). Where a caveat travels matters to the
+rubric: the CHAS level is in the citation (`mustHaveSentence`), Picture's not-reported sentinel is
+a footnote (`mustFootnote`), an unpublished place is a status (`expectStatus`).
+
 ## Adding a question
 
 Append a line to `boston.jsonl`: `{ id, area, question, tool, args, rubric }`. Supported rubric
@@ -64,7 +75,8 @@ keys: `expectProgram`, `expectStatus`, `mustHaveValue`, `mustNotHaveValue`, `mus
 (regex on caveats), `mustNotFlag`, `mustNotFabricateCity`, `compareAllOk`, `comparePeriodAligned`,
 `listPublished`/`listUnpublished` (`[[indicator, publishedAtLevel], …]`), `describeAllAvailable`,
 and for Census: `mustFootnote` (regex on footnotes), `mustHaveMargin`, `expectReliability`,
-`mustHaveSentence`. Add `"server": "census"` to route an entry to the Census server.
+`mustHaveSentence` (a string anywhere in the envelope). Add `"server": "census"` or
+`"server": "hud"` to route an entry to that server.
 
 ## Guided-run sets (source guides, ADR-015)
 

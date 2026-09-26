@@ -122,15 +122,23 @@ describe("buildCitation", () => {
   it("falls back to the agency code when the agency is unknown", () => {
     const citation = buildCitation(
       {
-        agency: "hud",
-        program: "Fair Market Rents",
+        agency: "xyz",
+        program: "Some Program",
         ids: ["X"],
         url: "https://example.gov",
         citation: "",
       },
       new Date("2026-09-08T00:00:00Z"),
     );
-    expect(citation.startsWith("hud, Fair Market Rents")).toBe(true);
+    expect(citation.startsWith("xyz, Some Program")).toBe(true);
+  });
+
+  it("names HUD in full (#237)", () => {
+    const citation = buildCitation(
+      { agency: "hud", program: "FMR", ids: ["1814199999|2"], url: "https://example.gov" },
+      new Date("2026-09-08T00:00:00Z"),
+    );
+    expect(citation.startsWith("U.S. Department of Housing and Urban Development, FMR")).toBe(true);
   });
 });
 

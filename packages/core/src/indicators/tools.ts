@@ -37,6 +37,11 @@ export interface IndicatorToolsOptions {
   defaultFetch: IndicatorFetch;
   /** The agency API URL the envelope's source block cites. */
   sourceUrl: string;
+  /**
+   * An attribution sentence the agency's terms require on every citation (HUD User, ADR-018 §7),
+   * appended after "Retrieved <date> from <url>". Omitted → citations are unchanged.
+   */
+  citationSuffix?: string;
   /** The program name the list tool's source block carries (cosmetic; default "indicators"). */
   sourceProgram?: string;
   /** The indicator the schema defaults to (default: the first definition). */
@@ -226,6 +231,10 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
   const sourceUrl = options.sourceUrl;
   const SOURCE = { agency, program: options.sourceProgram ?? "indicators", url: sourceUrl };
   const dimensionArguments = dimensionArgumentSchema(agency, options.dimensionDescriptions);
+  const cite = (source: Parameters<typeof buildCitation>[0]) => {
+    const base = buildCitation(source, now());
+    return options.citationSuffix ? `${base} ${options.citationSuffix}` : base;
+  };
 
   /**
    * A national-scope indicator (PPI): no geography to resolve. A mentioned place only names the
@@ -244,10 +253,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
       program: def.program,
       url,
       ids: [seriesId],
-      citation: buildCitation(
-        { agency, program: def.program, ids: [own?.label ?? seriesId], url },
-        now(),
-      ),
+      citation: cite({ agency, program: def.program, ids: [own?.label ?? seriesId], url }),
     };
   };
 
@@ -682,9 +688,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
               url,
               ids,
               citation:
-                ids.length > 0
-                  ? buildCitation({ agency, program: def.program, ids: labels, url }, now())
-                  : "",
+                ids.length > 0 ? cite({ agency, program: def.program, ids: labels, url }) : "",
             };
           })(),
           ...(footnotes.length > 0 ? { footnotes } : {}),

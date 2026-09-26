@@ -8,7 +8,8 @@
  * (ambiguity stops, no-local-CPI, below-threshold, multi-state metros, unknown places).
  *
  *   node docs/evals/run.mjs            # every *.jsonl set, against the live servers
- *   BLS_URL=http://localhost:3000/mcp CENSUS_URL=http://localhost:3002/mcp node docs/evals/run.mjs
+ *   BLS_URL=http://localhost:3000/mcp CENSUS_URL=http://localhost:3002/mcp \
+ *     HUD_URL=http://localhost:3004/mcp node docs/evals/run.mjs
  *
  * Grading is deterministic on the server's structured response (does it carry the right value,
  * citation, caveat, or status). Exits 0 if the pass-rate meets the bar (BAR, default 0.9), else 1.
@@ -19,6 +20,7 @@ import { readdirSync, readFileSync } from "node:fs";
 const URLS = {
   bls: process.env.BLS_URL ?? "https://bls.responsive.city/mcp",
   census: process.env.CENSUS_URL ?? "https://census.responsive.city/mcp",
+  hud: process.env.HUD_URL ?? "https://hud-user.responsive.city/mcp",
 };
 const BAR = Number.parseFloat(process.env.BAR ?? "0.9");
 const log = (line = "") => process.stdout.write(`${line}\n`);

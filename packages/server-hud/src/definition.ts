@@ -10,30 +10,33 @@ import {
   HUD_USER_API_ENDPOINT,
   HUD_USER_REQUIRED_SENTENCE,
 } from "./describe-source.js";
+import { hudGetRawTool } from "./get-raw.js";
 import { hudIndicatorDefinitions } from "./indicators.js";
 import { HUD_SERVER_VERSION } from "./version.js";
 
 /**
- * Instructions passed to the SDK so hosts surface them to the model (ADR-018 §1, §6). This
- * release ships the shell only — resolve a place, read the provenance block, no indicator
- * tools yet — so the guidance is short; later issues extend it per program.
+ * Instructions passed to the SDK so hosts surface them to the model (ADR-018 §1, §6): which tool
+ * answers what, the place levels HUD publishes, and the attribution HUD User's terms require.
  */
 export const HUD_INSTRUCTIONS = `
-This server gives HUD User Data API statistics organized by place: Fair Market Rents, Income
-Limits and MTSP limits, Comprehensive Housing Affordability Strategy (CHAS) cost-burden
-estimates, and the Picture of Subsidized Households. This release ships the shell only —
-\`hud_resolve_place\` and \`hud_describe_source\` — every program is planned, not yet queryable;
-\`hud_describe_source\` names each program's status. Resolve the place first with
-\`hud_resolve_place\`, and once an indicator tool lands, cite the result's provenance block
-(source, vintage, retrieval date and a ready-to-paste citation) rather than a bare number.
+This server gives HUD User Data API statistics organized by place: Fair Market Rents
+(\`fair_market_rent\`, by bedrooms), Income Limits and MTSP limits (\`income_limit\`,
+\`area_median_income\`, \`mtsp_limit\`), CHAS housing cost burden, and the Picture of Subsidized
+Households. Resolve the place with \`hud_resolve_place\`, then call \`hud_get_indicator\` (one
+value with its fiscal year or release, caveats and citation) or \`hud_compare_places\`;
+\`hud_list_indicators\` names every indicator and its picker arguments. FMR and Income Limits are
+set per county or HUD metro area: a city answers with its county's area, said in the caveats. New
+England publishes those by town, which this server does not resolve yet. \`hud_get_raw\` returns
+one HUD User endpoint's JSON unchanged (fmr, il, mtspil, chas, picture) for fields the indicators
+do not surface. Cite the result's provenance block rather than a bare number.
 ${HUD_USER_REQUIRED_SENTENCE} All tools are read-only.
 `.trim();
 
 export interface HudDefinitionDeps {
   catalog: GeographyCatalog;
   /**
-   * The core HTTP client for the HUD User API, rate-limited per minute (ADR-018 §5). Optional
-   * until the indicator tools land (#232+); the shell's tools make no upstream calls.
+   * The core HTTP client for the HUD User API, rate-limited per minute (ADR-018 §5). Without it
+   * only `hud_resolve_place` mounts (no upstream calls possible).
    */
   httpClient?: HttpClient;
   /** The HUD User bearer token (`HUD_USER_TOKEN`), read lazily; never logged or recorded. */
@@ -44,8 +47,9 @@ export interface HudDefinitionDeps {
 
 /**
  * The indicator tools (`hud_get_indicator`, `hud_compare_places`, `hud_list_indicators`) over
- * every HUD User family present (ADR-018 §1, §3). Mounted once at least one family exists and a
- * client is configured; each definition brings its own fetch, so the default fetch refuses.
+ * every HUD User family (ADR-018 §1, §3), plus `hud_get_raw` (#237). Mounted once a client is
+ * configured; each definition brings its own fetch, so the default fetch refuses. Every citation
+ * ends with the sentence HUD User's terms require.
  */
 function hudIndicatorToolsFor(deps: HudDefinitionDeps, catalog: () => GeographyCatalog) {
   const definitions = hudIndicatorDefinitions;
@@ -58,7 +62,7 @@ function hudIndicatorToolsFor(deps: HudDefinitionDeps, catalog: () => GeographyC
     kind: "county",
     indicator: first.name,
   };
-  return indicatorTools({
+  const tools = indicatorTools({
     agency: "hud",
     definitions,
     catalog,
@@ -69,6 +73,7 @@ function hudIndicatorToolsFor(deps: HudDefinitionDeps, catalog: () => GeographyC
       throw new Error("every HUD User indicator supplies its own fetch capability");
     },
     sourceUrl: HUD_USER_API_ENDPOINT,
+    citationSuffix: HUD_USER_REQUIRED_SENTENCE,
     sourceProgram: "HUD User",
     defaultIndicator: first.name,
     descriptions: {
@@ -89,9 +94,17 @@ function hudIndicatorToolsFor(deps: HudDefinitionDeps, catalog: () => GeographyC
       listIndicators: [{ title: "Everything HUD User reports", input: {} }],
     },
   });
+  return [
+    ...tools,
+    hudGetRawTool({
+      httpClient: () => httpClient,
+      token: deps.token ?? (() => undefined),
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  ];
 }
 
-/** The HUD User server's definition: core's resolver mounted as `hud_resolve_place`. */
+/** The HUD User server's definition: the shared resolver, the indicator tools and `hud_get_raw`. */
 export function buildHudDefinition(deps: HudDefinitionDeps): ServerDefinition {
   const catalog = () => deps.catalog;
   return {

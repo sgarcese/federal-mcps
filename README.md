@@ -5,10 +5,12 @@ policy staff U.S. federal statistics **by place**. Ask about Denver, Denver Coun
 Denver metro or Colorado and get numbers that carry their source, vintage and caveats —
 never a figure without a citation, never a fabricated one.
 
-**Status:** live. The Bureau of Labor Statistics server is deployed and answering
-([`bls.responsive.city/mcp`](https://bls.responsive.city/mcp)), on a shared
-geography core ([`geo.responsive.city/mcp`](https://geo.responsive.city/mcp)).
-Apache-2.0. Census and CDC PLACES servers follow on the same core.
+**Status:** live. Three agency servers are deployed and answering on a shared geography
+core ([`geo.responsive.city/mcp`](https://geo.responsive.city/mcp)): the Bureau of Labor
+Statistics ([`bls.responsive.city/mcp`](https://bls.responsive.city/mcp)), the Census Bureau
+([`census.responsive.city/mcp`](https://census.responsive.city/mcp)) and the HUD User API
+([`hud-user.responsive.city/mcp`](https://hud-user.responsive.city/mcp)). Portal-hosted sources
+(CDC PLACES, HUD Open Data) ship as source guides in [`skills/`](skills). Apache-2.0.
 
 ## Why this exists
 
@@ -51,6 +53,7 @@ connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 ```
 https://bls.responsive.city/mcp        # BLS: labor, wages, prices
 https://census.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
+https://hud-user.responsive.city/mcp   # HUD User: Fair Market Rents, Income Limits, CHAS, subsidized housing
 https://cdc.responsive.city/mcp        # CDC open data portal (OpenContext); pair with skills/cdc-places
 ```
 
@@ -90,6 +93,19 @@ meaning. `census_search_tables` finds table ids by topic and `census_get_raw` ru
 query. This product uses the Census Bureau Data API but is not endorsed or certified by the Census
 Bureau.
 
+## What it answers today (HUD User)
+
+`server-hud` (M11, ADR-018) serves the HUD User Data API by place: Fair Market Rents by bedroom
+count (`fair_market_rent`, Small Area FMRs by ZIP through `hud_get_raw`), Income Limits
+(`income_limit` by level and household size, `area_median_income`) and MTSP limits
+(`mtsp_limit`), CHAS cost burden for renters and owners (share and count, over 30% or over 50%
+of income), and the Picture of Subsidized Households (units, households, vouchers and waits by
+program). FMR and Income Limits are set per county or HUD metro area, so a city answers with its
+county's area, flagged; New England towns are not resolved yet (#241). Suppressed Picture cells
+come back as null with HUD's code, never zero. `hud_get_raw` returns any of the five endpoints'
+JSON unchanged. This product uses the HUD User Data API but is not endorsed or certified by HUD
+User.
+
 Call `bls_describe_source` to see coverage and cadence, or `bls_list_indicators` for the
 vocabulary and which programs publish at a given place's level.
 
@@ -108,7 +124,7 @@ full design and [`docs/adr/`](docs/adr) for the decisions behind it.
 
 - [`packages/core`](packages/core) — shared runtime: geography, HTTP client, envelope, server shell.
 - [`packages/geography-build`](packages/geography-build) — builds the SQLite geography catalog (a release artifact).
-- `packages/server-<agency>` — one deployable MCP server per agency (`server-bls`, `server-geo`, …).
+- `packages/server-<agency>` — one deployable MCP server per agency (`server-bls`, `server-census`, `server-hud`, `server-geo`).
 - [`terraform/`](terraform) — infrastructure (deployed locally, ADR-007).
 - [`docs/`](docs) — architecture, ADRs, spikes; [`docs/README.md`](docs/README.md) is the index.
 

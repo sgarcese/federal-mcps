@@ -12,6 +12,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { buildHudDefinition } from "./definition.js";
+import { HUD_USER_REQUIRED_SENTENCE } from "./describe-source.js";
 import { fmrIndicatorDefinitions } from "./fmr-indicators.js";
 
 /** A resolved-place stand-in: only the fields the indicator's own functions read. */
@@ -269,7 +270,9 @@ describe("hud_get_indicator: fair_market_rent through the mounted tool", () => {
     });
     const data = res.data as { latest: { value: number } | null };
     expect(data.latest?.value).toBe(1276);
+    expect(res.source.citation).toMatch(/^U\.S\. Department of Housing and Urban Development, FMR/);
     expect(res.source.citation).toMatch(/huduser\.gov/);
+    expect(res.source.citation.endsWith(HUD_USER_REQUIRED_SENTENCE)).toBe(true);
   });
 
   it("St. Joseph County, bedrooms 3: value 1545", async () => {
