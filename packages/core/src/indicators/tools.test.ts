@@ -243,7 +243,9 @@ describe("citationSuffix (#237): an attribution the agency's terms require rides
 
   it("appends the suffix to a get_indicator citation", async () => {
     const res = await run("demo_get_indicator", { place: "Denver", kind: "county" });
-    expect(res?.source.citation).toMatch(/Retrieved 2025-02-01 from \S+ Uses the Demo API; not endorsed by Demo\.$/);
+    expect(res?.source.citation).toMatch(
+      /Retrieved 2025-02-01 from \S+ Uses the Demo API; not endorsed by Demo\.$/,
+    );
   });
 
   it("appends the suffix to a compare_places citation", async () => {
@@ -252,7 +254,11 @@ describe("citationSuffix (#237): an attribution the agency's terms require rides
   });
 
   it("leaves citations unchanged without a suffix", async () => {
-    const res = await go("demo_get_indicator", { place: "Denver", kind: "county", indicator: "county_thing" });
+    const res = await go("demo_get_indicator", {
+      place: "Denver",
+      kind: "county",
+      indicator: "county_thing",
+    });
     expect(res.source.citation).toMatch(/from https:\/\/example\.invalid\/api$/);
   });
 });

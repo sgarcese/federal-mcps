@@ -53,6 +53,7 @@ const AGENCY_DISPLAY_NAMES: Readonly<Record<string, string>> = Object.freeze({
   bls: "U.S. Bureau of Labor Statistics",
   census: "U.S. Census Bureau",
   cdc: "Centers for Disease Control and Prevention",
+  hud: "U.S. Department of Housing and Urban Development",
 });
 
 /** Looks up an agency's display name for citations, falling back to the code itself. */
