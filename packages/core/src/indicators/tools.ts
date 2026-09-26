@@ -80,18 +80,22 @@ function dimensionArgumentSchema(
   return out as Record<DimensionArgument, z.ZodOptional<z.ZodString>>;
 }
 
-/** Parsed tool input may carry the four picker arguments, each possibly undefined. */
+/** Parsed tool input may carry any of the picker arguments, each possibly undefined. */
 type DimensionArgs = Partial<Record<DimensionArgument, string | undefined>>;
 
-/** Pull the picker arguments out of parsed tool input. */
+/**
+ * Pull the picker arguments out of parsed tool input — every argument in `DIMENSION_ARGUMENTS`,
+ * never a hand-kept list: a hand-kept copy that missed `frequency` (#213) and HUD's `bedrooms`,
+ * `level`, `household_size` and `program` (ADR-018 §3) silently replaced the caller's value with
+ * the indicator's default (found by #236).
+ */
 function pickDimensionArgs(p: DimensionArgs): DimensionSelection {
-  return {
-    ...(p.item === undefined ? {} : { item: p.item }),
-    ...(p.industry === undefined ? {} : { industry: p.industry }),
-    ...(p.ownership === undefined ? {} : { ownership: p.ownership }),
-    ...(p.occupation === undefined ? {} : { occupation: p.occupation }),
-    ...(p.product === undefined ? {} : { product: p.product }),
-  };
+  const out: DimensionSelection = {};
+  for (const arg of DIMENSION_ARGUMENTS) {
+    const value = p[arg];
+    if (value !== undefined) out[arg] = value;
+  }
+  return out;
 }
 
 /** Resolve an indicator's dimensions from tool input, or throw the actionable rejection. */

@@ -192,27 +192,27 @@ describe("every dimension argument reaches the indicator (#213, ADR-018 §3)", (
       listIndicators: [{ title: "z", input: {} }],
     },
   });
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+  type AnyArgs = any;
   const get = all.find((t) => t.name === "demo_get_indicator");
   const compare = all.find((t) => t.name === "demo_compare_places");
 
   it.each([...DIMENSION_ARGUMENTS])("get_indicator passes %s through", async (arg) => {
-    // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
     const res = await get?.handler(
-      { place: "Denver", kind: "county", indicator: `thing_by_${arg}`, [arg]: "picked" } as any,
-      {} as any,
+      { place: "Denver", kind: "county", indicator: `thing_by_${arg}`, [arg]: "picked" } as AnyArgs,
+      {} as AnyArgs,
     );
     expect(res?.source.ids).toEqual(["C:08031/picked"]);
   });
 
   it.each([...DIMENSION_ARGUMENTS])("compare_places passes %s through", async (arg) => {
-    // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
     const res = await compare?.handler(
       {
         indicator: `thing_by_${arg}`,
         places: ["Denver County", "Fairfield County"],
         [arg]: "picked",
-      } as any,
-      {} as any,
+      } as AnyArgs,
+      {} as AnyArgs,
     );
     expect(res?.source.ids).toContain("C:08031/picked");
     expect((res?.source.ids ?? []).every((id: string) => id.endsWith("/picked"))).toBe(true);
