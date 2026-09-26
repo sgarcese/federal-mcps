@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GeographyCatalog } from "../geography/catalog.js";
 import type { HttpClient } from "../http/index.js";
 import { buildFixtureCatalog } from "../geography/__fixtures__/build-fixture.js";
-import type { IndicatorDefinition, IndicatorFetch } from "./registry.js";
+import { DIMENSION_ARGUMENTS, type IndicatorDefinition, type IndicatorFetch } from "./registry.js";
 import { indicatorTools } from "./tools.js";
 
 /**
@@ -150,5 +150,71 @@ describe("indicatorTools (agency-neutral, #171)", () => {
     expect(data.indicators.map((i) => i.indicator)).toEqual(["county_thing", "national_thing"]);
     expect(data.indicators[1]?.scope).toBe("national");
     expect(data.indicators[0]?.dimensions).toHaveLength(1);
+  });
+});
+
+describe("every dimension argument reaches the indicator (#213, ADR-018 §3)", () => {
+  // One indicator per dimension argument: its series key echoes the chosen code, so a dropped
+  // argument shows up as the default instead of the caller's value.
+  const perArgument = DIMENSION_ARGUMENTS.map(
+    (arg): IndicatorDefinition => ({
+      name: `thing_by_${arg}`,
+      program: "DEMO",
+      description: `a thing keyed by ${arg}`,
+      defaultSeasonallyAdjusted: false,
+      agencyCodeOf: (place) => (place.kind.sumlevel === "050" ? `C:${place.geoid}` : undefined),
+      buildSeriesId: (code, { dimensions }) => `${code}/${dimensions[arg] ?? "missing"}`,
+      dimensions: [
+        {
+          argument: arg,
+          description: arg,
+          default: "d",
+          vocabulary: [
+            { code: "d", label: "default" },
+            { code: "picked", label: "picked" },
+          ],
+        },
+      ],
+    }),
+  );
+  const all = indicatorTools({
+    agency: "demo",
+    definitions: perArgument,
+    catalog: () => catalog,
+    httpClient: () => noClient,
+    now: () => new Date("2025-02-01T00:00:00Z"),
+    defaultFetch: echoFetch,
+    sourceUrl: "https://example.invalid/api",
+    descriptions: { getIndicator: "get", comparePlaces: "compare", listIndicators: "list" },
+    examples: {
+      getIndicator: [{ title: "x", input: { place: "Denver", kind: "county" } }],
+      comparePlaces: [{ title: "y", input: { places: ["Denver County", "Fairfield County"] } }],
+      listIndicators: [{ title: "z", input: {} }],
+    },
+  });
+  const get = all.find((t) => t.name === "demo_get_indicator");
+  const compare = all.find((t) => t.name === "demo_compare_places");
+
+  it.each([...DIMENSION_ARGUMENTS])("get_indicator passes %s through", async (arg) => {
+    // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+    const res = await get?.handler(
+      { place: "Denver", kind: "county", indicator: `thing_by_${arg}`, [arg]: "picked" } as any,
+      {} as any,
+    );
+    expect(res?.source.ids).toEqual(["C:08031/picked"]);
+  });
+
+  it.each([...DIMENSION_ARGUMENTS])("compare_places passes %s through", async (arg) => {
+    // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+    const res = await compare?.handler(
+      {
+        indicator: `thing_by_${arg}`,
+        places: ["Denver County", "Fairfield County"],
+        [arg]: "picked",
+      } as any,
+      {} as any,
+    );
+    expect(res?.source.ids).toContain("C:08031/picked");
+    expect((res?.source.ids ?? []).every((id: string) => id.endsWith("/picked"))).toBe(true);
   });
 });
