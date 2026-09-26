@@ -161,11 +161,14 @@ describe("CHAS fetch capabilities over recorded fixtures (#235)", () => {
     expect(result.notes?.join(" ")).toMatch(/CHAS 2017-2021/);
   });
 
-  it("sourceOf cites the exact URL read, including the release for an explicit year", async () => {
+  it("sourceOf names the release explicitly, even for the default (latest) call", async () => {
+    // The fetch itself reads the bare URL (no year param, fixture 62fbafae…); the citation names
+    // the release HUD actually answered with (from the response's own "year" field) so it stays
+    // reproducible after HUD publishes a newer one (see chasSourceOf's comment).
     const latest = (await fetchOne("cost_burdened_renter_share", "3:18:141|30")).observations[0];
     const sourceOf = def("cost_burdened_renter_share").sourceOf!;
     expect(sourceOf("3:18:141|30", latest)?.url).toBe(
-      "https://www.huduser.gov/hudapi/public/chas?type=3&stateId=18&entityId=141",
+      "https://www.huduser.gov/hudapi/public/chas?type=3&stateId=18&entityId=141&year=2018-2022",
     );
 
     const explicit = (
