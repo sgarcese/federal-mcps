@@ -5,6 +5,12 @@ milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitme
 
 ## Unreleased — M11 HUD User server
 
+Fixed
+- Every picker argument now reaches the indicator: the core copied only `item`, `industry`,
+  `ownership`, `occupation` and `product` from a tool call, so QCEW's `frequency` (M12, #213) and the
+  HUD arguments silently fell back to their defaults — an `annual` QCEW request answered quarterly.
+  Found while building the Picture indicators (#236).
+
 Added
 - **HUD User API seam** (#232, ADR-018 §4): entity ids built from a resolved place (FMR/IL county
   `SSCCC99999`; CHAS state/county/place; Picture state/county/city/tract/CBSA with USPS state codes from
