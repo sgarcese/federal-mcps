@@ -393,3 +393,33 @@ describe("assemble: BEA combination codes (#257)", () => {
     ]);
   });
 });
+
+describe("assemble: county → CBSA from OMB's delineation (#271)", () => {
+  const CO = [
+    "USPS\tGEOID\tANSICODE\tNAME\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "IN\t18141\t1\tSt. Joseph County\t1\t1\t0\t0",
+  ].join("\n");
+  const CBSA = [
+    "GEOID\tNAME\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "43780\tSouth Bend-Mishawaka, IN-MI Metro Area\t1\t1\t0\t0",
+  ].join("\n");
+  const rows = assemble({
+    gazetteers: { "050": CO, "310": CBSA },
+    cbsaDelineation: [
+      ["CBSA Code", "FIPS State Code", "FIPS County Code"],
+      ["43780", "18", "141"],
+      ["99999", "18", "999"], // neither entity in this catalog: no dangling edge
+    ],
+  });
+  it("adds the county's CBSA as a parent, only between entities the catalog holds", () => {
+    const toCbsa = rows.containment.filter((c) => c.parentUcgid.startsWith("310"));
+    expect(toCbsa).toEqual([
+      {
+        childUcgid: ucgidOf("050", "18141"),
+        parentUcgid: ucgidOf("310", "43780"),
+        share: 1,
+        relation: "nests",
+      },
+    ]);
+  });
+});
