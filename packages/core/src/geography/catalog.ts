@@ -54,7 +54,13 @@ export class GeographyCatalog {
    */
   searchNames(
     query: string,
-    filters: { stateFips?: string; sumlevels?: string[]; limit?: number } = {},
+    filters: {
+      stateFips?: string;
+      sumlevels?: string[];
+      /** Summary levels to leave out (the resolver searches county subdivisions apart, #241). */
+      excludeSumlevels?: string[];
+      limit?: number;
+    } = {},
   ): EntityRecord[] {
     const clauses: string[] = ["name_fts MATCH @q"];
     const sumlevelParams: Record<string, string> = {};
@@ -64,6 +70,13 @@ export class GeographyCatalog {
       sumlevelClause = ` AND e.sumlevel IN (${names.join(",")})`;
       filters.sumlevels.forEach((s, i) => {
         sumlevelParams[`sl${i}`] = s;
+      });
+    }
+    if (filters.excludeSumlevels && filters.excludeSumlevels.length > 0) {
+      const names = filters.excludeSumlevels.map((_, i) => `@xl${i}`);
+      sumlevelClause += ` AND e.sumlevel NOT IN (${names.join(",")})`;
+      filters.excludeSumlevels.forEach((s, i) => {
+        sumlevelParams[`xl${i}`] = s;
       });
     }
     if (filters.stateFips) clauses.push("e.state_fips = @state");

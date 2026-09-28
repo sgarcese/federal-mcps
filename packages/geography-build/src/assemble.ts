@@ -97,7 +97,10 @@ export function assemble(sources: Sources): CatalogRows {
 
   const agencyCodes: AgencyCodeRow[] = [];
   if (sources.cousubs2020) extend(agencyCodes, recodedCousubGeoids(entities, sources.cousubs2020));
-  if (sources.lausArea) extend(agencyCodes, parseLausArea(sources.lausArea));
+  if (sources.lausArea) {
+    extend(agencyCodes, parseLausArea(sources.lausArea));
+    extend(agencyCodes, lausTownCodes(entities, sources.lausArea));
+  }
   if (sources.cesArea) extend(agencyCodes, parseCesArea(sources.cesArea));
   if (sources.oewsArea) extend(agencyCodes, parseOewsArea(sources.oewsArea));
   if (sources.cpiArea) extend(agencyCodes, parseCpiArea(sources.cpiArea));
@@ -323,6 +326,39 @@ function recodedCousubGeoids(
       codeVintage: 2020,
       note: "the 2020 GEOID, changed since by a Census recode (e.g. Connecticut's 2022 planning regions)",
     });
+  }
+  return out;
+}
+
+/**
+ * LAUS county-subdivision codes (#241): `CS` + state FIPS + the 5-digit town code, no county
+ * (`CS2509175000000` Brookline town, MA; `CS4216920000000` Cranberry township, PA). A town code
+ * is unique within its state, so the code maps to every county part of that town; a code with no
+ * matching county subdivision maps to nothing.
+ */
+function lausTownCodes(entities: readonly EntityRow[], laArea: string): AgencyCodeRow[] {
+  const towns = new Map<string, EntityRow[]>();
+  for (const e of entities) {
+    if (e.sumlevel !== "060") continue;
+    const key = `${e.geoid.slice(0, 2)}${e.geoid.slice(5)}`;
+    const list = towns.get(key);
+    if (list) list.push(e);
+    else towns.set(key, [e]);
+  }
+  const out: AgencyCodeRow[] = [];
+  for (const line of laArea.split(/\r?\n/)) {
+    const code = line.split("\t")[1]?.trim();
+    if (!code || !code.startsWith("CS") || code.length !== 15) continue;
+    for (const town of towns.get(code.slice(2, 9)) ?? []) {
+      out.push({
+        ucgid: town.ucgid,
+        agency: "bls",
+        program: "LAUS",
+        code,
+        codeVintage: null,
+        note: null,
+      });
+    }
   }
   return out;
 }

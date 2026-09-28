@@ -269,11 +269,37 @@ describe("county subdivisions (#241)", () => {
   });
 
   it("resolves a township that is no place, with or without a kind", () => {
-    const plain = resolvePlace(catalog, "Cranberry, PA");
-    expect(plain.status).toBe("ok");
-    expect(plain.candidates[0]).toMatchObject({ geoid: "4201916920", kind: { sumlevel: "060" } });
-    const hinted = resolvePlace(catalog, "Cranberry", { kind: "township", state: "PA" });
-    expect(hinted.candidates[0]?.geoid).toBe("4201916920");
+    const r = resolvePlace(catalog, "Smallburg", { kind: "town" });
+    expect(r.status).toBe("ok");
+    const t = resolvePlace(catalog, "Boston", { kind: "township", state: "NY" });
+    expect(t.candidates[0]).toMatchObject({ geoid: "3602907454", kind: { sumlevel: "060" } });
+  });
+
+  it("same-name townships in one state, none dominant, ask for the county — never a silent pick ('Cranberry, PA')", () => {
+    const r = resolvePlace(catalog, "Cranberry, PA");
+    expect(r.status).toBe("ambiguous");
+    expect(r.explanation).toMatch(/Butler County/);
+    expect(r.explanation).toMatch(/Venango County/);
+    expect(r.candidates[0]?.geoid).toBe("4201916920"); // the more populous first
+  });
+
+  it("the ambiguity is resolvable: by county in the query, or by GEOID", () => {
+    const byCounty = resolvePlace(catalog, "Cranberry, Butler County, PA");
+    expect(byCounty.status).toBe("ok");
+    expect(byCounty.candidates[0]?.geoid).toBe("4201916920");
+    const byGeoid = resolvePlace(catalog, "4212116944");
+    expect(byGeoid.status).toBe("ok");
+    expect(byGeoid.candidates.map((c) => c.geoid)).toEqual(["4212116944"]);
+    expect(resolvePlace(catalog, "Cranberry, PA").explanation).toMatch(
+      /Butler County, PA.*4201916920/,
+    );
+  });
+
+  it("townships never crowd the cities out of the search ('Springfield' with 55 same-name townships)", () => {
+    const r = resolvePlace(catalog, "Springfield");
+    expect(r.candidates.map((c) => c.geoid)).toEqual(
+      expect.arrayContaining(["2970000", "1772000"]),
+    );
   });
 
   it("'town' and 'county subdivision' kinds reach county subdivisions", () => {

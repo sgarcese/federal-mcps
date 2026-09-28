@@ -187,6 +187,31 @@ export function buildFixtureCatalog(): string {
       population: 3_000,
       populationVintage: "2024",
     }),
+    // A second Cranberry township in Pennsylvania, comparable in size: a same-state rival (#241).
+    ent("42121", "050", "Venango County", {
+      stateFips: "42",
+      lsad: "06",
+      aland: 1_750_000_000,
+      population: 50_000,
+      populationVintage: "2024",
+    }),
+    ent("4212116944", "060", "Cranberry township", {
+      stateFips: "42",
+      funcstat: "A",
+      aland: 150_000_000,
+      population: 6_273,
+      populationVintage: "2024",
+    }),
+    // Enough small Springfield townships to fill one search page on their own (#241).
+    ...Array.from({ length: 55 }, (_, i) =>
+      ent(`390${String(i).padStart(2, "0")}74000`.slice(0, 10), "060", "Springfield township", {
+        stateFips: "39",
+        funcstat: "A",
+        aland: 90_000_000,
+        population: 900 + i,
+        populationVintage: "2024",
+      }),
+    ),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
@@ -214,6 +239,12 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("4201916920"), alias: "Cranberry", source: "lsad-stripped" },
     { ucgid: uc("3602907454"), alias: "Boston", source: "lsad-stripped" },
     { ucgid: uc("2907770009"), alias: "Springfield", source: "lsad-stripped" },
+    { ucgid: uc("4212116944"), alias: "Cranberry", source: "lsad-stripped" },
+    ...entities
+      .filter(
+        (e) => e.sumlevel === "060" && e.name === "Springfield township" && e.stateFips === "39",
+      )
+      .map((e) => ({ ucgid: e.ucgid, alias: "Springfield", source: "lsad-stripped" })),
     { ucgid: uc("0960120"), alias: "Plainfield", source: "lsad-stripped" },
     { ucgid: uc("0915059980"), alias: "Plainfield", source: "lsad-stripped" },
   ];
@@ -230,6 +261,8 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("2507000"), parentUcgid: uc("2502507000"), share: 1 }, // the twin edge
     { childUcgid: uc("4201916920"), parentUcgid: uc("42019"), share: 1 },
     { childUcgid: uc("4201916920"), parentUcgid: uc("42"), share: 1 },
+    { childUcgid: uc("4212116944"), parentUcgid: uc("42121"), share: 1 },
+    { childUcgid: uc("4212116944"), parentUcgid: uc("42"), share: 1 },
     { childUcgid: uc("0915059980"), parentUcgid: uc("09"), share: 1 },
     { childUcgid: uc("0960120"), parentUcgid: uc("09"), share: 1 },
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
