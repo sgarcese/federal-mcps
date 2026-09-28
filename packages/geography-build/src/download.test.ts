@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   fetchCached,
   fetchCachedWithCensusKey,
+  requireBeaApiKey,
   requireCensusApiKey,
   SOURCE_URLS,
 } from "./download.js";
@@ -122,5 +123,18 @@ describe("county subdivision sources (#241)", () => {
       "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E&for=county%20subdivision:*&in=state:09",
     ]);
     expect(urls.join(" ")).not.toContain("key=");
+  });
+});
+
+describe("BEA sources (#257)", () => {
+  it("names BEA's GeoFips list without a key", () => {
+    expect(SOURCE_URLS.beaGeoFips).toBe(
+      "https://apps.bea.gov/api/data?method=GetParameterValuesFiltered&datasetname=Regional&TargetParameter=GeoFips&TableName=CAINC1&LineCode=1&ResultFormat=JSON",
+    );
+  });
+
+  it("requireBeaApiKey throws loudly, naming the variable, when unset", () => {
+    expect(() => requireBeaApiKey({})).toThrow(/BEA_API_KEY/);
+    expect(requireBeaApiKey({ BEA_API_KEY: "k" })).toBe("k");
   });
 });
