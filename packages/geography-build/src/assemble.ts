@@ -1,6 +1,7 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { CENSUS_DIVISIONS, CENSUS_REGIONS, COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
 import { parseAcsPopulation } from "./parse/acs-population.js";
+import { parseBeaCombinations } from "./parse/bea-geofips.js";
 import {
   parseCesArea,
   parseCpiArea,
@@ -37,6 +38,8 @@ export interface Sources {
    * recoded town (Connecticut's 2022 planning regions) carries its 2020 GEOID as a code.
    */
   cousubs2020?: string;
+  /** BEA's Regional GeoFips list (JSON), for its combination areas (#257, ADR-019 §6). */
+  beaGeoFips?: string;
   /** BLS LABSTAT area tables, when present. */
   lausArea?: string;
   cesArea?: string;
@@ -97,6 +100,7 @@ export function assemble(sources: Sources): CatalogRows {
 
   const agencyCodes: AgencyCodeRow[] = [];
   if (sources.cousubs2020) extend(agencyCodes, recodedCousubGeoids(entities, sources.cousubs2020));
+  if (sources.beaGeoFips) extend(agencyCodes, parseBeaCombinations(sources.beaGeoFips, entities));
   if (sources.lausArea) {
     extend(agencyCodes, parseLausArea(sources.lausArea));
     extend(agencyCodes, lausTownCodes(entities, sources.lausArea));

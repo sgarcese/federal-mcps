@@ -106,6 +106,13 @@ only if none is present under `packages/geography-build/dist/`; delete that dire
 set `GEO_CATALOG_ARTIFACT` to a specific `.sqlite`, to refresh it. The BLS server needs
 the `BLS_API_KEY`; the geography server needs no key at serve time — its data is local.
 
+Building the catalog also needs `BEA_API_KEY` (ADR-019 §6, #257): the build reads BEA's
+Regional area list for its combination areas (Virginia, Maui + Kalawao). Register free at
+<https://apps.bea.gov/API/signup/> and activate the key from BEA's email (it can take several
+minutes to work). `npm run` does not read `.env`; load it into the same command:
+`set -a && . ./.env && set +a && npm run geography:build`. The weekly `geography-build` workflow
+reads both keys from the repository secrets `CENSUS_API_KEY` and `BEA_API_KEY`.
+
 Building the catalog itself now needs `CENSUS_API_KEY` in the environment (ADR-014 §6,
 #172): `geography:build` fetches each summary level's ACS 5-year total population from
 the Census Data API, which requires a key on every data query, and fails loudly — before

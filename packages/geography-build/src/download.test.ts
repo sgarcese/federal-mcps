@@ -1,9 +1,10 @@
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   fetchCached,
+  fetchCachedWithBeaKey,
   fetchCachedWithCensusKey,
   requireBeaApiKey,
   requireCensusApiKey,
@@ -136,5 +137,34 @@ describe("BEA sources (#257)", () => {
   it("requireBeaApiKey throws loudly, naming the variable, when unset", () => {
     expect(() => requireBeaApiKey({})).toThrow(/BEA_API_KEY/);
     expect(requireBeaApiKey({ BEA_API_KEY: "k" })).toBe("k");
+  });
+});
+
+describe("fetchCachedWithBeaKey (#257)", () => {
+  it("sends UserID at request time, and caches the body with BEA's echo of the key stripped", async () => {
+    tmp = mkdtempSync(join(tmpdir(), "geo-dl-"));
+    let requestedUrl = "";
+    const fetchImpl = (async (input: string | URL) => {
+      requestedUrl = String(input);
+      return new Response(
+        JSON.stringify({
+          BEAAPI: {
+            Request: { RequestParam: [{ ParameterName: "USERID", ParameterValue: "SECRETKEY" }] },
+            Results: { ParamValue: [{ Key: "51901", Desc: "Albemarle + Charlottesville, VA*" }] },
+          },
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch;
+    const buf = await fetchCachedWithBeaKey(SOURCE_URLS.beaGeoFips, "SECRETKEY", {
+      cacheDir: tmp,
+      fetchImpl,
+    });
+    expect(requestedUrl).toBe(`${SOURCE_URLS.beaGeoFips}&UserID=SECRETKEY`);
+    expect(buf.toString("utf-8")).not.toContain("SECRETKEY");
+    for (const f of readdirSync(tmp)) {
+      expect(f).not.toContain("SECRETKEY");
+      expect(readFileSync(join(tmp, f), "utf-8")).not.toContain("SECRETKEY");
+    }
   });
 });

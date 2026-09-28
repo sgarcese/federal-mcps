@@ -10,7 +10,9 @@ import { mergeAcsTables } from "../parse/acs-population.js";
 import { parseGazetteer } from "../parse/gazetteer.js";
 import {
   fetchCached,
+  fetchCachedWithBeaKey,
   fetchCachedWithCensusKey,
+  requireBeaApiKey,
   requireCensusApiKey,
   SOURCE_URLS,
 } from "../download.js";
@@ -30,6 +32,7 @@ async function main(): Promise<void> {
   // Fail loudly before downloading anything (#172, ADR-014 §6): a build with no key would
   // otherwise silently ship a catalog with no population column.
   const censusApiKey = requireCensusApiKey();
+  const beaApiKey = requireBeaApiKey();
 
   const acsPopulation: Record<string, string> = {};
   const sources: Sources = { gazetteers: {}, acsPopulation };
@@ -78,6 +81,12 @@ async function main(): Promise<void> {
     const rowCount = Math.max(0, (JSON.parse(text) as unknown[]).length - 1);
     process.stderr.write(`  acsPopulation ${sumlevel}: ${rowCount} rows\n`);
   }
+
+  // BEA's combination areas (Virginia, Maui + Kalawao) onto their components (#257, ADR-019 §6).
+  process.stderr.write(`beaGeoFips: ${SOURCE_URLS.beaGeoFips}\n`);
+  sources.beaGeoFips = (await fetchCachedWithBeaKey(SOURCE_URLS.beaGeoFips, beaApiKey)).toString(
+    "utf-8",
+  );
 
   // County-subdivision population comes one state per call (#241; a national query is 400).
   const stateFips = parseGazetteer(sources.gazetteers["040"] ?? "", "040").entities.map(

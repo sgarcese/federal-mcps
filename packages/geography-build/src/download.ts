@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { stripBeaRequest } from "./parse/bea-geofips.js";
 
 /**
  * Source URLs for the catalog build. Census 2025 gazetteer national files and the BLS
@@ -71,6 +72,13 @@ export const SOURCE_URLS = {
    * ACS 5-year population for county subdivisions, one URL per state (#241): the API answers
    * a national `in=state:*` query for this level with HTTP 400 (verified 2026-09-28).
    */
+  /**
+   * BEA's Regional GeoFips list (#257, ADR-019 §6), read for its combination areas (Virginia,
+   * Maui + Kalawao). The key (`UserID`) is appended at request time only, and BEA echoes it in the
+   * body — `fetchCachedWithBeaKey` strips that before the body is cached.
+   */
+  beaGeoFips:
+    "https://apps.bea.gov/api/data?method=GetParameterValuesFiltered&datasetname=Regional&TargetParameter=GeoFips&TableName=CAINC1&LineCode=1&ResultFormat=JSON",
   acsCousubPopulation: (stateFips: readonly string[], vintage = "2024"): string[] =>
     stateFips.map(
       (state) =>
@@ -100,6 +108,19 @@ export function requireCensusApiKey(env: NodeJS.ProcessEnv = process.env): strin
   return key;
 }
 
+/** Reads `BEA_API_KEY` or throws loudly, naming the variable and the sign-up URL (#257). */
+export function requireBeaApiKey(env: NodeJS.ProcessEnv = process.env): string {
+  const key = env["BEA_API_KEY"];
+  if (!key) {
+    throw new Error(
+      "BEA_API_KEY is not set. geography:build reads BEA's Regional area list for its combination " +
+        "areas (ADR-019 §6, #257). Register a free key at https://apps.bea.gov/API/signup/, " +
+        "activate it from BEA's email, and set BEA_API_KEY (e.g. `set -a && . ./.env && set +a`).",
+    );
+  }
+  return key;
+}
+
 const DEFAULT_CACHE_DIR = join(import.meta.dirname, "..", "downloads");
 
 /**
@@ -118,6 +139,8 @@ export async function fetchCached(
     userAgent?: string;
     fetchImpl?: typeof fetch;
     fetchUrl?: string;
+    /** Rewrites a fresh download before it is cached (e.g. stripping an echoed key). */
+    transform?: (buf: Buffer) => Buffer;
   } = {},
 ): Promise<Buffer> {
   const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR;
@@ -140,7 +163,8 @@ export async function fetchCached(
     // Deliberately reports `url` (the key-less form), never `options.fetchUrl`.
     throw new Error(`download failed ${res.status} for ${url}`);
   }
-  const buf = Buffer.from(await res.arrayBuffer());
+  const raw = Buffer.from(await res.arrayBuffer());
+  const buf = options.transform ? options.transform(raw) : raw;
   await mkdir(dirname(cachePath), { recursive: true });
   await writeFile(cachePath, buf);
   return buf;
@@ -165,4 +189,22 @@ export async function fetchCachedWithCensusKey(
 function basename(url: string): string {
   const clean = url.split("?")[0] ?? url;
   return clean.slice(clean.lastIndexOf("/") + 1) || "download";
+}
+
+/**
+ * Fetches a BEA API URL with `&UserID=<key>` appended at request time only (#257): the cache file
+ * is named from the key-less URL, and BEA's echo of the key (`BEAAPI.Request`) is stripped from
+ * the body before it is written, so the key never lands in the download cache or an error.
+ */
+export async function fetchCachedWithBeaKey(
+  url: string,
+  key: string,
+  options: { cacheDir?: string; userAgent?: string; fetchImpl?: typeof fetch } = {},
+): Promise<Buffer> {
+  const separator = url.includes("?") ? "&" : "?";
+  return fetchCached(url, {
+    ...options,
+    fetchUrl: `${url}${separator}UserID=${key}`,
+    transform: (buf) => Buffer.from(stripBeaRequest(buf.toString("utf-8")), "utf-8"),
+  });
 }

@@ -370,3 +370,26 @@ describe("assemble: county subdivisions (#241)", () => {
     ).toBe(false);
   });
 });
+
+describe("assemble: BEA combination codes (#257)", () => {
+  const CO = [
+    "USPS\tGEOID\tANSICODE\tNAME\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "VA\t51003\t1\tAlbemarle County\t1\t1\t0\t0",
+    "VA\t51540\t1\tCharlottesville city\t1\t1\t0\t0",
+  ].join("\n");
+  const rows = assemble({
+    gazetteers: { "050": CO },
+    beaGeoFips: JSON.stringify({
+      BEAAPI: {
+        Results: { ParamValue: [{ Key: "51901", Desc: "Albemarle + Charlottesville, VA*" }] },
+      },
+    }),
+  });
+  it("attaches the combination code to each component", () => {
+    const codes = rows.agencyCodes.filter((a) => a.agency === "bea");
+    expect(codes.map((a) => [a.ucgid, a.code]).sort()).toEqual([
+      [ucgidOf("050", "51003"), "51901"],
+      [ucgidOf("050", "51540"), "51901"],
+    ]);
+  });
+});

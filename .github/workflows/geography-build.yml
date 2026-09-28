@@ -25,6 +25,11 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build the catalog from live sources
+        # The build fetches ACS population (Census key, #172) and BEA's combination areas (BEA
+        # key, #257); both are repository secrets, used at build time only.
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          BEA_API_KEY: ${{ secrets.BEA_API_KEY }}
         run: npm run geography:build
       - name: Row-count sanity
         run: |
