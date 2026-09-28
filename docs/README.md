@@ -32,6 +32,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-018-hud-user-server.md](adr/ADR-018-hud-user-server.md) — the HUD User API as a
   dedicated server (`hud_*`, `hud-user.responsive.city`): FMR, Income Limits/MTSP, CHAS, Picture of
   Subsidized Households; a per-minute limiter in core; amends ADR-015 (HUD is two sources).
+- [adr/ADR-019-bea-regional-server.md](adr/ADR-019-bea-regional-server.md) — BEA Regional as a
+  dedicated server (`bea_*`, `bea.responsive.city`): personal income, GDP and real GDP by industry,
+  regional price parities; a core body sanitizer (the echoed key) and 200-body errors; sentinels never
+  numbers; Virginia/Maui combination codes; Connecticut from 2024.
 - [adr/ADR-017-raw-tool-rendering-and-bls-completions.md](adr/ADR-017-raw-tool-rendering-and-bls-completions.md)
   — raw tools render a compact table within a 24,000-character budget (indicator tools keep
   4,000), enforced by a `raw-rendering` contract rule; the M12 BLS completion order and QCEW
