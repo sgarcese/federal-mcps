@@ -15,7 +15,7 @@ import BetterSqlite3 from "better-sqlite3";
  * A small geography catalog for the server-bea suite (M14): the places the recorded fixtures cover
  * (scripts/record-*-fixtures.mts) and the geography cases ADR-019 §6 names — a county and its city
  * and metro (St. Joseph, IN), a second county for comparisons (Cook, IL), Denver at three levels, a
- * suppressed county (Loving, TX), a Virginia combination (Albemarle + Charlottesville, `51901`,
+ * suppressed county (Loving, TX), a micropolitan county (Marshall, IN), a Virginia combination (Albemarle + Charlottesville, `51901`,
  * carried as `bea`/`GEOFIPS` codes as #257 builds them), and a Connecticut planning region.
  */
 export function buildFixtureCatalog(): string {
@@ -56,6 +56,11 @@ export function buildFixtureCatalog(): string {
       aland: 2_448_000_000,
       ...pop(5_182_617),
     }),
+    ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN", { lsad: "M1", ...pop(9_260_000) }),
+    // A micropolitan county (Marshall County, IN in the Plymouth micro area): BEA's metro tables
+    // do not cover micro areas, so regional price parities answer with the state's nonmetro portion.
+    ent("18099", "050", "Marshall County", { stateFips: "18", lsad: "06", ...pop(46_000) }),
+    ent("38500", "310", "Plymouth, IN", { lsad: "M2", ...pop(46_000) }),
     ent("48", "040", "Texas", { stateFips: "48", ...pop(30_500_000) }),
     ent("48301", "050", "Loving County", {
       stateFips: "48",
@@ -104,6 +109,7 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("1871000"), alias: "South Bend", source: "lsad-stripped" },
     { ucgid: uc("43780"), alias: "South Bend", source: "hand" },
     { ucgid: uc("17031"), alias: "Cook", source: "lsad-stripped" },
+    { ucgid: uc("18099"), alias: "Marshall", source: "lsad-stripped" },
     { ucgid: uc("48301"), alias: "Loving", source: "lsad-stripped" },
     { ucgid: uc("51003"), alias: "Albemarle", source: "lsad-stripped" },
     { ucgid: uc("51540", "050"), alias: "Charlottesville", source: "lsad-stripped" },
@@ -126,6 +132,9 @@ export function buildFixtureCatalog(): string {
     nests(uc("1871000"), uc("18141")),
     nests(uc("18141"), uc("43780")),
     nests(uc("17031"), uc("17")),
+    nests(uc("17031"), uc("16980")),
+    nests(uc("18099"), uc("18")),
+    nests(uc("18099"), uc("38500")),
     nests(uc("48301"), uc("48")),
     nests(uc("51003"), uc("51")),
     nests(uc("51540", "050"), uc("51")),

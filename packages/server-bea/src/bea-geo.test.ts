@@ -77,6 +77,16 @@ describe("fallbacks", () => {
     ).toBeUndefined();
   });
 
+  it("a micropolitan county has no metro fallback (BEA's metro tables cover metropolitan areas only)", () => {
+    expect(
+      beaMetroFallback(catalog, one("Marshall County", "county", "IN"), "regional price parities"),
+    ).toBeUndefined();
+    expect(
+      beaMetroFallback(catalog, one("Cook County", "county", "IL"), "regional price parities")
+        ?.code,
+    ).toBe("16980");
+  });
+
   it("no fallback for a county (county statistics) or a state", () => {
     expect(
       beaCountyFallback(catalog, one("St. Joseph County", "county", "IN"), "x"),

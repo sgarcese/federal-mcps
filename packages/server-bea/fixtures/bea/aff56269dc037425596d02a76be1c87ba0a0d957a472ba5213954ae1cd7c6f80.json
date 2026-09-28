@@ -1,0 +1,18 @@
+{
+  "url": "https://apps.bea.gov/api/data?method=GetData&datasetname=Regional&TableName=SARPP&LineCode=1&GeoFips=18000&ResultFormat=JSON",
+  "status": 200,
+  "headers": {
+    "accept-ranges": "bytes",
+    "connection": "keep-alive",
+    "content-length": "1827",
+    "content-type": "application/json",
+    "date": "Mon, 28 Sep 2026 21:55:11 GMT",
+    "strict-transport-security": "max-age=2592000, max-age=31536000; includeSubDomains; preload",
+    "x-azure-ref": "20260928T215511Z-15fff5bbb5bn6jrshC1BN1s3pg0000001dr0000000005mh7",
+    "x-cache": "CONFIG_NOCACHE",
+    "x-frame-options": "SAMEORIGIN",
+    "x-powered-by": "ASP.NET"
+  },
+  "body": "{\"BEAAPI\":{\"Results\":{\"Statistic\":\"RPPs: All items\",\"UnitOfMeasure\":\"Index\",\"PublicTable\":\"SARPP Regional price parities by state\",\"UTCProductionTime\":\"2026-09-28T21:55:11.950\",\"NoteRef\":\" \",\"Dimensions\":[{\"Name\":\"Code\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoFips\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoName\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"TimePeriod\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"DataValue\",\"DataType\":\"numeric\",\"IsValue\":\"1\"},{\"Name\":\"CL_UNIT\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"UNIT_MULT\",\"DataType\":\"numeric\",\"IsValue\":\"0\"}],\"Data\":[{\"Code\":\"SARPP-1\",\"GeoFips\":\"18000\",\"GeoName\":\"Indiana\",\"TimePeriod\":\"2020\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"91.763\"},{\"Code\":\"SARPP-1\",\"GeoFips\":\"18000\",\"GeoName\":\"Indiana\",\"TimePeriod\":\"2021\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"92.579\"},{\"Code\":\"SARPP-1\",\"GeoFips\":\"18000\",\"GeoName\":\"Indiana\",\"TimePeriod\":\"2022\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"91.875\"},{\"Code\":\"SARPP-1\",\"GeoFips\":\"18000\",\"GeoName\":\"Indiana\",\"TimePeriod\":\"2023\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"92.097\"},{\"Code\":\"SARPP-1\",\"GeoFips\":\"18000\",\"GeoName\":\"Indiana\",\"TimePeriod\":\"2024\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"93.329\"}],\"Notes\":[{\"NoteRef\":\" \",\"NoteText\":\"Last updated: February 19, 2026-- new statistics for 2024; revised statistics for 2008-2023.\"}]}}}",
+  "recordedAt": "2026-09-28T21:55:12.001Z"
+}
