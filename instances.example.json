@@ -6,7 +6,8 @@
     "it is absent (so CI \u2014 which uses -backend=false + a mocked provider \u2014 runs on placeholders).",
     "domain.aliases.<service> lists extra hostnames served by the same API (ADR-016 \u00a72); the short <service>.responsive.city names live here while the *-mcp names stay the primary domain.",
     "cdcDomainName / cdcService: the OpenContext portal Lambda for data.cdc.gov (ADR-016 \u00a75), serving the CDC PLACES source guide.",
-    "hudDomainName / hudService: the HUD User server (M11, ADR-018); its primary hostname is already the short hud-user.responsive.city name."
+    "hudDomainName / hudService: the HUD User server (M11, ADR-018); its primary hostname is already the short hud-user.responsive.city name.",
+    "beaDomainName / beaService: the BEA Regional server (M14, ADR-019), at the short bea.responsive.city name."
   ],
   "instances": [
     {
@@ -27,7 +28,8 @@
           "census": ["census.responsive.city"]
         },
         "cdcDomainName": "cdc.responsive.city",
-        "hudDomainName": "hud-user.responsive.city"
+        "hudDomainName": "hud-user.responsive.city",
+        "beaDomainName": "bea.responsive.city"
       },
       "terraform": {
         "stateBucket": "rc-tfstate-123456789012",
@@ -38,7 +40,8 @@
         "geoService": "rc-geo-mcp",
         "censusService": "rc-census-mcp",
         "cdcService": "rc-cdc-mcp",
-        "hudService": "rc-huduser-mcp"
+        "hudService": "rc-huduser-mcp",
+        "beaService": "rc-bea-mcp"
       }
     }
   ]

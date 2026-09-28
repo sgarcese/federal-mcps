@@ -24,10 +24,10 @@ const REQUIRED_STRINGS = ["name", "description", "account", "region", "environme
 /**
  * @typedef {{ name: string; description: string; account: string; region: string;
  *   environmentTag: string;
- *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; cdcDomainName: string; hudDomainName: string; hostedZoneId: string; hostedZoneName: string;
- *     aliases?: { bls?: string[]; geo?: string[]; census?: string[]; cdc?: string[]; hud?: string[] } };
+ *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; cdcDomainName: string; hudDomainName: string; beaDomainName: string; hostedZoneId: string; hostedZoneName: string;
+ *     aliases?: { bls?: string[]; geo?: string[]; census?: string[]; cdc?: string[]; hud?: string[]; bea?: string[] } };
  *   terraform: { stateBucket: string; stateKey: string };
- *   naming: { blsService: string; geoService: string; censusService: string; cdcService: string; hudService: string } }} InstanceRecord
+ *   naming: { blsService: string; geoService: string; censusService: string; cdcService: string; hudService: string; beaService: string } }} InstanceRecord
  */
 
 /**
@@ -55,6 +55,7 @@ function assertRecord(value, index) {
     "censusDomainName",
     "cdcDomainName",
     "hudDomainName",
+    "beaDomainName",
     "hostedZoneId",
     "hostedZoneName",
   ]) {
@@ -69,7 +70,7 @@ function assertRecord(value, index) {
       throw new Error(`instances.json: entry ${index} domain.aliases must be an object`);
     }
     for (const [service, list] of Object.entries(aliases)) {
-      if (!["bls", "geo", "census", "cdc", "hud"].includes(service)) {
+      if (!["bls", "geo", "census", "cdc", "hud", "bea"].includes(service)) {
         throw new Error(
           `instances.json: entry ${index} domain.aliases has unknown service "${service}"`,
         );
@@ -94,7 +95,14 @@ function assertRecord(value, index) {
   if (typeof naming !== "object" || naming === null) {
     throw new Error(`instances.json: entry ${index} is missing object field "naming"`);
   }
-  for (const key of ["blsService", "geoService", "censusService", "cdcService", "hudService"]) {
+  for (const key of [
+    "blsService",
+    "geoService",
+    "censusService",
+    "cdcService",
+    "hudService",
+    "beaService",
+  ]) {
     if (typeof (/** @type {Record<string, unknown>} */ (naming)[key]) !== "string") {
       throw new Error(`instances.json: entry ${index} naming is missing string field "${key}"`);
     }

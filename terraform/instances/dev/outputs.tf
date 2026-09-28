@@ -58,6 +58,20 @@ output "hud_alias_urls" {
   value       = module.hud_server.alias_urls
 }
 
+output "bea_invoke_url" {
+  value = module.bea_server.invoke_url
+}
+
+output "bea_custom_domain_url" {
+  description = "Must equal https://<instances.json → dev → domain.beaDomainName>/mcp."
+  value       = module.bea_server.custom_domain_url
+}
+
+output "bea_alias_urls" {
+  description = "Alias hostnames for the bea server at /mcp (instances.json → domain.aliases.bea; ADR-016 §2)."
+  value       = module.bea_server.alias_urls
+}
+
 output "cdc_invoke_url" {
   value = module.cdc_portal.invoke_url
 }

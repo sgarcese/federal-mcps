@@ -112,6 +112,20 @@ variable "hud_lambda_zip_path" {
   default     = "../../../packages/server-hud/dist/lambda.zip"
 }
 
+# ADR-019 §3: the BEA Data API key, required for every data query, supplied as
+# TF_VAR_bea_api_key from .env by scripts/deploy.sh. Never a default, never in git.
+variable "bea_api_key" {
+  description = "BEA Data API key, set on the Lambda as BEA_API_KEY."
+  type        = string
+  sensitive   = true
+}
+
+variable "bea_lambda_zip_path" {
+  description = "Path to the BEA Lambda's esbuild bundle zip (catalog baked in)."
+  type        = string
+  default     = "../../../packages/server-bea/dist/lambda.zip"
+}
+
 module "bls_server" {
   source = "../../modules/bls-server"
 
@@ -168,6 +182,21 @@ module "hud_server" {
   # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
   alias_domain_names = try(local.instance.domain.aliases.hud, [])
   hud_user_token     = var.hud_user_token
+  environment_tag    = local.instance.environmentTag
+}
+
+# The BEA Regional server (M14, ADR-019): its own Lambda, API and domain, sharing the fleet
+# record; the catalog is baked in like the other agency servers, and the BEA key rides as
+# BEA_API_KEY.
+module "bea_server" {
+  source = "../../modules/bea-server"
+
+  service_name       = local.instance.naming.beaService
+  lambda_zip_path    = var.bea_lambda_zip_path
+  domain_name        = local.instance.domain.beaDomainName
+  hosted_zone_id     = local.instance.domain.hostedZoneId
+  alias_domain_names = try(local.instance.domain.aliases.bea, [])
+  bea_api_key        = var.bea_api_key
   environment_tag    = local.instance.environmentTag
 }
 

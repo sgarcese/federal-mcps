@@ -39,6 +39,13 @@ mock_provider "aws" {
     }
   }
 
+  override_data {
+    target = module.bea_server.data.aws_iam_role.exec
+    values = {
+      arn = "arn:aws:iam::123456789012:role/rc-bea-mcp-dev-role"
+    }
+  }
+
   # aws_acm_certificate.domain_validation_options's element count is only
   # known to the real provider (one per SAN); aws_route53_record.cert_validation
   # for_each's over it, which fails `plan` under the mocked provider without this.
@@ -108,6 +115,15 @@ mock_provider "aws" {
     }
   }
 
+  override_resource {
+    target          = module.bea_server.aws_acm_certificate.bea
+    override_during = plan
+    values = {
+      arn                       = "arn:aws:acm:us-east-1:123456789012:certificate/test-cert-id-bea"
+      domain_validation_options = [{ domain_name = "bea.responsive.city", resource_record_name = "_acme-challenge.bea.responsive.city.", resource_record_type = "CNAME", resource_record_value = "example.acm-validations.aws." }]
+    }
+  }
+
   # ADR-016 §2 aliases: one certificate per alias hostname from the fleet record.
   override_resource {
     target          = module.bls_server.aws_acm_certificate.alias["bls.responsive.city"]
@@ -144,10 +160,12 @@ variables {
   geo_lambda_zip_path         = "../../modules/geo-server/tests/placeholder.zip"
   census_lambda_zip_path      = "../../modules/census-server/tests/placeholder.zip"
   hud_lambda_zip_path         = "../../modules/hud-server/tests/placeholder.zip"
+  bea_lambda_zip_path         = "../../modules/bea-server/tests/placeholder.zip"
   opencontext_lambda_zip_path = "../../modules/opencontext-portal/tests/placeholder.zip"
   bls_api_key                 = "test-key-value"
   census_api_key              = "test-census-key"
   hud_user_token              = "test-hud-token"
+  bea_api_key                 = "test-bea-key"
 }
 
 run "fleet_record_drives_the_root" {
@@ -219,6 +237,20 @@ run "hud_server_follows_the_rc_naming_pattern_and_records_its_domain" {
   assert {
     condition     = output.hud_custom_domain_url == "https://hud-user.responsive.city/mcp"
     error_message = "hud_custom_domain_url must be https://<domain.hudDomainName>/mcp"
+  }
+}
+
+run "bea_server_follows_the_rc_naming_pattern_and_records_its_domain" {
+  command = plan
+
+  assert {
+    condition     = module.bea_server.function_name == "rc-bea-mcp-dev"
+    error_message = "the BEA function must be named rc-bea-mcp-dev"
+  }
+
+  assert {
+    condition     = output.bea_custom_domain_url == "https://bea.responsive.city/mcp"
+    error_message = "bea_custom_domain_url must be https://<domain.beaDomainName>/mcp"
   }
 }
 
