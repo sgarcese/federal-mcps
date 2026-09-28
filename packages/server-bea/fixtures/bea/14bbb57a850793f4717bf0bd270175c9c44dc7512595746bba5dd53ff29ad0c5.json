@@ -1,0 +1,18 @@
+{
+  "url": "https://apps.bea.gov/api/data?method=GetData&datasetname=Regional&TableName=MARPP&LineCode=1&GeoFips=19740&Year=2024,2023&ResultFormat=JSON",
+  "status": 200,
+  "headers": {
+    "accept-ranges": "bytes",
+    "connection": "keep-alive",
+    "content-length": "1765",
+    "content-type": "application/json",
+    "date": "Mon, 28 Sep 2026 21:42:52 GMT",
+    "strict-transport-security": "max-age=2592000, max-age=31536000; includeSubDomains; preload",
+    "x-azure-ref": "20260928T214252Z-1758885f9d7vtjdxhC1IAD396n0000000mt0000000000vw2",
+    "x-cache": "CONFIG_NOCACHE",
+    "x-frame-options": "SAMEORIGIN",
+    "x-powered-by": "ASP.NET"
+  },
+  "body": "{\"BEAAPI\":{\"Results\":{\"Statistic\":\"RPPs: All items\",\"UnitOfMeasure\":\"Index\",\"PublicTable\":\"MARPP Regional price parities by MSA\",\"UTCProductionTime\":\"2026-09-28T21:42:52.457\",\"NoteRef\":\" \",\"Dimensions\":[{\"Name\":\"Code\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoFips\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoName\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"TimePeriod\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"DataValue\",\"DataType\":\"numeric\",\"IsValue\":\"1\"},{\"Name\":\"CL_UNIT\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"UNIT_MULT\",\"DataType\":\"numeric\",\"IsValue\":\"0\"}],\"Data\":[{\"Code\":\"MARPP-1\",\"GeoFips\":\"19740\",\"GeoName\":\"Denver-Aurora-Centennial, CO (Metropolitan Statistical Area)\",\"TimePeriod\":\"2023\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"105.768\"},{\"Code\":\"MARPP-1\",\"GeoFips\":\"19740\",\"GeoName\":\"Denver-Aurora-Centennial, CO (Metropolitan Statistical Area)\",\"TimePeriod\":\"2024\",\"CL_UNIT\":\"Index\",\"UNIT_MULT\":\"0\",\"DataValue\":\"105.782\"}],\"Notes\":[{\"NoteRef\":\" \",\"NoteText\":\"Metropolitan Areas are defined (geographically delineated) by the Office of Management and Budget (OMB) bulletin no. 23-01 issued July 21, 2023.\"},{\"NoteRef\":\" \",\"NoteText\":\"Last updated: February 19, 2026-- new statistics for 2024; revised statistics for 2008-2023.\"}]}}}",
+  "recordedAt": "2026-09-28T21:42:52.584Z"
+}
