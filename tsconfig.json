@@ -18,6 +18,9 @@
       "path": "packages/server-hud"
     },
     {
+      "path": "packages/server-bea"
+    },
+    {
       "path": "packages/geography-build"
     },
     {

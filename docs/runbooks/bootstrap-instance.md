@@ -16,6 +16,8 @@ bucket already exists, and `rc-deploy` can create everything a server needs
   register free at <https://api.census.gov/data/key_signup.html>).
 - `./.env` with `HUD_USER_TOKEN=<your token>`. Register free at <https://www.huduser.gov>
   and generate a token under your account's API access settings.
+- `./.env` with `BEA_API_KEY=<your key>`. Register free at <https://apps.bea.gov/API/signup/>
+  and activate the key from BEA's email (it can take several minutes to start working).
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
@@ -32,10 +34,11 @@ AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev geo
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev census
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev cdc
 AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev hud
+AWS_PROFILE=<admin> scripts/admin-create-exec-role.sh dev bea
 ```
 
-That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role`, `rc-census-mcp-dev-role` and
-`rc-huduser-mcp-dev-role` (each trust Lambda, inline logs + X-Ray) and grants `rc-deploy`
+That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role`, `rc-census-mcp-dev-role`,
+`rc-cdc-mcp-dev-role`, `rc-huduser-mcp-dev-role` and `rc-bea-mcp-dev-role` (each trust Lambda, inline logs + X-Ray) and grants `rc-deploy`
 `iam:PassRole` on each. Idempotent; re-running only updates the policies. The server
 argument defaults to `bls` if omitted.
 
@@ -58,25 +61,38 @@ the fourth `admin-create-exec-role.sh` run above.
 - **Verification.** `deploy.sh` lists the portal's tools and calls `socrata__get_dataset` for the
   PLACES county dataset (`swc5-untb`), failing the deploy unless "PLACES" comes back.
 
-## The HUD User server (M11 shell, ADR-018)
+## The HUD User server (M11, ADR-018)
 
-The instance also deploys `rc-huduser-mcp-<env>` at `hud-user.responsive.city/mcp` — the
-HUD User Data API server (Fair Market Rents, Income Limits, CHAS, Picture of Subsidized
-Households). This release ships the shell only: `hud_resolve_place` and
-`hud_describe_source`; every program lists `status: "planned"` until its indicator tool
-lands in a later issue. Its fleet-record fields are `domain.hudDomainName` and
-`naming.hudService` — add both to your `instances.json` (see the example). Its execution
-role is the fifth `admin-create-exec-role.sh` run above (`dev hud`).
+The instance deploys `rc-huduser-mcp-<env>` at `hud-user.responsive.city/mcp` — the HUD User
+Data API server (Fair Market Rents, Income Limits and MTSP limits, CHAS, Picture of Subsidized
+Households). Its fleet-record fields are `domain.hudDomainName` and `naming.hudService`; its
+execution role is the `dev hud` run above.
 
 - **Token.** `HUD_USER_TOKEN` in `.env` becomes `TF_VAR_hud_user_token` and is set on the
-  Lambda as the `HUD_USER_TOKEN` environment variable (ADR-006 §3); it is never logged.
-  No indicator tool calls the API yet, so nothing fails without one today — but a
-  misconfigured deployment (`lambda.ts`) warns loudly at cold start regardless.
-- **Rate limit.** The HUD User API allows 60 queries a minute per token
-  (`HUD_USER_PER_MINUTE` in `src/index.ts`); a shared core rate limiter is being added in
-  parallel (#231) and is not yet wired in.
-- **Verification.** `deploy.sh` lists `hud_describe_source` and calls `hud_resolve_place`
-  with `{"query":"Denver"}`, the same catalog-backed check as the other agency servers.
+  Lambda as the `HUD_USER_TOKEN` environment variable (ADR-006 §3); it is sent as a bearer header
+  and never logged. `lambda.ts` warns at cold start if it is missing.
+- **Rate limit.** 60 queries a minute per token, enforced by the core client's per-minute
+  limiter (`HUD_USER_PER_MINUTE` in `src/index.ts`, #231).
+- **Verification.** `deploy.sh` lists `hud_describe_source` and calls `hud_resolve_place` with
+  `{"query":"Denver"}`.
+
+## The BEA Regional server (M14, ADR-019)
+
+The instance deploys `rc-bea-mcp-<env>` at `bea.responsive.city/mcp` — BEA Regional economic
+accounts by place (personal income, GDP and real GDP by industry, regional price parities). Its
+fleet-record fields are `domain.beaDomainName` and `naming.beaService` — **add both to your
+`instances.json`** (see the example) before the first deploy that includes it; its execution role
+is the `dev bea` run above.
+
+- **Key.** `BEA_API_KEY` in `.env` becomes `TF_VAR_bea_api_key` and is set on the Lambda as the
+  `BEA_API_KEY` environment variable (ADR-006 §3). It rides as the `UserID` query parameter at
+  fetch time only; BEA echoes it in every response body, and the client's `sanitize` hook strips
+  that before anything is cached, recorded or returned (#256). `lambda.ts` warns at cold start if
+  it is missing.
+- **Limits.** BEA allows 100 requests, 100 MB and 30 errors a minute per key; the core limiter
+  holds the server to 90 a minute and never retries a bad-parameter error (ADR-019 §4).
+- **Verification.** `deploy.sh` lists `bea_describe_source` and calls `bea_resolve_place` with
+  `{"query":"Denver"}`.
 
 ## Short hostnames (aliases, ADR-016 §2)
 
