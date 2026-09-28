@@ -83,7 +83,8 @@ export function beaCountyFallback(
 
 /**
  * A county, city or town answers with its metro area (for metro-only statistics such as regional
- * price parities): the containing CBSA, reached through the county when the place is a city or town.
+ * price parities): the containing metropolitan CBSA — never a micropolitan one, which BEA's metro
+ * tables do not cover — reached through the county when the place is a city or town.
  */
 export function beaMetroFallback(
   catalog: GeographyCatalog,
@@ -98,7 +99,11 @@ export function beaMetroFallback(
       ? undefined
       : direct.filter((e) => e.kind.sumlevel === "050").sort((a, b) => b.share - a.share)[0];
   const edges = county ? getContainment(catalog, ucgidOf("050", county.geoid)) : direct;
-  const metro = edges.filter((e) => e.kind.sumlevel === "310").sort((a, b) => b.share - a.share)[0];
+  // CBSAs include micropolitan areas (LSAD M2); BEA's metro tables cover metropolitan ones only.
+  const metro = edges
+    .filter((e) => e.kind.sumlevel === "310")
+    .filter((e) => catalog.getEntity(ucgidOf("310", e.geoid))?.lsad !== "M2")
+    .sort((a, b) => b.share - a.share)[0];
   if (!metro) return undefined;
   return {
     geoid: metro.geoid,

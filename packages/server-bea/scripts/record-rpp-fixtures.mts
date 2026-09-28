@@ -29,9 +29,10 @@ const queries: BeaQuery[] = [
   { table: "PARPP", lineCode: 1, geoFips: "48999" },
   // Two metros in one call — compare_places batching.
   { table: "MARPP", lineCode: 1, geoFips: ["19740", "43780"] },
-  // Cook County, IL has no metro in this catalog: Illinois's nonmetropolitan portion, latest —
-  // the PARPP half of the St. Joseph + Cook compare.
-  { table: "PARPP", lineCode: 1, geoFips: "17999" },
+  // St. Joseph County (South Bend metro) + Cook County (Chicago metro) compared: one MARPP call.
+  { table: "MARPP", lineCode: 1, geoFips: ["43780", "16980"] },
+  // Marshall County, IN is micropolitan: Indiana's nonmetropolitan portion, latest.
+  { table: "PARPP", lineCode: 1, geoFips: "18999" },
 ];
 
 await recordBeaFixtures(queries);

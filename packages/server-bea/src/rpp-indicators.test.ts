@@ -120,14 +120,18 @@ describe("fallback: a place with no RPP series answers with its metro, or its st
       code: "portion:48999",
       caveat: expect.stringContaining("Texas's nonmetropolitan portion"),
     });
-    expect(fb?.caveat).toContain("not resolved to a metropolitan area");
+    expect(fb?.caveat).toContain("outside any metropolitan area");
   });
 
-  it("Cook County has no metro in this catalog either: falls back to Illinois's nonmetropolitan portion", () => {
-    const cook = resolveOne("Cook", "county", "IL");
-    const fb = def.fallback?.(catalog, cook);
-    expect(fb?.code).toBe("portion:17999");
-    expect(fb?.geoid).toBe("17999");
+  it("Cook County answers with the Chicago metro", () => {
+    const fb = def.fallback?.(catalog, resolveOne("Cook", "county", "IL"));
+    expect(fb?.code).toBe("metro:16980");
+  });
+
+  it("a micropolitan county (Marshall, IN) answers with Indiana's nonmetropolitan portion, never its micro area", () => {
+    const fb = def.fallback?.(catalog, resolveOne("Marshall", "county", "IN"));
+    expect(fb?.code).toBe("portion:18999");
+    expect(fb?.caveat).toContain("micropolitan areas included");
   });
 
   it("has no fallback for a metro or state (already direct)", () => {
@@ -217,13 +221,13 @@ describe("rppFetch over recorded fixtures (verified live 2026-09-28)", () => {
   });
 
   it("a mixed batch (MARPP + PARPP) makes one call per table, not one per place", async () => {
-    const results = await fetchRpp(replay(), ["MARPP|1|43780", "PARPP|1|17999"], {
+    const results = await fetchRpp(replay(), ["MARPP|1|43780", "PARPP|1|18999"], {
       apiKey: "test-key",
     });
     expect(results.find((r) => r.seriesId === "MARPP|1|43780")?.observations[0]?.value).toBe(
       92.858,
     );
-    expect(results.find((r) => r.seriesId === "PARPP|1|17999")?.observations[0]).toBeDefined();
+    expect(results.find((r) => r.seriesId === "PARPP|1|18999")?.observations[0]).toBeDefined();
   });
 
   it("MARPP notes carry BEA's OMB delineation text and the release vintage verbatim", async () => {
@@ -413,7 +417,7 @@ describe("bea_get_indicator and bea_compare_places: regional_price_parity throug
     expect(southBend?.status).toBe("ok");
   });
 
-  it("compare_places: St. Joseph County, IN vs Cook County, IL — honest about what each falls back to", async () => {
+  it("compare_places: St. Joseph County, IN vs Cook County, IL — each answers with its metro, in one call", async () => {
     const res = await comparePlacesTool().handler({
       indicator: "regional_price_parity",
       places: ["St. Joseph County, IN", "Cook County, IL"],
@@ -427,9 +431,10 @@ describe("bea_get_indicator and bea_compare_places: regional_price_parity throug
     expect(stJoseph?.status).toBe("fallback");
     expect(stJoseph?.value).toBe(92.858);
     expect(stJoseph?.caveat).toContain("South Bend-Mishawaka");
-    // Cook County has no metro in this fixture catalog: it falls back to Illinois's
-    // nonmetropolitan portion, honestly caveated rather than reported as Chicago's own number.
+    // Cook County answers with the Chicago metro; both metros come from one MARPP call (only the
+    // batched fixture is recorded).
     expect(cook?.status).toBe("fallback");
-    expect(cook?.caveat).toContain("not resolved to a metropolitan area");
+    expect(cook?.caveat).toContain("Chicago-Naperville-Elgin");
+    expect(typeof cook?.value).toBe("number");
   });
 });

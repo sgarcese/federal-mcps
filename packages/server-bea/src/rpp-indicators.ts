@@ -74,7 +74,7 @@ function rppAgencyCodeOf(place: PlaceCandidate): string | undefined {
 }
 
 /**
- * A county, city or town with no containing metro in the catalog answers with its state's
+ * A county, city or town outside any metropolitan area (a micropolitan or rural county) answers with its state's
  * nonmetropolitan portion (`PARPP`, GeoFips `<state FIPS>999`) rather than "unavailable" — verified
  * live 2026-09-28: BEA publishes it, keyed by state FIPS alone, so it is unambiguous to build.
  */
@@ -92,9 +92,9 @@ function nonmetroPortionFallback(place: PlaceCandidate): IndicatorFallback | und
     code: `portion:${geoid}`,
     caveat:
       `BEA publishes regional price parities for metropolitan areas and states; ${place.name} ` +
-      `is not resolved to a metropolitan area in this catalog. This answer is ${stateName}'s ` +
-      "nonmetropolitan portion (BEA table PARPP, the whole state outside its metro areas), not a " +
-      `figure specific to ${place.name} — it may be a real metro area this catalog does not yet cover.`,
+      `is outside any metropolitan area. This answer is ${stateName}'s nonmetropolitan portion ` +
+      "(BEA table PARPP: the whole state outside its metro areas, micropolitan areas included), " +
+      `not a figure for ${place.name} alone.`,
   };
 }
 
