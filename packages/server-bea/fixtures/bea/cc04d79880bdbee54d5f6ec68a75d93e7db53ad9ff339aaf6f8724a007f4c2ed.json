@@ -1,0 +1,18 @@
+{
+  "url": "https://apps.bea.gov/api/data?method=GetData&datasetname=Regional&TableName=CAINC1&LineCode=1&GeoFips=51901&ResultFormat=JSON",
+  "status": 200,
+  "headers": {
+    "accept-ranges": "bytes",
+    "connection": "keep-alive",
+    "content-length": "2805",
+    "content-type": "application/json",
+    "date": "Mon, 28 Sep 2026 21:36:53 GMT",
+    "strict-transport-security": "max-age=2592000, max-age=31536000; includeSubDomains; preload",
+    "x-azure-ref": "20260928T213653Z-165d494845bzgg72hC1IAD8bzn0000000zbg0000000005e9",
+    "x-cache": "CONFIG_NOCACHE",
+    "x-frame-options": "SAMEORIGIN",
+    "x-powered-by": "ASP.NET"
+  },
+  "body": "{\"BEAAPI\":{\"Results\":{\"Statistic\":\"Personal income\",\"UnitOfMeasure\":\"Thousands of dollars\",\"PublicTable\":\"CAINC1 County personal income summary: personal income, population, per capita personal income\",\"UTCProductionTime\":\"2026-09-28T21:36:53.333\",\"NoteRef\":\" \",\"Dimensions\":[{\"Name\":\"Code\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoFips\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"GeoName\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"TimePeriod\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"DataValue\",\"DataType\":\"numeric\",\"IsValue\":\"1\"},{\"Name\":\"CL_UNIT\",\"DataType\":\"string\",\"IsValue\":\"0\"},{\"Name\":\"UNIT_MULT\",\"DataType\":\"numeric\",\"IsValue\":\"0\"}],\"Data\":[{\"Code\":\"CAINC1-1\",\"GeoFips\":\"51901\",\"GeoName\":\"Albemarle + Charlottesville\",\"TimePeriod\":\"2020\",\"CL_UNIT\":\"Thousands of dollars\",\"UNIT_MULT\":\"3\",\"DataValue\":\"12075576\",\"NoteRef\":\"*\"},{\"Code\":\"CAINC1-1\",\"GeoFips\":\"51901\",\"GeoName\":\"Albemarle + Charlottesville\",\"TimePeriod\":\"2021\",\"CL_UNIT\":\"Thousands of dollars\",\"UNIT_MULT\":\"3\",\"DataValue\":\"14207144\",\"NoteRef\":\"*\"},{\"Code\":\"CAINC1-1\",\"GeoFips\":\"51901\",\"GeoName\":\"Albemarle + Charlottesville\",\"TimePeriod\":\"2022\",\"CL_UNIT\":\"Thousands of dollars\",\"UNIT_MULT\":\"3\",\"DataValue\":\"15308257\",\"NoteRef\":\"*\"},{\"Code\":\"CAINC1-1\",\"GeoFips\":\"51901\",\"GeoName\":\"Albemarle + Charlottesville\",\"TimePeriod\":\"2023\",\"CL_UNIT\":\"Thousands of dollars\",\"UNIT_MULT\":\"3\",\"DataValue\":\"16878483\",\"NoteRef\":\"*\"},{\"Code\":\"CAINC1-1\",\"GeoFips\":\"51901\",\"GeoName\":\"Albemarle + Charlottesville\",\"TimePeriod\":\"2024\",\"CL_UNIT\":\"Thousands of dollars\",\"UNIT_MULT\":\"3\",\"DataValue\":\"17850944\",\"NoteRef\":\"*\"}],\"Notes\":[{\"NoteRef\":\"*\",\"NoteText\":\"Virginia combination areas consist of one or two independent cities with 1980 populations of less than 100,000 combined with an adjacent county. The county name appears first, followed by the city name(s). Separate estimates for the jurisdictions making up the combination area are not available. Bedford County, VA includes the independent city of Bedford for all years.\"},{\"NoteRef\":\"Note.\",\"NoteText\":\"All dollar estimates are in thousands of current dollars (not adjusted for inflation). Statistics presented in thousands of dollars do not indicate more precision than statistics presented in millions of dollars.\"},{\"NoteRef\":\" \",\"NoteText\":\"Last updated: February 5, 2026-- new statistics for 2024; revised statistics for 2020-2023.\"}]}}}",
+  "recordedAt": "2026-09-28T21:36:53.486Z"
+}
