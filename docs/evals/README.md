@@ -68,6 +68,15 @@ answered as no data (HUD publishes FMR there by town). Where a caveat travels ma
 rubric: the CHAS level is in the citation (`mustHaveSentence`), Picture's not-reported sentinel is
 a footnote (`mustFootnote`), an unpublished place is a status (`expectStatus`).
 
+## The BEA sets (`bea*.jsonl`, M14)
+
+Entries carry `"server": "bea"`; the runner's URL is `BEA_URL` (default
+`https://bea.responsive.city/mcp`). One file per family — `bea-pi.jsonl`, `bea-gdp.jsonl`,
+`bea-rpp.jsonl` — and `bea.jsonl` for the server: every program available, a two-county comparison in
+one call, a Virginia independent city answered with its combination, and `bea_get_raw` for every
+county in a state. BEA's required sentence rides the citation (`mustHaveSentence`); a suppressed
+cell's disclosure note is a footnote (`mustFootnote`).
+
 ## Adding a question
 
 Append a line to `boston.jsonl`: `{ id, area, question, tool, args, rubric }`. Supported rubric

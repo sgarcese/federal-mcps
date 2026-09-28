@@ -8,8 +8,9 @@ never a figure without a citation, never a fabricated one.
 **Status:** live. Three agency servers are deployed and answering on a shared geography
 core ([`geo.responsive.city/mcp`](https://geo.responsive.city/mcp)): the Bureau of Labor
 Statistics ([`bls.responsive.city/mcp`](https://bls.responsive.city/mcp)), the Census Bureau
-([`census.responsive.city/mcp`](https://census.responsive.city/mcp)) and the HUD User API
-([`hud-user.responsive.city/mcp`](https://hud-user.responsive.city/mcp)). Portal-hosted sources
+([`census.responsive.city/mcp`](https://census.responsive.city/mcp)), the HUD User API
+([`hud-user.responsive.city/mcp`](https://hud-user.responsive.city/mcp)) and the Bureau of Economic
+Analysis ([`bea.responsive.city/mcp`](https://bea.responsive.city/mcp)). Portal-hosted sources
 (CDC PLACES, HUD Open Data) ship as source guides in [`skills/`](skills). Apache-2.0.
 
 ## Why this exists
@@ -54,6 +55,7 @@ connector in Claude, Claude Code, or any MCP host (no auth; the data is public):
 https://bls.responsive.city/mcp        # BLS: labor, wages, prices
 https://census.responsive.city/mcp     # Census: ACS estimates with margins of error, decennial counts
 https://hud-user.responsive.city/mcp   # HUD User: Fair Market Rents, Income Limits, CHAS, subsidized housing
+https://bea.responsive.city/mcp        # BEA: personal income, GDP by industry, regional price parities
 https://cdc.responsive.city/mcp        # CDC open data portal (OpenContext); pair with skills/cdc-places
 ```
 
@@ -107,6 +109,17 @@ come back as null with HUD's code, never zero. `hud_get_raw` returns any of the 
 JSON unchanged. This product uses the HUD User Data API but is not endorsed or certified by HUD
 User.
 
+## What it answers today (BEA)
+
+`server-bea` (M14, ADR-019) serves BEA's Regional economic accounts by place: personal income and
+per capita personal income (county and state; states also quarterly), GDP and real GDP by NAICS
+industry (county and state), and regional price parities (metro and state; all items, goods, rents,
+utilities, other services). A city answers with its county, and price parities with its metro area,
+or its state's nonmetropolitan portion outside any metro; Virginia's small independent cities come
+combined with a county, as BEA publishes them. A value BEA marks (D) or (NA) is reported as
+unavailable, never as its placeholder zero. `bea_compare_places` answers many places in one upstream
+call, and `bea_get_raw` runs any BEA Regional query. This product uses the Bureau of Economic Analysis (BEA) Data API but is not endorsed or certified by BEA.
+
 Call `bls_describe_source` to see coverage and cadence, or `bls_list_indicators` for the
 vocabulary and which programs publish at a given place's level.
 
@@ -125,7 +138,7 @@ full design and [`docs/adr/`](docs/adr) for the decisions behind it.
 
 - [`packages/core`](packages/core) — shared runtime: geography, HTTP client, envelope, server shell.
 - [`packages/geography-build`](packages/geography-build) — builds the SQLite geography catalog (a release artifact).
-- `packages/server-<agency>` — one deployable MCP server per agency (`server-bls`, `server-census`, `server-hud`, `server-geo`).
+- `packages/server-<agency>` — one deployable MCP server per agency (`server-bls`, `server-census`, `server-hud`, `server-bea`, `server-geo`).
 - [`terraform/`](terraform) — infrastructure (deployed locally, ADR-007).
 - [`docs/`](docs) — architecture, ADRs, spikes; [`docs/README.md`](docs/README.md) is the index.
 

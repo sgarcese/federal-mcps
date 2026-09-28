@@ -20,6 +20,9 @@ U.S. Department of Housing and Urban Development, HUD User — the HUD User Data
   States Government; no copyright. This product uses the HUD User Data API but is not endorsed or
   certified by HUD User.
 
+U.S. Bureau of Economic Analysis — the BEA Data API (Regional personal income, GDP, regional price
+  parities). Works of the United States Government; no copyright. This product uses the Bureau of Economic Analysis (BEA) Data API but is not endorsed or certified by BEA.
+
 Missouri Census Data Center (MCDC), University of Missouri — Geocorr 2022 place-to-county
   correlation output, vendored as packages/geography-build/src/data/geocorr/*. Geocorr is produced
   by MCDC (a Census Bureau State Data Center partner, sponsored by the Missouri State Library,

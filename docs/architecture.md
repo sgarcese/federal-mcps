@@ -85,6 +85,7 @@ federal-mcps/
     server-bls/           Bureau of Labor Statistics
     server-census/        Census server on the core (M8, ADR-014): ACS indicators with reliability data
     server-hud/           HUD User API server (M11, ADR-018): FMR, Income Limits/MTSP, CHAS, Picture
+    server-bea/           BEA Regional server (M14, ADR-019): personal income, GDP by industry, RPPs
     server-cdc-places/    CDC PLACES via data.cdc.gov (Socrata SODA)
     server-composite/     one endpoint mounting several servers, shared resolve_place
   terraform/              bootstrap/, modules/, instances/<name>/ (ADR-005)
@@ -214,8 +215,7 @@ is a natural second phase.
 **CDC PLACES.** Model-based health estimates for every county, place, tract and ZCTA,
 ~40 measures, via the Socrata SODA API on data.cdc.gov. Annual release, long cache TTL.
 
-Later, with no core changes: BEA regional (county GDP, personal
-income), FEMA National Risk Index, County Health Rankings, Census QWI and Building
+Later, with no core changes: FEMA National Risk Index, County Health Rankings, Census QWI and Building
 Permits.
 
 ## Release 1: BLS only
@@ -252,6 +252,12 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 |---|---|---|
 | **M11 HUD User server** (ADR-018) | `packages/server-hud` on the core: a per-minute limiter in the core HTTP client; the bearer token as a header (never cached, recorded or logged); entity ids built from the catalog; `fair_market_rent`, `income_limit`, `area_median_income`, `mtsp_limit`, CHAS cost-burden share and count, Picture of Subsidized Households indicators with city→county fallback; `hud_get_raw` over the five endpoints; HUD User's required sentence on every citation; its own Terraform module and hostname | Rent, income-limit, cost-burden and subsidized-housing questions answer through the family verbs with the fiscal year or release stated; the HUD eval sets pass live at `hud-user.responsive.city` |
 
+## Release 4: BEA Regional
+
+| Milestone | Component | Exit criterion |
+|---|---|---|
+| **M14 BEA regional server** (ADR-019) | `packages/server-bea` on the core: a response `sanitize` hook and HTTP-200 body errors in the core client (BEA echoes the key and answers errors with 200); `bea`/`GEOFIPS` combination codes and county → CBSA edges in the catalog; personal income (county, state, state quarterly), GDP and real GDP by NAICS industry, regional price parities (metro, state, state nonmetro portion); sentinels never numbers; compare in one upstream call; `bea_get_raw` in BEA's grammar; BEA's required sentence on every citation; its own Terraform module and hostname | Income, GDP and cost-of-living questions for any county, state or metro answer through the family verbs with BEA's release note; the BEA eval sets pass live at `bea.responsive.city` |
+
 Deferred to later releases, deliberately: sub-dimension pickers for Census (by race, age, tenure), ACS significance testing, SAIPE/PEP, CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
@@ -263,7 +269,7 @@ the Responsive City account (`us-east-1`; the account id lives in the gitignored
 `instances.json`). Each server has its own
 hostname following the account's `<service>.responsive.city` pattern:
 `bls.responsive.city/mcp`, `census.responsive.city/mcp`, `hud-user.responsive.city/mcp`,
-`geo.responsive.city/mcp` (ADR-016 §2; the
+`bea.responsive.city/mcp`, `geo.responsive.city/mcp` (ADR-016 §2; the
 Release 1 `*-mcp` names remain as aliases). Guide-backed sources this family owns get an
 OpenContext portal Lambda from the same wrapper — `cdc.responsive.city/mcp` for data.cdc.gov —
 built from the commit pinned in `opencontext.lock.json` (ADR-016 §4-5).
