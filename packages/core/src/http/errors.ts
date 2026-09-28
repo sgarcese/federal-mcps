@@ -104,3 +104,30 @@ export class RateLimitWaitError extends HttpClientError {
     this.maxWaitMs = params.maxWaitMs;
   }
 }
+
+/**
+ * An agency reported an error inside a successful HTTP response (#256, ADR-019 §4): BEA answers a
+ * bad parameter with HTTP 200 and `APIErrorCode` in the body. Carries the agency's own code and
+ * text; never the request's credentials (the body is sanitized before it is read).
+ */
+export class AgencyApiError extends HttpClientError {
+  readonly code: string;
+  readonly url: string;
+  readonly attempts: number;
+
+  constructor(params: {
+    source: string;
+    code: string;
+    message: string;
+    url: string;
+    attempts: number;
+  }) {
+    super(
+      `${params.source}: ${params.url} answered with agency error ${params.code}: ${params.message} (after ${params.attempts} attempt(s))`,
+      params.source,
+    );
+    this.code = params.code;
+    this.url = params.url;
+    this.attempts = params.attempts;
+  }
+}

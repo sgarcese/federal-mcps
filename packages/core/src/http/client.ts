@@ -7,6 +7,7 @@ import {
   QuotaExceededError,
   RateLimitWaitError,
   TimeoutError,
+  AgencyApiError,
 } from "./errors.js";
 import { type FixtureMode, readFixture, resolveFixtureMode, writeFixture } from "./fixtures.js";
 import { DEFAULT_BACKOFF, computeDelayMs, isRetryableStatus, parseRetryAfter } from "./retry.js";
@@ -43,6 +44,20 @@ export interface HttpClientOptions {
   readonly maxWaitMs?: number;
   /** Sleep implementation used while waiting for a rate-limit token; defaults to `setTimeout`. Injectable for tests. */
   readonly sleep?: (ms: number) => Promise<void>;
+  /**
+   * Rewrites every upstream response body before anything else sees it — fixture recording,
+   * parsing, the cache and the caller (#256, ADR-019 §3). For an agency that echoes a credential
+   * back (BEA returns the `UserID` in every body), so the key never reaches disk or an answer.
+   */
+  readonly sanitize?: (body: string) => string;
+  /**
+   * Reads an error an agency reports inside a successful (2xx) response (#256, ADR-019 §4), e.g.
+   * BEA's `APIErrorCode`. Returning one throws `AgencyApiError`; `retryable: false` (a bad
+   * parameter) is never retried, since the agency may count errors against the caller.
+   */
+  readonly bodyError?: (
+    body: string,
+  ) => { code: string; message: string; retryable: boolean } | undefined;
 }
 
 export interface RequestOptions {
@@ -234,7 +249,20 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         if (raw.status >= 400) {
           throw new HttpError({ source, status: raw.status, url, attempts: attempt });
         }
-        return raw;
+        const clean = options.sanitize ? { ...raw, body: options.sanitize(raw.body) } : raw;
+        const agencyError = options.bodyError?.(clean.body);
+        if (!agencyError) return clean;
+        if (!agencyError.retryable || attempt >= DEFAULT_BACKOFF.maxAttempts) {
+          throw new AgencyApiError({
+            source,
+            code: agencyError.code,
+            message: agencyError.message,
+            url,
+            attempts: attempt,
+          });
+        }
+        await delay(computeDelayMs(attempt, DEFAULT_BACKOFF));
+        continue;
       }
 
       if (attempt >= DEFAULT_BACKOFF.maxAttempts) {

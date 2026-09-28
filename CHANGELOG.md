@@ -3,6 +3,14 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## Unreleased — M14 BEA regional server
+
+Added
+- Core HTTP client: a `sanitize` hook rewrites every upstream body before it is recorded, parsed,
+  cached or returned (BEA echoes the caller's key in every response), and a `bodyError` hook turns an
+  error an agency reports inside an HTTP 200 into a typed `AgencyApiError` — never retried when the
+  agency marks it a bad parameter (#256, ADR-019).
+
 ## Unreleased — M13 HUD guide
 
 Added
