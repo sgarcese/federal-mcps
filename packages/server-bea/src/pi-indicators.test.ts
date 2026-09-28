@@ -121,7 +121,7 @@ describe("fallback: a city or town answers with its county (#259)", () => {
       sumlevel: "050",
       code: "18141",
     });
-    expect(fb?.caveat).toMatch(/by county, not by city or town/);
+    expect(fb?.caveat).toMatch(/^BEA publishes personal income by county, not by city or town/);
   });
 
   it("Albemarle County resolved directly carries its combination code and caveat", () => {

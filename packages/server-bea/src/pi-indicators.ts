@@ -213,7 +213,12 @@ function piSourceOf(
   };
 }
 
-function definitionFor(name: string, lineCode: number, description: string): IndicatorDefinition {
+function definitionFor(
+  name: string,
+  lineCode: number,
+  label: string,
+  description: string,
+): IndicatorDefinition {
   return {
     name,
     program: PROGRAM,
@@ -224,7 +229,7 @@ function definitionFor(name: string, lineCode: number, description: string): Ind
       buildPiKey(lineCode, code, dimensions.frequency ?? "annual"),
     dimensions: [FREQUENCY_DIMENSION],
     caveatOf: (place) => combinationCaveat(place),
-    fallback: (catalog, place) => beaCountyFallback(catalog, place, description),
+    fallback: (catalog, place) => beaCountyFallback(catalog, place, label),
     unavailableNote: piUnavailableNote,
     fetch: piFetch,
     sourceOf: piSourceOf,
@@ -236,11 +241,13 @@ export const piIndicatorDefinitions: IndicatorDefinition[] = [
   definitionFor(
     "personal_income",
     1,
+    "personal income",
     "Total personal income by place, in current dollars (BEA CAINC1 county / SAINC1 state / SQINC1 state quarterly, line 1).",
   ),
   definitionFor(
     "per_capita_personal_income",
     3,
+    "per capita personal income",
     "Per capita personal income by place, in current dollars (BEA CAINC1 county / SAINC1 state / SQINC1 state quarterly, line 3).",
   ),
 ];

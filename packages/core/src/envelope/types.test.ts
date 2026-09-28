@@ -133,6 +133,19 @@ describe("buildCitation", () => {
     expect(citation.startsWith("xyz, Some Program")).toBe(true);
   });
 
+  it("names BEA in full (#259)", () => {
+    const citation = buildCitation(
+      {
+        agency: "bea",
+        program: "PI",
+        ids: ["CAINC1 line 3, GeoFips 18141"],
+        url: "https://example.gov",
+      },
+      new Date("2026-09-28T00:00:00Z"),
+    );
+    expect(citation.startsWith("U.S. Bureau of Economic Analysis, PI")).toBe(true);
+  });
+
   it("names HUD in full (#237)", () => {
     const citation = buildCitation(
       { agency: "hud", program: "FMR", ids: ["1814199999|2"], url: "https://example.gov" },
