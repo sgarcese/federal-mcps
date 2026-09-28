@@ -5,7 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryBudgetStore } from "./budget.js";
 import { MemoryCacheStore } from "./cache-store.js";
 import { createHttpClient } from "./client.js";
-import { HttpError, MissingFixtureError, QuotaExceededError, TimeoutError } from "./errors.js";
+import {
+  AgencyApiError,
+  HttpError,
+  MissingFixtureError,
+  QuotaExceededError,
+  TimeoutError,
+} from "./errors.js";
 import { writeFixture } from "./fixtures.js";
 
 function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}) {
@@ -417,5 +423,139 @@ describe("queryAuth (M8.2): a key appended at fetch time only", () => {
     await expect(
       client.getJson("https://example.invalid/data?get=NAME", { queryAuth: { key: "SECRET-KEY" } }),
     ).rejects.toMatchObject({ url: "https://example.invalid/data?get=NAME" });
+  });
+});
+
+describe("sanitize and bodyError hooks (#256, ADR-019 §3–4)", () => {
+  // A BEA-shaped reply: the key echoed back, and errors answered with HTTP 200.
+  const KEY = "11111111-2222-3333-4444-555555555555";
+  const beaBody = (results: unknown) => ({
+    BEAAPI: {
+      Request: { RequestParam: [{ ParameterName: "USERID", ParameterValue: KEY }] },
+      Results: results,
+    },
+  });
+  const redactKey = (body: string) => body.split(KEY).join("<redacted>");
+  const beaError = (body: string) => {
+    const code = (
+      JSON.parse(body) as {
+        BEAAPI?: { Results?: { Error?: { APIErrorCode?: string; APIErrorDescription?: string } } };
+      }
+    ).BEAAPI?.Results?.Error;
+    if (!code?.APIErrorCode) return undefined;
+    return {
+      code: code.APIErrorCode,
+      message: code.APIErrorDescription ?? "",
+      retryable: !["4", "40", "101"].includes(code.APIErrorCode),
+    };
+  };
+
+  it("sanitize runs before the value is returned or cached: the echoed key is never in either", async () => {
+    const cache = new MemoryCacheStore();
+    const { client, fetchFn } = makeClient({ sanitize: redactKey, cache });
+    fetchFn.mockResolvedValue(jsonResponse(beaBody({ Data: [{ DataValue: "1" }] })));
+    const first = await client.getJson("https://apps.bea.gov/api/data?x=1", {
+      freshTtlSeconds: 60,
+    });
+    expect(JSON.stringify(first.value)).not.toContain(KEY);
+    const cached = await client.getJson("https://apps.bea.gov/api/data?x=1", {
+      freshTtlSeconds: 60,
+    });
+    expect(cached.cache.hit).toBe(true);
+    expect(JSON.stringify(cached.value)).not.toContain(KEY);
+  });
+
+  it("sanitize runs before a fixture is recorded: the key never reaches disk", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "sanitize-"));
+    try {
+      const { client, fetchFn } = makeClient({
+        sanitize: redactKey,
+        fixtures: { mode: "record", dir },
+      });
+      fetchFn.mockResolvedValue(jsonResponse(beaBody({ Data: [] })));
+      await client.getJson("https://apps.bea.gov/api/data?x=2");
+      const { readdir, readFile } = await import("node:fs/promises");
+      const files = await readdir(join(dir, "bls"));
+      const text = await readFile(join(dir, "bls", files[0] as string), "utf8");
+      expect(text).not.toContain(KEY);
+      expect(text).toContain("<redacted>");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("bodyError turns an error answered with HTTP 200 into a typed AgencyApiError, not a value", async () => {
+    const { client, fetchFn } = makeClient({ sanitize: redactKey, bodyError: beaError });
+    fetchFn.mockResolvedValue(
+      jsonResponse(
+        beaBody({
+          Error: {
+            APIErrorCode: "40",
+            APIErrorDescription: "Invalid Value for Parameter TableName",
+          },
+        }),
+      ),
+    );
+    const err = await client.getJson("https://apps.bea.gov/api/data?x=3").catch((e) => e);
+    expect(err).toBeInstanceOf(AgencyApiError);
+    expect(err).toMatchObject({ source: "bls", code: "40", attempts: 1 });
+    expect(err.message).toContain("Invalid Value for Parameter TableName");
+    expect(err.message).not.toContain(KEY);
+  });
+
+  it("a non-retryable body error is never retried (it spends the agency's error budget)", async () => {
+    const { client, fetchFn } = makeClient({ bodyError: beaError });
+    fetchFn.mockResolvedValue(
+      jsonResponse(
+        beaBody({ Error: { APIErrorCode: "101", APIErrorDescription: "Unknown error." } }),
+      ),
+    );
+    await client.getJson("https://apps.bea.gov/api/data?x=4").catch(() => undefined);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("a retryable body error is retried with backoff, then succeeds", async () => {
+    vi.useFakeTimers();
+    try {
+      const { client, fetchFn } = makeClient({ bodyError: beaError });
+      fetchFn
+        .mockResolvedValueOnce(
+          jsonResponse(
+            beaBody({
+              Error: {
+                APIErrorCode: "7",
+                APIErrorDescription: "exceeded Requests per minute quota",
+              },
+            }),
+          ),
+        )
+        .mockResolvedValueOnce(jsonResponse(beaBody({ Data: [{ DataValue: "5" }] })));
+      const promise = client.getJson<{ BEAAPI: { Results: { Data: unknown[] } } }>(
+        "https://apps.bea.gov/api/data?x=5",
+      );
+      await vi.runAllTimersAsync();
+      const result = await promise;
+      expect(result.value.BEAAPI.Results.Data).toHaveLength(1);
+      expect(fetchFn).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("an error body is never cached or recorded", async () => {
+    const cache = new MemoryCacheStore();
+    const { client, fetchFn } = makeClient({ bodyError: beaError, cache });
+    fetchFn
+      .mockResolvedValueOnce(
+        jsonResponse(beaBody({ Error: { APIErrorCode: "40", APIErrorDescription: "bad" } })),
+      )
+      .mockResolvedValueOnce(jsonResponse(beaBody({ Data: [] })));
+    await client
+      .getJson("https://apps.bea.gov/api/data?x=6", { freshTtlSeconds: 60 })
+      .catch(() => undefined);
+    const second = await client.getJson("https://apps.bea.gov/api/data?x=6", {
+      freshTtlSeconds: 60,
+    });
+    expect(second.cache.hit).toBe(false);
   });
 });

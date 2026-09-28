@@ -23,6 +23,7 @@ export {
   QuotaExceededError,
   RateLimitWaitError,
   TimeoutError,
+  AgencyApiError,
 } from "./errors.js";
 export type { FixtureMode, FixtureResponse } from "./fixtures.js";
 export { fixturePath, readFixture, resolveFixtureMode, writeFixture } from "./fixtures.js";
