@@ -279,9 +279,16 @@ describe("assemble: county subdivisions (#241)", () => {
     "OH\t3918000\t1\tColumbus city\t25\tA\t600000000\t1\t0\t0",
     "CO\t0820000\t1\tDenver city\t25\tA\t396000000\t1\t0\t0",
   ].join("\n");
+  const LA = [
+    "area_type_code\tarea_code\tarea_text\tdisplay_level\tselectable\tsort_sequence",
+    "G\tCS4216920000000\tCranberry township (Butler County), PA\t0\tT\t1",
+    "G\tCS2507000000000\tBoston city, MA\t0\tT\t2",
+    "H\tCS2599999000000\tNowhere town, MA\t0\tT\t3",
+  ].join("\n");
   const rows = assemble({
     gazetteers: { "040": ST, "050": CO, "160": PL, "060": COUSUBS },
     cousubs2020: COUSUBS_2020,
+    lausArea: LA,
   });
   const edge = (child: string, parent: string) =>
     rows.containment.find((c) => c.childUcgid === child && c.parentUcgid === parent);
@@ -336,6 +343,15 @@ describe("assemble: county subdivisions (#241)", () => {
     expect(edge(P("0937000"), T("0911037070"))).toMatchObject({ share: 1, relation: "nests" });
     // East Hartford town is not consolidated and has no city twin: no edge from Hartford city.
     expect(edge(P("0937000"), T("0911022630"))).toBeUndefined();
+  });
+
+  it("maps LAUS county-subdivision codes (CS + state + town code, no county) onto the town (#241)", () => {
+    const laus = (g: string) =>
+      rows.agencyCodes.find((a) => a.ucgid === T(g) && a.program === "LAUS");
+    expect(laus("4201916920")?.code).toBe("CS4216920000000");
+    expect(laus("2502507000")?.code).toBe("CS2507000000000");
+    // A CS code with no matching town maps to nothing, never to a guess.
+    expect(rows.agencyCodes.some((a) => a.code === "CS2599999000000")).toBe(false);
   });
 
   it("carries a recoded county subdivision's 2020 GEOID, joined by ANSI code (Connecticut)", () => {

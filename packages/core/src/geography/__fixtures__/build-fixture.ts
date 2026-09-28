@@ -100,6 +100,93 @@ export function buildFixtureCatalog(): string {
       population: 1_800,
       populationVintage: "2024",
     }),
+    // County subdivisions (#241): Boston's town twin (same code), a Pennsylvania township with
+    // no place, and a Connecticut town beside a same-name CDP that is NOT its twin.
+    ent("25", "040", "Massachusetts", {
+      stateFips: "25",
+      population: 7_000_000,
+      populationVintage: "2024",
+    }),
+    ent("25025", "050", "Suffolk County", {
+      stateFips: "25",
+      lsad: "06",
+      aland: 150_000_000,
+      population: 770_000,
+      populationVintage: "2024",
+    }),
+    ent("2507000", "160", "Boston city", {
+      stateFips: "25",
+      lsad: "25",
+      aland: 125_000_000,
+      population: 663_972,
+      populationVintage: "2024",
+    }),
+    ent("2502507000", "060", "Boston city", {
+      stateFips: "25",
+      funcstat: "A",
+      aland: 125_000_000,
+      population: 663_972,
+      populationVintage: "2024",
+    }),
+    ent("42", "040", "Pennsylvania", {
+      stateFips: "42",
+      population: 13_000_000,
+      populationVintage: "2024",
+    }),
+    ent("42019", "050", "Butler County", {
+      stateFips: "42",
+      lsad: "06",
+      aland: 2_042_000_000,
+      population: 198_000,
+      populationVintage: "2024",
+    }),
+    ent("4201916920", "060", "Cranberry township", {
+      stateFips: "42",
+      funcstat: "A",
+      aland: 59_000_000,
+      population: 33_000,
+      populationVintage: "2024",
+    }),
+    ent("09", "040", "Connecticut", {
+      stateFips: "09",
+      population: 3_600_000,
+      populationVintage: "2024",
+    }),
+    ent("0960120", "160", "Plainfield CDP", {
+      stateFips: "09",
+      lsad: "57",
+      aland: 8_000_000,
+      population: 2_700,
+      populationVintage: "2024",
+    }),
+    ent("0915059980", "060", "Plainfield town", {
+      stateFips: "09",
+      funcstat: "A",
+      aland: 110_000_000,
+      population: 15_000,
+      populationVintage: "2024",
+    }),
+    // A small same-name town elsewhere (Boston, NY): dominated, never a reason to ask (#241).
+    ent("36", "040", "New York", {
+      stateFips: "36",
+      population: 19_800_000,
+      populationVintage: "2024",
+    }),
+    ent("3602907454", "060", "Boston town", {
+      stateFips: "36",
+      funcstat: "A",
+      aland: 111_000_000,
+      population: 7_948,
+      populationVintage: "2024",
+    }),
+    // A big rural township sharing Springfield's name: more land, far fewer people (#241).
+    ent("2907770009", "060", "Springfield township", {
+      stateFips: "29",
+      funcstat: "A",
+      aland: 3_000_000_000,
+      population: 3_000,
+      populationVintage: "2024",
+    }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
@@ -122,6 +209,13 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("2970000"), alias: "Springfield", source: "lsad-stripped" },
     { ucgid: uc("1772000"), alias: "Springfield", source: "lsad-stripped" },
     { ucgid: uc("1920035"), alias: "Denver", source: "lsad-stripped" },
+    { ucgid: uc("2507000"), alias: "Boston", source: "lsad-stripped" },
+    { ucgid: uc("2502507000"), alias: "Boston", source: "lsad-stripped" },
+    { ucgid: uc("4201916920"), alias: "Cranberry", source: "lsad-stripped" },
+    { ucgid: uc("3602907454"), alias: "Boston", source: "lsad-stripped" },
+    { ucgid: uc("2907770009"), alias: "Springfield", source: "lsad-stripped" },
+    { ucgid: uc("0960120"), alias: "Plainfield", source: "lsad-stripped" },
+    { ucgid: uc("0915059980"), alias: "Plainfield", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [
@@ -129,6 +223,15 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("8"), parentUcgid: uc("4"), share: 1 },
     { childUcgid: uc("08031"), parentUcgid: uc("08"), share: 1 },
     { childUcgid: uc("0820000"), parentUcgid: uc("08"), share: 1 },
+    { childUcgid: uc("25025"), parentUcgid: uc("25"), share: 1 },
+    { childUcgid: uc("2507000"), parentUcgid: uc("25"), share: 1 },
+    { childUcgid: uc("2502507000"), parentUcgid: uc("25025"), share: 1 },
+    { childUcgid: uc("2502507000"), parentUcgid: uc("25"), share: 1 },
+    { childUcgid: uc("2507000"), parentUcgid: uc("2502507000"), share: 1 }, // the twin edge
+    { childUcgid: uc("4201916920"), parentUcgid: uc("42019"), share: 1 },
+    { childUcgid: uc("4201916920"), parentUcgid: uc("42"), share: 1 },
+    { childUcgid: uc("0915059980"), parentUcgid: uc("09"), share: 1 },
+    { childUcgid: uc("0960120"), parentUcgid: uc("09"), share: 1 },
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
     { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
   ];
@@ -139,6 +242,8 @@ export function buildFixtureCatalog(): string {
     code(uc("0820000"), "LAUS", "CT0820000000000"), // the city is above threshold
     code(uc("19740"), "LAUS", "MT0819740000000"),
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
+    code(uc("0915059980"), "LAUS", "CS0959980000000"), // Plainfield town has its own LAUS series
+    // Cranberry township (4201916920) has none → below_threshold, county fallback (#241).
   ];
 
   const rows: CatalogRows = {

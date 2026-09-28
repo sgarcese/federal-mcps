@@ -321,7 +321,7 @@ function recodedCousubGeoids(
       program: "GEOID2020",
       code: before,
       codeVintage: 2020,
-      note: "the 2020 GEOID, changed since by a county-equivalent recode (Connecticut planning regions, 2022)",
+      note: "the 2020 GEOID, changed since by a Census recode (e.g. Connecticut's 2022 planning regions)",
     });
   }
   return out;

@@ -20,6 +20,12 @@ could mean several kinds, resolve_place returns status "ambiguous" — pick a ki
 happens when one kind of place shares a name across states with none dominant (Springfield,
 Portland): pick a state, or write "Springfield, MO".
 
+County subdivisions (towns, townships, MCDs; kind "township" or "county subdivision",
+and "town") nest in their county. In New England, New York, Pennsylvania, the upper
+Midwest and New Jersey many are working governments, and some agencies publish by them
+(HUD sets New England Fair Market Rents by town). A city and the town that is the same
+municipality resolve as one place, the town listed among its parents.
+
 Read the structured flags on each result rather than prose:
 - below_threshold: a place under the LAUS 25,000 cutoff has no city-level unemployment
   series; use the surrounding county (flagged).

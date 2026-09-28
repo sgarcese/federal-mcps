@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
@@ -94,6 +94,8 @@ async function main(): Promise<void> {
 
   const rows = assemble(sources);
   mkdirSync(outDir, { recursive: true });
+  // A rebuild replaces the previous catalog: the schema is created fresh, never on top of one.
+  for (const suffix of ["", "-wal", "-shm"]) rmSync(`${outPath}${suffix}`, { force: true });
   const db = new BetterSqlite3(outPath);
   buildCatalog(db, rows, { vintage });
   db.close();

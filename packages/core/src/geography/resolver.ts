@@ -94,7 +94,13 @@ const KIND_HINTS: Readonly<Record<string, string[]>> = Object.freeze({
   county: ["050"],
   city: ["160"],
   place: ["160"],
-  town: ["160"],
+  // A "town" is a place in most states and a county subdivision in New England, New York and
+  // Wisconsin; the town-twin fold below keeps a city and its same-municipality town one answer.
+  town: ["160", "060"],
+  township: ["060"],
+  "county subdivision": ["060"],
+  cousub: ["060"],
+  mcd: ["060"],
   metro: ["310"],
   "metro area": ["310"],
   cbsa: ["310"],
@@ -137,9 +143,9 @@ export function resolvePlace(
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
   const rows = catalog.searchNames(searchText, searchOpts);
-  const scored = rows
-    .map((e) => scoreCandidate(catalog, e, normQuery))
-    .sort((a, b) => b.score - a.score);
+  const scored = foldTownTwins(
+    rows.map((e) => scoreCandidate(catalog, e, normQuery)).sort((a, b) => b.score - a.score),
+  );
 
   const limit = options.limit ?? 10;
   const candidates = scored.slice(0, limit);
@@ -148,7 +154,9 @@ export function resolvePlace(
   // kind (city vs county vs metro), stop and let the caller choose.
   if (!options.kind) {
     const strongKinds = new Set(
-      scored.filter((c) => c.isExact).map((c) => c.candidate.kind.sumlevel),
+      scored
+        .filter((c) => c.isExact && !isDominatedTown(c, scored))
+        .map((c) => c.candidate.kind.sumlevel),
     );
     if (strongKinds.size > 1) {
       const kinds = [...strongKinds].map(labelForSumlevel).join(", ");
@@ -181,6 +189,25 @@ export function resolvePlace(
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
 }
 
+/**
+ * Drops a county subdivision that is the same municipality as a place also in the results
+ * (#241): Boston city (place) and Boston city (county subdivision) are one answer, not a choice.
+ * The catalog links them with a place → town edge (geography-build `deriveTownTwins`), so the
+ * town stays visible as the place's parent; a same-name town with no such edge is kept, and
+ * the kind check below then reports the ambiguity.
+ */
+function foldTownTwins(scored: readonly Scored[]): Scored[] {
+  const twinTowns = new Set<string>();
+  for (const s of scored) {
+    if (s.candidate.kind.sumlevel !== "160") continue;
+    for (const p of s.candidate.parents) if (p.kind.sumlevel === "060") twinTowns.add(p.geoid);
+  }
+  if (twinTowns.size === 0) return [...scored];
+  return scored.filter(
+    (s) => !(s.candidate.kind.sumlevel === "060" && twinTowns.has(s.candidate.geoid)),
+  );
+}
+
 function flagAmbiguous(candidates: readonly Scored[]): PlaceCandidate[] {
   return candidates.map((c) => ({
     ...c.candidate,
@@ -188,6 +215,20 @@ function flagAmbiguous(candidates: readonly Scored[]): PlaceCandidate[] {
       ? c.candidate.flags
       : [...c.candidate.flags, "ambiguous" as const],
   }));
+}
+
+/**
+ * True for an exact county-subdivision match that a non-subdivision exact match outweighs by
+ * STATE_DOMINANCE_RATIO× in population (#241): thousands of small townships share a city's name
+ * (Boston, NY; Detroit township, IL), and none is a plausible reading of "Boston" or "Detroit".
+ * A comparable town still makes the query ambiguous.
+ */
+function isDominatedTown(c: Scored, scored: readonly Scored[]): boolean {
+  if (c.candidate.kind.sumlevel !== "060") return false;
+  const lead = scored
+    .filter((s) => s.isExact && s.candidate.kind.sumlevel !== "060")
+    .reduce((max, s) => Math.max(max, s.candidate.population ?? 0), 0);
+  return lead > 0 && lead >= STATE_DOMINANCE_RATIO * (c.candidate.population ?? 0);
 }
 
 /** True when the most populous rival has STATE_DOMINANCE_RATIO× the best rival in any other state. */
@@ -269,6 +310,8 @@ function scoreCandidate(catalog: GeographyCatalog, e: EntityRecord, normQuery: s
   score += Math.log10((e.aland ?? 1) + 10);
   // Prefer real places over CDPs and consolidated-city balances when otherwise equal.
   if (e.lsad === "57" || /\(balance\)/i.test(e.name)) score -= 5;
+  // A county subdivision ranks just below an equally matching place (#241), still above a CDP.
+  if (e.sumlevel === "060") score -= 1;
 
   const agencyCodes = catalog.agencyCodesOf(e.ucgid);
   const { flags, caveat } = deriveFlags(

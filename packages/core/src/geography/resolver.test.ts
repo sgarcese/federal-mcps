@@ -242,3 +242,81 @@ describe("Census regions and divisions (#154)", () => {
     expect(labelForSumlevel("030")).toBe("division");
   });
 });
+
+describe("county subdivisions (#241)", () => {
+  let path: string;
+  let catalog: GeographyCatalog;
+  beforeAll(() => {
+    path = buildFixtureCatalog();
+    catalog = new GeographyCatalog(path);
+  });
+  afterAll(() => {
+    catalog.close();
+    rmSync(dirname(path), { recursive: true, force: true });
+  });
+
+  it("folds a town into its same-municipality city: 'Boston, MA' is one answer, the town named as its parent", () => {
+    const r = resolvePlace(catalog, "Boston, MA");
+    expect(r.status).toBe("ok");
+    expect(r.candidates.map((c) => c.kind.sumlevel)).not.toContain("060");
+    expect(r.candidates[0]?.geoid).toBe("2507000");
+    expect(r.candidates[0]?.parents).toContainEqual(
+      expect.objectContaining({
+        geoid: "2502507000",
+        kind: { sumlevel: "060", label: "county subdivision" },
+      }),
+    );
+  });
+
+  it("resolves a township that is no place, with or without a kind", () => {
+    const plain = resolvePlace(catalog, "Cranberry, PA");
+    expect(plain.status).toBe("ok");
+    expect(plain.candidates[0]).toMatchObject({ geoid: "4201916920", kind: { sumlevel: "060" } });
+    const hinted = resolvePlace(catalog, "Cranberry", { kind: "township", state: "PA" });
+    expect(hinted.candidates[0]?.geoid).toBe("4201916920");
+  });
+
+  it("'town' and 'county subdivision' kinds reach county subdivisions", () => {
+    expect(
+      resolvePlace(catalog, "Plainfield", { kind: "county subdivision", state: "CT" }).candidates[0]
+        ?.geoid,
+    ).toBe("0915059980");
+    const town = resolvePlace(catalog, "Plainfield", { kind: "town", state: "CT" });
+    expect(town.candidates.map((c) => c.geoid)).toContain("0915059980");
+  });
+
+  it("a much smaller same-name town elsewhere neither wins nor makes a big city ambiguous ('Boston')", () => {
+    const r = resolvePlace(catalog, "Boston");
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.geoid).toBe("2507000");
+    expect(r.candidates.map((c) => c.geoid)).toContain("3602907454"); // still listed, ranked below
+  });
+
+  it("an ambiguous name still leads with its cities, not a big rural township ('Springfield')", () => {
+    const r = resolvePlace(catalog, "Springfield");
+    expect(r.status).toBe("ambiguous");
+    expect(r.candidates[0]?.kind.sumlevel).toBe("160");
+    expect(r.explanation).toMatch(/place in more than one state/);
+  });
+
+  it("a county subdivision with no LAUS series is flagged for the county fallback; one with a series is not", () => {
+    const cranberry = resolvePlace(catalog, "Cranberry", { kind: "township", state: "PA" })
+      .candidates[0];
+    expect(cranberry?.flags).toContain("below_threshold");
+    expect(cranberry?.caveat).toMatch(/county subdivision/);
+    const plainfield = resolvePlace(catalog, "Plainfield", { kind: "township", state: "CT" })
+      .candidates[0];
+    expect(plainfield?.flags).not.toContain("below_threshold");
+  });
+
+  it("a place outranks an equally matching county subdivision", () => {
+    const r = resolvePlace(catalog, "Boston", { kind: "town" });
+    expect(r.candidates[0]?.kind.sumlevel).toBe("160");
+  });
+
+  it("a town beside a same-name place that is not its twin stays ambiguous, never picked silently", () => {
+    const r = resolvePlace(catalog, "Plainfield, CT");
+    expect(r.status).toBe("ambiguous");
+    expect(r.explanation).toMatch(/county subdivision/);
+  });
+});
