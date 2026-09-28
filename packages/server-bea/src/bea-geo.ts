@@ -99,10 +99,12 @@ export function beaMetroFallback(
       ? undefined
       : direct.filter((e) => e.kind.sumlevel === "050").sort((a, b) => b.share - a.share)[0];
   const edges = county ? getContainment(catalog, ucgidOf("050", county.geoid)) : direct;
-  // CBSAs include micropolitan areas (LSAD M2); BEA's metro tables cover metropolitan ones only.
+  // CBSAs include micropolitan areas; BEA's metro tables cover metropolitan ones only. The
+  // production catalog carries no LSAD on CBSAs, so a micro area is known by its Census name ("…
+  // Micro Area"), or by LSAD M2 where a source provides it (#271).
   const metro = edges
     .filter((e) => e.kind.sumlevel === "310")
-    .filter((e) => catalog.getEntity(ucgidOf("310", e.geoid))?.lsad !== "M2")
+    .filter((e) => !isMicropolitan(catalog, e.geoid, e.name))
     .sort((a, b) => b.share - a.share)[0];
   if (!metro) return undefined;
   return {
@@ -112,6 +114,12 @@ export function beaMetroFallback(
     code: metro.geoid,
     caveat: `BEA publishes ${program} by metropolitan area: this is ${metro.name}'s, which includes ${place.name}.`,
   };
+}
+
+/** A micropolitan CBSA: LSAD M2, or a Census name ending "Micro Area". */
+function isMicropolitan(catalog: GeographyCatalog, geoid: string, name: string): boolean {
+  if (/\bMicro Area$/i.test(name)) return true;
+  return catalog.getEntity(ucgidOf("310", geoid))?.lsad === "M2";
 }
 
 /** True for a Connecticut county-level GeoFips (the planning regions, 09110–09190). */

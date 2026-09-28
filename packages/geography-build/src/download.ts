@@ -31,6 +31,9 @@ export const SOURCE_URLS = {
    */
   cousubs2020:
     "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_Gaz_cousubs_national.zip",
+  /** OMB's 2023 CBSA delineation (county → metro/micro area), a spreadsheet (#271). */
+  cbsaDelineation:
+    "https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2023/delineation-files/list1_2023.xlsx",
   lausArea: "https://download.bls.gov/pub/time.series/la/la.area",
   cesArea: "https://download.bls.gov/pub/time.series/sm/sm.area",
   oewsArea: "https://download.bls.gov/pub/time.series/oe/oe.area",
