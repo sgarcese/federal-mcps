@@ -54,9 +54,11 @@ const PROGRAMS: readonly ProgramDescription[] = [
 
 const CAVEATS: readonly string[] = [
   HUD_USER_REQUIRED_SENTENCE,
-  "Fair Market Rents and Income Limits are set per county or HUD metro area; a city answers " +
-    "with its county's area, stated in the caveats. New England publishes them by town, which " +
-    "this server does not resolve yet (#241).",
+  "Fair Market Rents and Income Limits are set per county or HUD metro area; a city or township " +
+    "answers with its county's area, stated in the caveats. New England sets them by town: a town " +
+    "answers directly, a city with its town, and a county not at all (#241). Connecticut towns " +
+    "are sent under their planning-region ids from FY2026 (FMR) and FY2025 (Income Limits), their " +
+    "former county ids before.",
   "CHAS is a multi-year ACS tabulation (state, county, place); Picture of Subsidized Households " +
     "suppresses small cells, reported as unavailable rather than zero.",
   "hud_get_raw returns one endpoint's JSON unchanged (fmr, il, mtspil, chas, picture) for " +

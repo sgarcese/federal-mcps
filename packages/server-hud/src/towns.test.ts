@@ -173,5 +173,6 @@ describe("hud_get_indicator for towns (#241)", () => {
     expect((hartford.data as Answer).observations?.map((o) => [o.year, o.value])).toEqual([
       ["2024", 97450],
     ]);
+    expect((hartford.limitations ?? []).join(" ")).toMatch(/planning-region id from FY2025/);
   });
 });

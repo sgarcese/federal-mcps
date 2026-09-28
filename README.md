@@ -101,7 +101,8 @@ count (`fair_market_rent`, Small Area FMRs by ZIP through `hud_get_raw`), Income
 (`mtsp_limit`), CHAS cost burden for renters and owners (share and count, over 30% or over 50%
 of income), and the Picture of Subsidized Households (units, households, vouchers and waits by
 program). FMR and Income Limits are set per county or HUD metro area, so a city answers with its
-county's area, flagged; New England towns are not resolved yet (#241). Suppressed Picture cells
+county's area, flagged; in New England, where HUD sets them by town, a town answers directly and a
+city through its town. Suppressed Picture cells
 come back as null with HUD's code, never zero. `hud_get_raw` returns any of the five endpoints'
 JSON unchanged. This product uses the HUD User Data API but is not endorsed or certified by HUD
 User.

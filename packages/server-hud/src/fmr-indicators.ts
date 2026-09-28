@@ -1,16 +1,16 @@
-import {
-  type DimensionDefinition,
-  getContainment,
-  type GeographyCatalog,
-  type HttpClient,
-  type IndicatorDefinition,
-  type IndicatorFallback,
-  type IndicatorFetch,
-  type PlaceCandidate,
-  type SeriesObservation,
-  type SeriesResult,
+import type {
+  DimensionDefinition,
+  GeographyCatalog,
+  HttpClient,
+  IndicatorDefinition,
+  IndicatorFallback,
+  IndicatorFetch,
+  PlaceCandidate,
+  SeriesObservation,
+  SeriesResult,
 } from "@federal-mcps/core";
 import { fmrEntityOf, fmrUrl, hudGetJson } from "./hud-api.js";
+import { hudAreaFallback, newEnglandCountyNote } from "./towns.js";
 
 /**
  * Fair Market Rents and Small Area FMRs (#233, ADR-018 §3). One indicator, `fair_market_rent`,
@@ -21,8 +21,8 @@ import { fmrEntityOf, fmrUrl, hudGetJson } from "./hud-api.js";
  * ZIP rows; a county answer reads the "MSA level" row).
  */
 const FMR_PROGRAM = "FMR";
-const COUNTY_SUMLEVEL = "050";
-const PLACE_SUMLEVEL = "160";
+const _COUNTY_SUMLEVEL = "050";
+const _PLACE_SUMLEVEL = "160";
 
 /** HUD's earliest published FMR fiscal year (docs/spikes/m11-hud-user-server.md); FY2016 answers 400. */
 const FMR_FLOOR_FISCAL_YEAR = 2017;
@@ -60,33 +60,21 @@ function fmrAgencyCodeOf(place: PlaceCandidate): string | undefined {
 }
 
 /**
- * A city falls back to its containing county's FMR area (ADR-018 §3): HUD sets Fair Market
- * Rents per FMR area, never by city, so the county's rate is the answer with a caveat naming
- * it. A New England county (fmrEntityOf reuses `hud-api.ts`'s town rule) yields no fallback —
- * towns need county-subdivision ids the catalog does not hold yet (#241).
+ * A city answers with its FMR area (ADR-018 §3, #241): its county's outside New England, its town
+ * in New England; a township outside New England answers with its county's. HUD sets Fair Market
+ * Rents per FMR area, never by city — the substitution travels as a caveat (`towns.ts`).
  */
 function fmrFallback(
   catalog: GeographyCatalog,
   place: PlaceCandidate,
 ): IndicatorFallback | undefined {
-  if (place.kind.sumlevel !== PLACE_SUMLEVEL) return undefined;
-  const counties = getContainment(catalog, place.ucgid)
-    .filter((e) => e.kind.sumlevel === COUNTY_SUMLEVEL)
-    .sort((a, b) => b.share - a.share);
-  const county = counties[0];
-  if (!county) return undefined;
-  const code = fmrEntityOf({
-    geoid: county.geoid,
-    kind: { sumlevel: COUNTY_SUMLEVEL, label: county.kind.label },
-  } as unknown as PlaceCandidate);
-  if (!code) return undefined;
-  return {
-    geoid: county.geoid,
-    name: county.name,
-    sumlevel: COUNTY_SUMLEVEL,
-    code,
-    caveat: `HUD sets Fair Market Rents per FMR area, not by city: this is ${county.name}'s area rate, covering ${place.name}.`,
-  };
+  return hudAreaFallback(
+    catalog,
+    place,
+    "Fair Market Rents",
+    (county, name) =>
+      `HUD sets Fair Market Rents per FMR area, not by city: this is ${county}'s area rate, covering ${name}.`,
+  );
 }
 
 /** Encode the entity id and the resolved bedroom code into the opaque series key. */
@@ -259,6 +247,7 @@ export const fmrIndicatorDefinitions: IndicatorDefinition[] = [
     buildSeriesId: (code, { dimensions }) => buildFmrKey(code, dimensions.bedrooms ?? "2"),
     dimensions: [BEDROOMS_DIMENSION],
     fallback: fmrFallback,
+    unavailableNote: (place) => newEnglandCountyNote(place, "Fair Market Rents"),
     fetch: fmrFetch,
     sourceOf: fmrSourceOf,
   },

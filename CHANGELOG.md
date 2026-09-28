@@ -3,6 +3,28 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## Unreleased — M13 HUD guide
+
+Added
+- **County subdivisions in the geography catalog** (#241): 36,427 towns, townships, MCDs and CCDs
+  for every state, with ACS population, nested in their counties. A city and the town that is the
+  same municipality resolve as one place; kinds `town`, `township` and `county subdivision`; much
+  smaller same-name towns elsewhere never make a city ambiguous; same-name towns within a state ask
+  for the county, and `"Cranberry, Butler County, PA"` or a bare GEOID picks one. Catalog 94 → 121 MB
+  (zipped 21 → 28 MB per Lambda).
+- **LAUS unemployment for towns** (#241): 1,665 BLS `CS` town and township codes map onto their
+  county subdivisions; a town without one falls back to its county, flagged.
+- **HUD Fair Market Rents and Income Limits for New England** (#241): a town answers with HUD's
+  town area, a city through its town, a county with a note that HUD publishes by town. Connecticut
+  towns are sent under their planning-region ids from FY2026 (FMR) and FY2025 (IL/MTSP) and their
+  2020 ids before, so a history spans HUD's change. A township outside New England answers with
+  its county's area.
+- Core: `IndicatorDefinition.unavailableNote` lets a program say why a place has no series.
+
+Changed
+- Brookline, MA and Greenwich, CT (and similar) resolve to their towns, the municipalities, rather
+  than a same-name census designated place.
+
 ## 0.6.0 — M11 HUD User server (2026-09-26)
 
 Live at `https://hud-user.responsive.city/mcp`. This product uses the HUD User Data API but is not

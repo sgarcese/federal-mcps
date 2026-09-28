@@ -291,7 +291,7 @@ describe("unavailableNote (#241): a program says why a place has no series", () 
 
   it("adds the note to an unavailable get_indicator answer", async () => {
     const res = await run("demo_get_indicator", { place: "Colorado", kind: "state" });
-    expect((res?.data as { status: string }).status).toBe("unavailable");
+    expect((res?.data as { status: string } | undefined)?.status).toBe("unavailable");
     expect(res?.limitations).toContain("Demo publishes Colorado by town; ask for a town.");
   });
 
