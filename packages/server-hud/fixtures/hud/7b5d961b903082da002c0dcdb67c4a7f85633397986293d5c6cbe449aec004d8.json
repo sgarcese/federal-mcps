@@ -1,0 +1,9 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/fmr/data/2502507000",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"data\":{\"county_name\":\"Suffolk County, MA\",\"counties_msa\":\"\",\"town_name\":\"Boston city\",\"metro_status\":\"1.0\",\"metro_name\":\"Boston-Cambridge-Newton, MA-NH\",\"area_name\":\"Boston-Cambridge-Quincy, MA-NH HUD Metro FMR Area\",\"basicdata\":{\"Efficiency\":2440,\"One-Bedroom\":2518,\"Two-Bedroom\":3008,\"Three-Bedroom\":3584,\"Four-Bedroom\":3953,\"year\":\"2027\"}}}",
+  "recordedAt": "2026-09-28T19:25:31.934Z"
+}

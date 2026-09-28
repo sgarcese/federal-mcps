@@ -1,0 +1,9 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/fmr/data/5000710675",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"data\":{\"county_name\":\"Chittenden County, VT\",\"counties_msa\":\"\",\"town_name\":\"Burlington city\",\"metro_status\":\"1.0\",\"metro_name\":\"Burlington-South Burlington, VT\",\"area_name\":\"Burlington-South Burlington, VT MSA\",\"basicdata\":{\"Efficiency\":1550,\"One-Bedroom\":1719,\"Two-Bedroom\":2165,\"Three-Bedroom\":2733,\"Four-Bedroom\":2845,\"year\":\"2027\"}}}",
+  "recordedAt": "2026-09-28T19:25:32.036Z"
+}

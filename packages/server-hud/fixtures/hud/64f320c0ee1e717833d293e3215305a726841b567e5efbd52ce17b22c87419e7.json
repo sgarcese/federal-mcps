@@ -1,0 +1,9 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/il/data/0911037070",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"data\":{\"county_name\":\"Capitol Planning Region, CT\",\"counties_msa\":\"\",\"town_name\":\"Hartford town\",\"metro_status\":\"1.0\",\"metro_name\":\"Hartford-West Hartford-East Hartford, CT\",\"area_name\":\"Hartford-West Hartford-East Hartford, CT MSA\",\"year\":\"2026\",\"median_income\":129200,\"very_low\":{\"il50_p1\":45250,\"il50_p2\":51700,\"il50_p3\":58150,\"il50_p4\":64600,\"il50_p5\":69800,\"il50_p6\":74950,\"il50_p7\":80150,\"il50_p8\":85300},\"extremely_low\":{\"il30_p1\":27150,\"il30_p2\":31000,\"il30_p3\":34900,\"il30_p4\":38750,\"il30_p5\":41850,\"il30_p6\":44950,\"il30_p7\":50040,\"il30_p8\":55720},\"low\":{\"il80_p1\":72350,\"il80_p2\":82700,\"il80_p3\":93050,\"il80_p4\":103350,\"il80_p5\":111650,\"il80_p6\":119900,\"il80_p7\":128200,\"il80_p8\":136450}}}",
+  "recordedAt": "2026-09-28T19:25:33.567Z"
+}
