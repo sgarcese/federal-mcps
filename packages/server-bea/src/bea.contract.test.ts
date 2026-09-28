@@ -47,14 +47,16 @@ it("meets the family contract", () => assertFamilyContract(definition()));
 it("does not call agencies directly", () => assertServerSources(new URL("./", import.meta.url)));
 
 describe("the live BEA server (createServer + InMemoryTransport)", () => {
-  it("lists bea_resolve_place and bea_describe_source with titles and the family annotations", async () => {
+  it("lists bea_resolve_place and bea_describe_source (and any indicator tools) with titles and the family annotations", async () => {
     const server = createServer(definition());
     const client = new Client({ name: "contract-test-client", version: "0.0.0" });
     const [ct, st] = InMemoryTransport.createLinkedPair();
     await Promise.all([client.connect(ct), server.connect(st)]);
     try {
       const { tools } = await client.listTools();
-      expect(tools.map((t) => t.name).sort()).toEqual(["bea_describe_source", "bea_resolve_place"]);
+      expect(tools.map((t) => t.name)).toEqual(
+        expect.arrayContaining(["bea_describe_source", "bea_resolve_place"]),
+      );
       for (const tool of tools) {
         expect(tool.title).toMatch(/\S/);
         expect(tool.annotations).toMatchObject({
