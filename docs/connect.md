@@ -2,7 +2,7 @@
 
 **Status:** current · a copy-paste quickstart for city and state policy staff. No
 account, no API key, no install — the servers answer over the public internet and serve
-only public federal statistics (BLS, Census, HUD User). Developers who want a local stdio process
+only public federal statistics (BLS, Census, HUD User, BEA). Developers who want a local stdio process
 instead want [`install.md`](install.md).
 
 The one thing to copy is the URL — one per server:
@@ -11,6 +11,7 @@ The one thing to copy is the URL — one per server:
 https://bls.responsive.city/mcp        # BLS: unemployment, jobs, wages, prices
 https://census.responsive.city/mcp     # Census: population, income, poverty, housing (ACS + 2020 count)
 https://hud-user.responsive.city/mcp   # HUD User: Fair Market Rents, Income Limits, CHAS cost burden, subsidized housing
+https://bea.responsive.city/mcp        # BEA: personal income, GDP by industry, regional price parities
 https://geo.responsive.city/mcp        # Geography: resolve any place name to its identifiers and parents
 https://cdc.responsive.city/mcp        # CDC open data (data.cdc.gov via OpenContext) — load skills/cdc-places for PLACES
 
@@ -37,6 +38,7 @@ One command from any terminal:
 claude mcp add --transport http bls https://bls.responsive.city/mcp
 claude mcp add --transport http census https://census.responsive.city/mcp
 claude mcp add --transport http hud https://hud-user.responsive.city/mcp
+claude mcp add --transport http bea https://bea.responsive.city/mcp
 ```
 
 `bls` is just the local name you'll see it under; call it anything. Check it landed with
@@ -46,8 +48,9 @@ claude mcp add --transport http hud https://hud-user.responsive.city/mcp
 
 The server speaks **MCP over stateless Streamable HTTP**. Any host that accepts a remote
 MCP endpoint takes the same URLs — point it at `https://bls.responsive.city/mcp` or
-`https://census.responsive.city/mcp` or `https://hud-user.responsive.city/mcp`, no auth, and
-you're connected (the HUD server holds its own HUD User token; you need none).
+`https://census.responsive.city/mcp`, `https://hud-user.responsive.city/mcp` or
+`https://bea.responsive.city/mcp`, no auth, and you're connected (the HUD and BEA servers hold their
+own agency keys; you need none).
 
 ## What to ask
 

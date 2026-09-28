@@ -3,7 +3,26 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## Unreleased — M14 BEA regional server
+## 0.7.0 — M14 BEA regional server, and towns (2026-09-28)
+
+Live at `https://bea.responsive.city/mcp`. This product uses the Bureau of Economic Analysis (BEA)
+Data API but is not endorsed or certified by BEA. Also ships M13's county subdivisions (#241), below.
+
+Added (BEA)
+- **Personal income** (#259): `personal_income` and `per_capita_personal_income` for counties
+  (`CAINC1`) and states (`SAINC1`), with a `frequency` picker for state quarterly (`SQINC1`); a county
+  asking quarterly is told it is state-only, never given the annual figure.
+- **GDP and real GDP by industry** (#260): `gdp` and `real_gdp` for counties and states from 2001, an
+  `industry` picker generated from BEA's own line list (identical line codes in county and state
+  tables, verified); real GDP never summed.
+- **Regional price parities** (#261): `regional_price_parity` for metros and states with an `item`
+  picker (all items, goods, rents, utilities, other services); a county or city answers with its metro,
+  and a place outside any metro with its state's nonmetropolitan portion (`PARPP`).
+- **`bea_get_raw`** (#262): any BEA Regional query in BEA's terms — table, line, GeoFips list or a
+  state's counties or every county, years or a span — BEA's rows unchanged, compact rendering
+  (ADR-017), at most one bulk parameter per call. `bea_compare_places` answers many places in one
+  upstream call.
+- **Evals** (#262): the runner's `bea` server (`BEA_URL`), per-family sets and `bea.jsonl`.
 
 Added
 - Core HTTP client: a `sanitize` hook rewrites every upstream body before it is recorded, parsed,
@@ -34,9 +53,7 @@ Fixed
 - The weekly `geography-build` workflow passes `CENSUS_API_KEY` and `BEA_API_KEY` from repository
   secrets; it had failed since the Census key became required (#172).
 
-## Unreleased — M13 HUD guide
-
-Added
+Added (towns, M13)
 - **County subdivisions in the geography catalog** (#241): 36,427 towns, townships, MCDs and CCDs
   for every state, with ACS population, nested in their counties. A city and the town that is the
   same municipality resolve as one place; kinds `town`, `township` and `county subdivision`; much
