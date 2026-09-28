@@ -104,3 +104,23 @@ describe("fetchCachedWithCensusKey", () => {
     ).rejects.toThrow(/^(?!.*SECRETKEY).*$/s);
   });
 });
+
+describe("county subdivision sources (#241)", () => {
+  it("adds the 2025 county-subdivision gazetteer under 060, and the 2020 one for recoded GEOIDs", () => {
+    expect(SOURCE_URLS.gazetteers["060"]).toBe(
+      "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_cousubs_national.zip",
+    );
+    expect(SOURCE_URLS.cousubs2020).toBe(
+      "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_Gaz_cousubs_national.zip",
+    );
+  });
+
+  it("asks ACS for county-subdivision population one state per URL (a national query is HTTP 400), keyless", () => {
+    const urls = SOURCE_URLS.acsCousubPopulation(["25", "09"]);
+    expect(urls).toEqual([
+      "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E&for=county%20subdivision:*&in=state:25",
+      "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E&for=county%20subdivision:*&in=state:09",
+    ]);
+    expect(urls.join(" ")).not.toContain("key=");
+  });
+});
