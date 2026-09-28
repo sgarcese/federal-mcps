@@ -10,9 +10,9 @@ describe("BEA describeSource() (#258, ADR-019)", () => {
     expect(BEA_API_ENDPOINT).toBe("https://apps.bea.gov/api/data");
   });
 
-  it("lists personal income, GDP and regional price parities, planned in the shell", () => {
+  it("lists personal income, GDP and regional price parities, all available (#262)", () => {
     const byCode = Object.fromEntries(describeSource().programs.map((p) => [p.code, p]));
-    for (const code of ["PI", "GDP", "RPP"]) expect(byCode[code]?.status).toBe("planned");
+    for (const code of ["PI", "GDP", "RPP"]) expect(byCode[code]?.status).toBe("available");
     expect(byCode.RPP?.granularity).toContain("metropolitan");
   });
 
@@ -25,5 +25,7 @@ describe("BEA describeSource() (#258, ADR-019)", () => {
     );
     expect(d.caveats.join(" ")).toContain(BEA_REQUIRED_SENTENCE);
     expect(d.caveats.join(" ")).toMatch(/never as zero/);
+    expect(d.caveats.join(" ")).not.toMatch(/shell only/);
+    expect(d.caveats.join(" ")).toContain("bea_get_raw");
   });
 });

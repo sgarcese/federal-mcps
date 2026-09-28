@@ -6,6 +6,7 @@ import {
   type ServerDefinition,
 } from "@federal-mcps/core";
 import { BEA_API_ENDPOINT, BEA_REQUIRED_SENTENCE, describeSource } from "./describe-source.js";
+import { beaGetRawTool } from "./get-raw.js";
 import { beaIndicatorDefinitions } from "./indicators.js";
 import { BEA_SERVER_VERSION } from "./version.js";
 
@@ -43,7 +44,7 @@ function beaIndicatorToolsFor(deps: BeaDefinitionDeps, catalog: () => GeographyC
   const first = definitions[0];
   const httpClient = deps.httpClient;
   if (!first || !httpClient) return [];
-  return indicatorTools({
+  const tools = indicatorTools({
     agency: "bea",
     definitions,
     catalog,
@@ -80,6 +81,14 @@ function beaIndicatorToolsFor(deps: BeaDefinitionDeps, catalog: () => GeographyC
       listIndicators: [{ title: "Everything BEA Regional reports", input: {} }],
     },
   });
+  return [
+    ...tools,
+    beaGetRawTool({
+      httpClient: () => httpClient,
+      apiKey: deps.apiKey ?? (() => undefined),
+      ...(deps.now ? { now: deps.now } : {}),
+    }),
+  ];
 }
 
 /** The BEA server's definition: the shared resolver as `bea_resolve_place`, and the indicator tools. */
