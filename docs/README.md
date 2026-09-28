@@ -43,6 +43,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/m14-bea-regional.md](spikes/m14-bea-regional.md) — BEA Regional verified with a key:
+  tables and units, zero-valued suppression markers, the key echoed in every body, errors as HTTP
+  200, push-down (all counties in one call), Virginia/Maui combinations, Connecticut's 2024 break,
+  metro RPPs; twelve owner decisions.
 - [spikes/m11-hud-user-server.md](spikes/m11-hud-user-server.md) — the HUD User API verified with a
   token: FMR (FY2017–FY2027, Small Area FMRs), Income Limits and MTSP, CHAS (to 2018–2022), Picture of
   Subsidized Households (2012–2025), the ZIP crosswalk; 60 queries/minute and the required sentence;
