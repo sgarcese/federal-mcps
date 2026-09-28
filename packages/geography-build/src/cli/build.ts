@@ -7,6 +7,7 @@ import { assemble, type Sources } from "../assemble.js";
 import { buildCatalog } from "../catalog.js";
 import { loadVendoredGeocorr } from "../data/geocorr/vendored.js";
 import { mergeAcsTables } from "../parse/acs-population.js";
+import { parseSharedStrings, parseSheetRows } from "../parse/delineation.js";
 import { parseGazetteer } from "../parse/gazetteer.js";
 import {
   fetchCached,
@@ -45,6 +46,14 @@ async function main(): Promise<void> {
   // The 2020 county-subdivision gazetteer: recoded towns keep their 2020 GEOID (#241).
   process.stderr.write(`cousubs2020: ${SOURCE_URLS.cousubs2020}\n`);
   sources.cousubs2020 = unzipSingleText(await fetchCached(SOURCE_URLS.cousubs2020));
+
+  // OMB's CBSA delineation: every county's metro or micro area (#271). An .xlsx is a zip of XML.
+  process.stderr.write(`cbsaDelineation: ${SOURCE_URLS.cbsaDelineation}\n`);
+  const delineation = await fetchCached(SOURCE_URLS.cbsaDelineation);
+  sources.cbsaDelineation = parseSheetRows(
+    unzipMember(delineation, "xl/worksheets/sheet1.xml"),
+    parseSharedStrings(unzipMember(delineation, "xl/sharedStrings.xml")),
+  );
 
   for (const key of [
     "lausArea",
@@ -112,6 +121,21 @@ async function main(): Promise<void> {
   process.stderr.write(
     `built ${outPath}: ${rows.entities.length} entities, ${rows.agencyCodes.length} agency codes, ` +
       `${rows.containment.length} containment edges, ${rows.lineage.length} lineage rows\n`,
+  );
+}
+
+/** Extracts one named member of a zip (e.g. an .xlsx part) via the system `unzip`. */
+function unzipMember(zip: Buffer, member: string): string {
+  const dir = mkdirSync(
+    join(tmpdir(), `geo-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    {
+      recursive: true,
+    },
+  );
+  const tmp = join(dir ?? tmpdir(), "m.zip");
+  writeFileSync(tmp, zip);
+  return execFileSync("unzip", ["-p", tmp, member], { maxBuffer: 256 * 1024 * 1024 }).toString(
+    "utf-8",
   );
 }
 

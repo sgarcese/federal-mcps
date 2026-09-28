@@ -2,6 +2,7 @@ import { ucgidOf } from "@federal-mcps/core";
 import { CENSUS_DIVISIONS, CENSUS_REGIONS, COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
 import { parseAcsPopulation } from "./parse/acs-population.js";
 import { parseBeaCombinations } from "./parse/bea-geofips.js";
+import { parseDelineation } from "./parse/delineation.js";
 import {
   parseCesArea,
   parseCpiArea,
@@ -38,6 +39,11 @@ export interface Sources {
    * recoded town (Connecticut's 2022 planning regions) carries its 2020 GEOID as a code.
    */
   cousubs2020?: string;
+  /**
+   * OMB's CBSA delineation as spreadsheet rows (`list1_2023.xlsx`, read by `parse/delineation.ts`):
+   * each county's metropolitan or micropolitan statistical area (#271).
+   */
+  cbsaDelineation?: readonly (readonly string[])[];
   /** BEA's Regional GeoFips list (JSON), for its combination areas (#257, ADR-019 §6). */
   beaGeoFips?: string;
   /** BLS LABSTAT area tables, when present. */
@@ -142,6 +148,7 @@ export function assemble(sources: Sources): CatalogRows {
     containment: [
       ...deriveStrictContainment(entities),
       ...deriveTownTwins(entities),
+      ...countyCbsaEdges(entities, sources.cbsaDelineation),
       ...regional.containment,
       ...mergeWeighted(weighted, geocorr),
     ],
@@ -239,6 +246,18 @@ function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
     }
   }
   return out;
+}
+
+/** County → CBSA edges from OMB's delineation (#271), only between entities this catalog holds. */
+function countyCbsaEdges(
+  entities: readonly EntityRow[],
+  delineation: readonly (readonly string[])[] | undefined,
+): ContainmentRow[] {
+  if (!delineation) return [];
+  const present = new Set(entities.map((e) => e.ucgid));
+  return parseDelineation(delineation).filter(
+    (e) => present.has(e.childUcgid) && present.has(e.parentUcgid),
+  );
 }
 
 /** County-subdivision functional statuses that mean a working government (Census FUNCSTAT). */

@@ -60,7 +60,8 @@ export function buildFixtureCatalog(): string {
     // A micropolitan county (Marshall County, IN in the Plymouth micro area): BEA's metro tables
     // do not cover micro areas, so regional price parities answer with the state's nonmetro portion.
     ent("18099", "050", "Marshall County", { stateFips: "18", lsad: "06", ...pop(46_000) }),
-    ent("38500", "310", "Plymouth, IN", { lsad: "M2", ...pop(46_000) }),
+    // As the production catalog stores it (#271): no LSAD on CBSAs; a micro area is named "… Micro Area".
+    ent("38500", "310", "Plymouth, IN Micro Area", { ...pop(46_000) }),
     ent("48", "040", "Texas", { stateFips: "48", ...pop(30_500_000) }),
     ent("48301", "050", "Loving County", {
       stateFips: "48",

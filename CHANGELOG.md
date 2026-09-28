@@ -24,6 +24,12 @@ Added
   verifies the server; `admin-create-exec-role.sh dev bea`. The fleet record gains
   `domain.beaDomainName` and `naming.beaService`.
 
+- **County → metro in the geography catalog** (#271): every county's metropolitan or micropolitan
+  area (1,915 edges) from OMB's 2023 delineation, read from Census's spreadsheet by a minimal tested
+  xlsx reader (no new dependency). The production catalog had none — the server fixture catalogs did,
+  which hid it — so a county's regional price parity fell to its state's nonmetropolitan portion.
+  Micropolitan areas are recognised by name ("… Micro Area"; CBSAs carry no LSAD in the catalog).
+
 Fixed
 - The weekly `geography-build` workflow passes `CENSUS_API_KEY` and `BEA_API_KEY` from repository
   secrets; it had failed since the Census key became required (#172).
