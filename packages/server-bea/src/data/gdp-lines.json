@@ -1,0 +1,1290 @@
+{
+  "CAGDP2": [
+    {
+      "code": "1",
+      "label": "All industry total",
+      "naics": null
+    },
+    {
+      "code": "2",
+      "label": "Private industries",
+      "naics": null
+    },
+    {
+      "code": "3",
+      "label": "Agriculture, forestry, fishing and hunting",
+      "naics": "11"
+    },
+    {
+      "code": "6",
+      "label": "Mining, quarrying, and oil and gas extraction",
+      "naics": "21"
+    },
+    {
+      "code": "10",
+      "label": "Utilities",
+      "naics": "22"
+    },
+    {
+      "code": "11",
+      "label": "Construction",
+      "naics": "23"
+    },
+    {
+      "code": "12",
+      "label": "Manufacturing",
+      "naics": "31-33"
+    },
+    {
+      "code": "13",
+      "label": "Durable goods manufacturing",
+      "naics": "321,327-339"
+    },
+    {
+      "code": "25",
+      "label": "Nondurable goods manufacturing",
+      "naics": "311-316,322-326"
+    },
+    {
+      "code": "34",
+      "label": "Wholesale trade",
+      "naics": "42"
+    },
+    {
+      "code": "35",
+      "label": "Retail trade",
+      "naics": "44-45"
+    },
+    {
+      "code": "36",
+      "label": "Transportation and warehousing",
+      "naics": "48-49"
+    },
+    {
+      "code": "45",
+      "label": "Information",
+      "naics": "51"
+    },
+    {
+      "code": "50",
+      "label": "Finance, insurance, real estate, rental, and leasing",
+      "naics": "52,53"
+    },
+    {
+      "code": "51",
+      "label": "Finance and insurance",
+      "naics": "52"
+    },
+    {
+      "code": "56",
+      "label": "Real estate and rental and leasing",
+      "naics": "53"
+    },
+    {
+      "code": "59",
+      "label": "Professional and business services",
+      "naics": "54,55,56"
+    },
+    {
+      "code": "60",
+      "label": "Professional, scientific, and technical services",
+      "naics": "54"
+    },
+    {
+      "code": "64",
+      "label": "Management of companies and enterprises",
+      "naics": "55"
+    },
+    {
+      "code": "65",
+      "label": "Administrative and support and waste management and remediation services",
+      "naics": "56"
+    },
+    {
+      "code": "68",
+      "label": "Educational services, health care, and social assistance",
+      "naics": "61,62"
+    },
+    {
+      "code": "69",
+      "label": "Educational services",
+      "naics": "61"
+    },
+    {
+      "code": "70",
+      "label": "Health care and social assistance",
+      "naics": "62"
+    },
+    {
+      "code": "75",
+      "label": "Arts, entertainment, recreation, accommodation, and food services",
+      "naics": "71,72"
+    },
+    {
+      "code": "76",
+      "label": "Arts, entertainment, and recreation",
+      "naics": "71"
+    },
+    {
+      "code": "79",
+      "label": "Accommodation and food services",
+      "naics": "72"
+    },
+    {
+      "code": "82",
+      "label": "Other services (except government and government enterprises)",
+      "naics": "81"
+    },
+    {
+      "code": "83",
+      "label": "Government and government enterprises",
+      "naics": "92"
+    },
+    {
+      "code": "87",
+      "label": "Natural resources and mining",
+      "naics": "11,21"
+    },
+    {
+      "code": "88",
+      "label": "Trade",
+      "naics": "42,44-45"
+    },
+    {
+      "code": "89",
+      "label": "Transportation and utilities",
+      "naics": "22,48-49"
+    },
+    {
+      "code": "90",
+      "label": "Manufacturing and information",
+      "naics": "31-33,51"
+    },
+    {
+      "code": "91",
+      "label": "Private goods-producing industries",
+      "naics": null
+    },
+    {
+      "code": "92",
+      "label": "Private services-providing industries",
+      "naics": null
+    }
+  ],
+  "CAGDP9": [
+    {
+      "code": "1",
+      "label": "All industry total",
+      "naics": null
+    },
+    {
+      "code": "2",
+      "label": "Private industries",
+      "naics": null
+    },
+    {
+      "code": "3",
+      "label": "Agriculture, forestry, fishing and hunting",
+      "naics": "11"
+    },
+    {
+      "code": "6",
+      "label": "Mining, quarrying, and oil and gas extraction",
+      "naics": "21"
+    },
+    {
+      "code": "10",
+      "label": "Utilities",
+      "naics": "22"
+    },
+    {
+      "code": "11",
+      "label": "Construction",
+      "naics": "23"
+    },
+    {
+      "code": "12",
+      "label": "Manufacturing",
+      "naics": "31-33"
+    },
+    {
+      "code": "13",
+      "label": "Durable goods manufacturing",
+      "naics": "321,327-339"
+    },
+    {
+      "code": "25",
+      "label": "Nondurable goods manufacturing",
+      "naics": "311-316,322-326"
+    },
+    {
+      "code": "34",
+      "label": "Wholesale trade",
+      "naics": "42"
+    },
+    {
+      "code": "35",
+      "label": "Retail trade",
+      "naics": "44-45"
+    },
+    {
+      "code": "36",
+      "label": "Transportation and warehousing",
+      "naics": "48-49"
+    },
+    {
+      "code": "45",
+      "label": "Information",
+      "naics": "51"
+    },
+    {
+      "code": "50",
+      "label": "Finance, insurance, real estate, rental, and leasing",
+      "naics": "52,53"
+    },
+    {
+      "code": "51",
+      "label": "Finance and insurance",
+      "naics": "52"
+    },
+    {
+      "code": "56",
+      "label": "Real estate and rental and leasing",
+      "naics": "53"
+    },
+    {
+      "code": "59",
+      "label": "Professional and business services",
+      "naics": "54,55,56"
+    },
+    {
+      "code": "60",
+      "label": "Professional, scientific, and technical services",
+      "naics": "54"
+    },
+    {
+      "code": "64",
+      "label": "Management of companies and enterprises",
+      "naics": "55"
+    },
+    {
+      "code": "65",
+      "label": "Administrative and support and waste management and remediation services",
+      "naics": "56"
+    },
+    {
+      "code": "68",
+      "label": "Educational services, health care, and social assistance",
+      "naics": "61,62"
+    },
+    {
+      "code": "69",
+      "label": "Educational services",
+      "naics": "61"
+    },
+    {
+      "code": "70",
+      "label": "Health care and social assistance",
+      "naics": "62"
+    },
+    {
+      "code": "75",
+      "label": "Arts, entertainment, recreation, accommodation, and food services",
+      "naics": "71,72"
+    },
+    {
+      "code": "76",
+      "label": "Arts, entertainment, and recreation",
+      "naics": "71"
+    },
+    {
+      "code": "79",
+      "label": "Accommodation and food services",
+      "naics": "72"
+    },
+    {
+      "code": "82",
+      "label": "Other services (except government and government enterprises)",
+      "naics": "81"
+    },
+    {
+      "code": "83",
+      "label": "Government and government enterprises",
+      "naics": "92"
+    },
+    {
+      "code": "87",
+      "label": "Natural resources and mining",
+      "naics": "11,21"
+    },
+    {
+      "code": "88",
+      "label": "Trade",
+      "naics": "42,44-45"
+    },
+    {
+      "code": "89",
+      "label": "Transportation and utilities",
+      "naics": "22,48-49"
+    },
+    {
+      "code": "90",
+      "label": "Manufacturing and information",
+      "naics": "31-33,51"
+    },
+    {
+      "code": "91",
+      "label": "Private goods-producing industries",
+      "naics": null
+    },
+    {
+      "code": "92",
+      "label": "Private services-providing industries",
+      "naics": null
+    }
+  ],
+  "SAGDP2": [
+    {
+      "code": "1",
+      "label": "All industry total",
+      "naics": null
+    },
+    {
+      "code": "2",
+      "label": "Private industries",
+      "naics": null
+    },
+    {
+      "code": "3",
+      "label": "Agriculture, forestry, fishing and hunting",
+      "naics": "11"
+    },
+    {
+      "code": "4",
+      "label": "Farms",
+      "naics": "111-112"
+    },
+    {
+      "code": "5",
+      "label": "Forestry, fishing, and related activities",
+      "naics": "113-115"
+    },
+    {
+      "code": "6",
+      "label": "Mining, quarrying, and oil and gas extraction",
+      "naics": "21"
+    },
+    {
+      "code": "7",
+      "label": "Oil and gas extraction",
+      "naics": "211"
+    },
+    {
+      "code": "8",
+      "label": "Mining (except oil and gas)",
+      "naics": "212"
+    },
+    {
+      "code": "9",
+      "label": "Support activities for mining",
+      "naics": "213"
+    },
+    {
+      "code": "10",
+      "label": "Utilities",
+      "naics": "22"
+    },
+    {
+      "code": "11",
+      "label": "Construction",
+      "naics": "23"
+    },
+    {
+      "code": "12",
+      "label": "Manufacturing",
+      "naics": "31-33"
+    },
+    {
+      "code": "13",
+      "label": "Durable goods manufacturing",
+      "naics": "321,327-339"
+    },
+    {
+      "code": "14",
+      "label": "Wood product manufacturing",
+      "naics": "321"
+    },
+    {
+      "code": "15",
+      "label": "Nonmetallic mineral product manufacturing",
+      "naics": "327"
+    },
+    {
+      "code": "16",
+      "label": "Primary metal manufacturing",
+      "naics": "331"
+    },
+    {
+      "code": "17",
+      "label": "Fabricated metal product manufacturing",
+      "naics": "332"
+    },
+    {
+      "code": "18",
+      "label": "Machinery manufacturing",
+      "naics": "333"
+    },
+    {
+      "code": "19",
+      "label": "Computer and electronic product manufacturing",
+      "naics": "334"
+    },
+    {
+      "code": "20",
+      "label": "Electrical equipment, appliance, and component manufacturing",
+      "naics": "335"
+    },
+    {
+      "code": "21",
+      "label": "Motor vehicles, bodies and trailers, and parts manufacturing",
+      "naics": "3361-3363"
+    },
+    {
+      "code": "22",
+      "label": "Other transportation equipment manufacturing",
+      "naics": "3364-3466,3369"
+    },
+    {
+      "code": "23",
+      "label": "Furniture and related product manufacturing",
+      "naics": "337"
+    },
+    {
+      "code": "24",
+      "label": "Miscellaneous manufacturing",
+      "naics": "339"
+    },
+    {
+      "code": "25",
+      "label": "Nondurable goods manufacturing",
+      "naics": "311-316,322-326"
+    },
+    {
+      "code": "26",
+      "label": "Food and beverage and tobacco product manufacturing",
+      "naics": "311-312"
+    },
+    {
+      "code": "27",
+      "label": "Textile mills and textile product mills",
+      "naics": "313-314"
+    },
+    {
+      "code": "28",
+      "label": "Apparel, leather, and allied product manufacturing",
+      "naics": "315-316"
+    },
+    {
+      "code": "29",
+      "label": "Paper manufacturing",
+      "naics": "322"
+    },
+    {
+      "code": "30",
+      "label": "Printing and related support activities",
+      "naics": "323"
+    },
+    {
+      "code": "31",
+      "label": "Petroleum and coal products manufacturing",
+      "naics": "324"
+    },
+    {
+      "code": "32",
+      "label": "Chemical manufacturing",
+      "naics": "325"
+    },
+    {
+      "code": "33",
+      "label": "Plastics and rubber products manufacturing",
+      "naics": "326"
+    },
+    {
+      "code": "34",
+      "label": "Wholesale trade",
+      "naics": "42"
+    },
+    {
+      "code": "35",
+      "label": "Retail trade",
+      "naics": "44-45"
+    },
+    {
+      "code": "36",
+      "label": "Transportation and warehousing",
+      "naics": "48-49"
+    },
+    {
+      "code": "37",
+      "label": "Air transportation",
+      "naics": "481"
+    },
+    {
+      "code": "38",
+      "label": "Rail transportation",
+      "naics": "482"
+    },
+    {
+      "code": "39",
+      "label": "Water transportation",
+      "naics": "483"
+    },
+    {
+      "code": "40",
+      "label": "Truck transportation",
+      "naics": "484"
+    },
+    {
+      "code": "41",
+      "label": "Transit and ground passenger transportation",
+      "naics": "485"
+    },
+    {
+      "code": "42",
+      "label": "Pipeline transportation",
+      "naics": "486"
+    },
+    {
+      "code": "43",
+      "label": "Other transportation and support activities",
+      "naics": "487-488,492"
+    },
+    {
+      "code": "44",
+      "label": "Warehousing and storage",
+      "naics": "493"
+    },
+    {
+      "code": "45",
+      "label": "Information",
+      "naics": "51"
+    },
+    {
+      "code": "46",
+      "label": "Publishing industries (except Internet)",
+      "naics": "511"
+    },
+    {
+      "code": "47",
+      "label": "Motion picture and sound recording industries",
+      "naics": "512"
+    },
+    {
+      "code": "48",
+      "label": "Broadcasting (except Internet) and telecommunications",
+      "naics": "515,517"
+    },
+    {
+      "code": "49",
+      "label": "Data processing, hosting, and other information services",
+      "naics": "518-519"
+    },
+    {
+      "code": "50",
+      "label": "Finance, insurance, real estate, rental, and leasing",
+      "naics": "52,53"
+    },
+    {
+      "code": "51",
+      "label": "Finance and insurance",
+      "naics": "52"
+    },
+    {
+      "code": "52",
+      "label": "Monetary Authorities- central bank, credit intermediation, and related services",
+      "naics": "521-522"
+    },
+    {
+      "code": "53",
+      "label": "Securities, commodity contracts, and other financial investments and related activities",
+      "naics": "523"
+    },
+    {
+      "code": "54",
+      "label": "Insurance carriers and related activities",
+      "naics": "524"
+    },
+    {
+      "code": "55",
+      "label": "Funds, trusts, and other financial vehicles",
+      "naics": "525"
+    },
+    {
+      "code": "56",
+      "label": "Real estate and rental and leasing",
+      "naics": "53"
+    },
+    {
+      "code": "57",
+      "label": "Real estate",
+      "naics": "531"
+    },
+    {
+      "code": "58",
+      "label": "Rental and leasing services and lessors of nonfinancial intangible assets",
+      "naics": "532-533"
+    },
+    {
+      "code": "59",
+      "label": "Professional and business services",
+      "naics": "54,55,56"
+    },
+    {
+      "code": "60",
+      "label": "Professional, scientific, and technical services",
+      "naics": "54"
+    },
+    {
+      "code": "61",
+      "label": "Legal services",
+      "naics": "5411"
+    },
+    {
+      "code": "62",
+      "label": "Computer systems design and related services",
+      "naics": "5415"
+    },
+    {
+      "code": "63",
+      "label": "Miscellaneous professional, scientific, and technical services",
+      "naics": "5412-5414,5416-5419"
+    },
+    {
+      "code": "64",
+      "label": "Management of companies and enterprises",
+      "naics": "55"
+    },
+    {
+      "code": "65",
+      "label": "Administrative and support and waste management and remediation services",
+      "naics": "56"
+    },
+    {
+      "code": "66",
+      "label": "Administrative and support services",
+      "naics": "561"
+    },
+    {
+      "code": "67",
+      "label": "Waste management and remediation services",
+      "naics": "562"
+    },
+    {
+      "code": "68",
+      "label": "Educational services, health care, and social assistance",
+      "naics": "61,62"
+    },
+    {
+      "code": "69",
+      "label": "Educational services",
+      "naics": "61"
+    },
+    {
+      "code": "70",
+      "label": "Health care and social assistance",
+      "naics": "62"
+    },
+    {
+      "code": "71",
+      "label": "Ambulatory health care services",
+      "naics": "621"
+    },
+    {
+      "code": "72",
+      "label": "Hospitals",
+      "naics": "622"
+    },
+    {
+      "code": "73",
+      "label": "Nursing and residential care facilities",
+      "naics": "623"
+    },
+    {
+      "code": "74",
+      "label": "Social assistance",
+      "naics": "624"
+    },
+    {
+      "code": "75",
+      "label": "Arts, entertainment, recreation, accommodation, and food services",
+      "naics": "71,72"
+    },
+    {
+      "code": "76",
+      "label": "Arts, entertainment, and recreation",
+      "naics": "71"
+    },
+    {
+      "code": "77",
+      "label": "Performing arts, spectator sports, museums, and related activities",
+      "naics": "711-712"
+    },
+    {
+      "code": "78",
+      "label": "Amusement, gambling, and recreation industries",
+      "naics": "713"
+    },
+    {
+      "code": "79",
+      "label": "Accommodation and food services",
+      "naics": "72"
+    },
+    {
+      "code": "80",
+      "label": "Accommodation",
+      "naics": "721"
+    },
+    {
+      "code": "81",
+      "label": "Food services and drinking places",
+      "naics": "722"
+    },
+    {
+      "code": "82",
+      "label": "Other services (except government and government enterprises)",
+      "naics": "81"
+    },
+    {
+      "code": "83",
+      "label": "Government and government enterprises",
+      "naics": "92"
+    },
+    {
+      "code": "84",
+      "label": "Federal civilian",
+      "naics": null
+    },
+    {
+      "code": "85",
+      "label": "Military",
+      "naics": null
+    },
+    {
+      "code": "86",
+      "label": "State and local",
+      "naics": null
+    },
+    {
+      "code": "87",
+      "label": "Natural resources and mining",
+      "naics": "11,21"
+    },
+    {
+      "code": "88",
+      "label": "Trade",
+      "naics": "42,44-45"
+    },
+    {
+      "code": "89",
+      "label": "Transportation and utilities",
+      "naics": "22,48-49"
+    },
+    {
+      "code": "90",
+      "label": "Manufacturing and information",
+      "naics": "31-33,51"
+    },
+    {
+      "code": "91",
+      "label": "Private goods-producing industries",
+      "naics": null
+    },
+    {
+      "code": "92",
+      "label": "Private services-providing industries",
+      "naics": null
+    },
+    {
+      "code": "100",
+      "label": "All industry total, overseas activity",
+      "naics": null
+    },
+    {
+      "code": "101",
+      "label": "Government and government enterprises, overseas activity",
+      "naics": null
+    },
+    {
+      "code": "102",
+      "label": "Federal civilian, overseas activity",
+      "naics": null
+    },
+    {
+      "code": "103",
+      "label": "Military, overseas activity",
+      "naics": null
+    }
+  ],
+  "SAGDP9": [
+    {
+      "code": "1",
+      "label": "All industry total",
+      "naics": null
+    },
+    {
+      "code": "2",
+      "label": "Private industries",
+      "naics": null
+    },
+    {
+      "code": "3",
+      "label": "Agriculture, forestry, fishing and hunting",
+      "naics": "11"
+    },
+    {
+      "code": "4",
+      "label": "Farms",
+      "naics": "111-112"
+    },
+    {
+      "code": "5",
+      "label": "Forestry, fishing, and related activities",
+      "naics": "113-115"
+    },
+    {
+      "code": "6",
+      "label": "Mining, quarrying, and oil and gas extraction",
+      "naics": "21"
+    },
+    {
+      "code": "7",
+      "label": "Oil and gas extraction",
+      "naics": "211"
+    },
+    {
+      "code": "8",
+      "label": "Mining (except oil and gas)",
+      "naics": "212"
+    },
+    {
+      "code": "9",
+      "label": "Support activities for mining",
+      "naics": "213"
+    },
+    {
+      "code": "10",
+      "label": "Utilities",
+      "naics": "22"
+    },
+    {
+      "code": "11",
+      "label": "Construction",
+      "naics": "23"
+    },
+    {
+      "code": "12",
+      "label": "Manufacturing",
+      "naics": "31-33"
+    },
+    {
+      "code": "13",
+      "label": "Durable goods manufacturing",
+      "naics": "321,327-339"
+    },
+    {
+      "code": "14",
+      "label": "Wood product manufacturing",
+      "naics": "321"
+    },
+    {
+      "code": "15",
+      "label": "Nonmetallic mineral product manufacturing",
+      "naics": "327"
+    },
+    {
+      "code": "16",
+      "label": "Primary metal manufacturing",
+      "naics": "331"
+    },
+    {
+      "code": "17",
+      "label": "Fabricated metal product manufacturing",
+      "naics": "332"
+    },
+    {
+      "code": "18",
+      "label": "Machinery manufacturing",
+      "naics": "333"
+    },
+    {
+      "code": "19",
+      "label": "Computer and electronic product manufacturing",
+      "naics": "334"
+    },
+    {
+      "code": "20",
+      "label": "Electrical equipment, appliance, and component manufacturing",
+      "naics": "335"
+    },
+    {
+      "code": "21",
+      "label": "Motor vehicles, bodies and trailers, and parts manufacturing",
+      "naics": "3361-3363"
+    },
+    {
+      "code": "22",
+      "label": "Other transportation equipment manufacturing",
+      "naics": "3364-3466,3369"
+    },
+    {
+      "code": "23",
+      "label": "Furniture and related product manufacturing",
+      "naics": "337"
+    },
+    {
+      "code": "24",
+      "label": "Miscellaneous manufacturing",
+      "naics": "339"
+    },
+    {
+      "code": "25",
+      "label": "Nondurable goods manufacturing",
+      "naics": "311-316,322-326"
+    },
+    {
+      "code": "26",
+      "label": "Food and beverage and tobacco product manufacturing",
+      "naics": "311-312"
+    },
+    {
+      "code": "27",
+      "label": "Textile mills and textile product mills",
+      "naics": "313-314"
+    },
+    {
+      "code": "28",
+      "label": "Apparel, leather, and allied product manufacturing",
+      "naics": "315-316"
+    },
+    {
+      "code": "29",
+      "label": "Paper manufacturing",
+      "naics": "322"
+    },
+    {
+      "code": "30",
+      "label": "Printing and related support activities",
+      "naics": "323"
+    },
+    {
+      "code": "31",
+      "label": "Petroleum and coal products manufacturing",
+      "naics": "324"
+    },
+    {
+      "code": "32",
+      "label": "Chemical manufacturing",
+      "naics": "325"
+    },
+    {
+      "code": "33",
+      "label": "Plastics and rubber products manufacturing",
+      "naics": "326"
+    },
+    {
+      "code": "34",
+      "label": "Wholesale trade",
+      "naics": "42"
+    },
+    {
+      "code": "35",
+      "label": "Retail trade",
+      "naics": "44-45"
+    },
+    {
+      "code": "36",
+      "label": "Transportation and warehousing",
+      "naics": "48-49"
+    },
+    {
+      "code": "37",
+      "label": "Air transportation",
+      "naics": "481"
+    },
+    {
+      "code": "38",
+      "label": "Rail transportation",
+      "naics": "482"
+    },
+    {
+      "code": "39",
+      "label": "Water transportation",
+      "naics": "483"
+    },
+    {
+      "code": "40",
+      "label": "Truck transportation",
+      "naics": "484"
+    },
+    {
+      "code": "41",
+      "label": "Transit and ground passenger transportation",
+      "naics": "485"
+    },
+    {
+      "code": "42",
+      "label": "Pipeline transportation",
+      "naics": "486"
+    },
+    {
+      "code": "43",
+      "label": "Other transportation and support activities",
+      "naics": "487-488,492"
+    },
+    {
+      "code": "44",
+      "label": "Warehousing and storage",
+      "naics": "493"
+    },
+    {
+      "code": "45",
+      "label": "Information",
+      "naics": "51"
+    },
+    {
+      "code": "46",
+      "label": "Publishing industries (except Internet)",
+      "naics": "511"
+    },
+    {
+      "code": "47",
+      "label": "Motion picture and sound recording industries",
+      "naics": "512"
+    },
+    {
+      "code": "48",
+      "label": "Broadcasting (except Internet) and telecommunications",
+      "naics": "515,517"
+    },
+    {
+      "code": "49",
+      "label": "Data processing, hosting, and other information services",
+      "naics": "518-519"
+    },
+    {
+      "code": "50",
+      "label": "Finance, insurance, real estate, rental, and leasing",
+      "naics": "52,53"
+    },
+    {
+      "code": "51",
+      "label": "Finance and insurance",
+      "naics": "52"
+    },
+    {
+      "code": "52",
+      "label": "Monetary Authorities- central bank, credit intermediation, and related services",
+      "naics": "521-522"
+    },
+    {
+      "code": "53",
+      "label": "Securities, commodity contracts, and other financial investments and related activities",
+      "naics": "523"
+    },
+    {
+      "code": "54",
+      "label": "Insurance carriers and related activities",
+      "naics": "524"
+    },
+    {
+      "code": "55",
+      "label": "Funds, trusts, and other financial vehicles",
+      "naics": "525"
+    },
+    {
+      "code": "56",
+      "label": "Real estate and rental and leasing",
+      "naics": "53"
+    },
+    {
+      "code": "57",
+      "label": "Real estate",
+      "naics": "531"
+    },
+    {
+      "code": "58",
+      "label": "Rental and leasing services and lessors of nonfinancial intangible assets",
+      "naics": "532-533"
+    },
+    {
+      "code": "59",
+      "label": "Professional and business services",
+      "naics": "54,55,56"
+    },
+    {
+      "code": "60",
+      "label": "Professional, scientific, and technical services",
+      "naics": "54"
+    },
+    {
+      "code": "61",
+      "label": "Legal services",
+      "naics": "5411"
+    },
+    {
+      "code": "62",
+      "label": "Computer systems design and related services",
+      "naics": "5415"
+    },
+    {
+      "code": "63",
+      "label": "Miscellaneous professional, scientific, and technical services",
+      "naics": "5412-5414,5416-5419"
+    },
+    {
+      "code": "64",
+      "label": "Management of companies and enterprises",
+      "naics": "55"
+    },
+    {
+      "code": "65",
+      "label": "Administrative and support and waste management and remediation services",
+      "naics": "56"
+    },
+    {
+      "code": "66",
+      "label": "Administrative and support services",
+      "naics": "561"
+    },
+    {
+      "code": "67",
+      "label": "Waste management and remediation services",
+      "naics": "562"
+    },
+    {
+      "code": "68",
+      "label": "Educational services, health care, and social assistance",
+      "naics": "61,62"
+    },
+    {
+      "code": "69",
+      "label": "Educational services",
+      "naics": "61"
+    },
+    {
+      "code": "70",
+      "label": "Health care and social assistance",
+      "naics": "62"
+    },
+    {
+      "code": "71",
+      "label": "Ambulatory health care services",
+      "naics": "621"
+    },
+    {
+      "code": "72",
+      "label": "Hospitals",
+      "naics": "622"
+    },
+    {
+      "code": "73",
+      "label": "Nursing and residential care facilities",
+      "naics": "623"
+    },
+    {
+      "code": "74",
+      "label": "Social assistance",
+      "naics": "624"
+    },
+    {
+      "code": "75",
+      "label": "Arts, entertainment, recreation, accommodation, and food services",
+      "naics": "71,72"
+    },
+    {
+      "code": "76",
+      "label": "Arts, entertainment, and recreation",
+      "naics": "71"
+    },
+    {
+      "code": "77",
+      "label": "Performing arts, spectator sports, museums, and related activities",
+      "naics": "711-712"
+    },
+    {
+      "code": "78",
+      "label": "Amusement, gambling, and recreation industries",
+      "naics": "713"
+    },
+    {
+      "code": "79",
+      "label": "Accommodation and food services",
+      "naics": "72"
+    },
+    {
+      "code": "80",
+      "label": "Accommodation",
+      "naics": "721"
+    },
+    {
+      "code": "81",
+      "label": "Food services and drinking places",
+      "naics": "722"
+    },
+    {
+      "code": "82",
+      "label": "Other services (except government and government enterprises)",
+      "naics": "81"
+    },
+    {
+      "code": "83",
+      "label": "Government and government enterprises",
+      "naics": "92"
+    },
+    {
+      "code": "84",
+      "label": "Federal civilian",
+      "naics": null
+    },
+    {
+      "code": "85",
+      "label": "Military",
+      "naics": null
+    },
+    {
+      "code": "86",
+      "label": "State and local",
+      "naics": null
+    },
+    {
+      "code": "87",
+      "label": "Natural resources and mining",
+      "naics": "11,21"
+    },
+    {
+      "code": "88",
+      "label": "Trade",
+      "naics": "42,44-45"
+    },
+    {
+      "code": "89",
+      "label": "Transportation and utilities",
+      "naics": "22,48-49"
+    },
+    {
+      "code": "90",
+      "label": "Manufacturing and information",
+      "naics": "31-33,51"
+    },
+    {
+      "code": "91",
+      "label": "Private goods-producing industries",
+      "naics": null
+    },
+    {
+      "code": "92",
+      "label": "Private services-providing industries",
+      "naics": null
+    }
+  ]
+}
