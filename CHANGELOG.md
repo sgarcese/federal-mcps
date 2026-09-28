@@ -10,6 +10,14 @@ Added
   cached or returned (BEA echoes the caller's key in every response), and a `bodyError` hook turns an
   error an agency reports inside an HTTP 200 into a typed `AgencyApiError` — never retried when the
   agency marks it a bad parameter (#256, ADR-019).
+- Geography catalog: BEA's combination areas — 23 Virginia county + independent-city areas and
+  Maui + Kalawao — as `bea`/`GEOFIPS` codes on their 53 components, parsed from BEA's own area list
+  at build time (the build fails if a component cannot be matched). The build now needs
+  `BEA_API_KEY`; the key BEA echoes in its reply is stripped before the download is cached (#257).
+
+Fixed
+- The weekly `geography-build` workflow passes `CENSUS_API_KEY` and `BEA_API_KEY` from repository
+  secrets; it had failed since the Census key became required (#172).
 
 ## Unreleased — M13 HUD guide
 

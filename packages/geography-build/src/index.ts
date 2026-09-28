@@ -17,6 +17,7 @@ export {
   parseQcewArea,
 } from "./parse/bls-area.js";
 export { mergeAcsTables, parseAcsPopulation } from "./parse/acs-population.js";
+export { parseBeaCombinations, stripBeaRequest } from "./parse/bea-geofips.js";
 export { parseGazetteer, stripLsad } from "./parse/gazetteer.js";
 export { parseGeocorr } from "./parse/geocorr.js";
 export {
