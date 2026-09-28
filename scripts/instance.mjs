@@ -95,7 +95,14 @@ function assertRecord(value, index) {
   if (typeof naming !== "object" || naming === null) {
     throw new Error(`instances.json: entry ${index} is missing object field "naming"`);
   }
-  for (const key of ["blsService", "geoService", "censusService", "cdcService", "hudService", "beaService"]) {
+  for (const key of [
+    "blsService",
+    "geoService",
+    "censusService",
+    "cdcService",
+    "hudService",
+    "beaService",
+  ]) {
     if (typeof (/** @type {Record<string, unknown>} */ (naming)[key]) !== "string") {
       throw new Error(`instances.json: entry ${index} naming is missing string field "${key}"`);
     }

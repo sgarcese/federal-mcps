@@ -15,6 +15,15 @@ Added
   at build time (the build fails if a component cannot be matched). The build now needs
   `BEA_API_KEY`; the key BEA echoes in its reply is stripped before the download is cached (#257).
 
+- **server-bea shell** (#258, ADR-019): `bea_resolve_place` and `bea_describe_source` (personal
+  income, GDP, regional price parities — planned until #259–#261), BEA's required sentence, and the
+  `bea-api` seam every indicator family uses — the GetData URL, the keyed fetch (`UserID` as
+  `queryAuth`), BEA's `sanitize` and 200-error hooks on the client, sentinel-safe observations
+  (`(D)`/`(NA)` → null with BEA's note) and the in-band release note. Terraform `modules/bea-server`
+  and instance wiring at `bea.responsive.city`, `rc-bea-mcp`; `deploy.sh` needs `BEA_API_KEY` and
+  verifies the server; `admin-create-exec-role.sh dev bea`. The fleet record gains
+  `domain.beaDomainName` and `naming.beaService`.
+
 Fixed
 - The weekly `geography-build` workflow passes `CENSUS_API_KEY` and `BEA_API_KEY` from repository
   secrets; it had failed since the Census key became required (#172).
