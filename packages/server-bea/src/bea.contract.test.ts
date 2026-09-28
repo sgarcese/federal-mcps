@@ -1,11 +1,19 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
-import { createServer, GeographyCatalog } from "@federal-mcps/core";
+import { fileURLToPath } from "node:url";
+import {
+  createHttpClient,
+  createServer,
+  GeographyCatalog,
+  MemoryBudgetStore,
+  MemoryCacheStore,
+} from "@federal-mcps/core";
 import { assertFamilyContract, assertServerSources } from "@federal-mcps/core/testing";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+import { beaBodyError, sanitizeBeaBody } from "./bea-api.js";
 import { buildBeaDefinition } from "./definition.js";
 
 /** The family contract suite for the BEA server (M14 shell): the shell over an in-memory transport. */
@@ -20,7 +28,19 @@ afterAll(() => {
   rmSync(dirname(path), { recursive: true, force: true });
 });
 
-const definition = () => buildBeaDefinition({ catalog });
+const FIXTURES = fileURLToPath(new URL("../fixtures", import.meta.url));
+const replay = () =>
+  createHttpClient({
+    source: "bea",
+    budget: new MemoryBudgetStore(1000),
+    cache: new MemoryCacheStore(),
+    fixtures: { mode: "replay", dir: FIXTURES },
+    sanitize: sanitizeBeaBody,
+    bodyError: beaBodyError,
+  });
+// The indicator tools replay recorded fixtures; the key is a placeholder (never sent).
+const definition = () =>
+  buildBeaDefinition({ catalog, httpClient: replay(), apiKey: () => "test-key" });
 
 it("meets the family contract", () => assertFamilyContract(definition()));
 

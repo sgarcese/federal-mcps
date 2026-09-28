@@ -2,9 +2,11 @@ import {
   type GeographyCatalog,
   geographyTools,
   type HttpClient,
+  indicatorTools,
   type ServerDefinition,
 } from "@federal-mcps/core";
-import { BEA_REQUIRED_SENTENCE, describeSource } from "./describe-source.js";
+import { BEA_API_ENDPOINT, BEA_REQUIRED_SENTENCE, describeSource } from "./describe-source.js";
+import { beaIndicatorDefinitions } from "./indicators.js";
 import { BEA_SERVER_VERSION } from "./version.js";
 
 /**
@@ -30,7 +32,57 @@ export interface BeaDefinitionDeps {
   now?: () => Date;
 }
 
-/** The BEA server's definition: the shared resolver as `bea_resolve_place`; indicators follow. */
+/**
+ * The indicator tools (`bea_get_indicator`, `bea_compare_places`, `bea_list_indicators`) over every
+ * BEA family present (ADR-019 §2). Mounted once at least one family exists and a client is
+ * configured; each definition brings its own fetch, so the default fetch refuses. Every citation
+ * ends with BEA's required sentence (core `citationSuffix`).
+ */
+function beaIndicatorToolsFor(deps: BeaDefinitionDeps, catalog: () => GeographyCatalog) {
+  const definitions = beaIndicatorDefinitions;
+  const first = definitions[0];
+  const httpClient = deps.httpClient;
+  if (!first || !httpClient) return [];
+  return indicatorTools({
+    agency: "bea",
+    definitions,
+    catalog,
+    httpClient: () => httpClient,
+    ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
+    ...(deps.now ? { now: deps.now } : {}),
+    defaultFetch: async () => {
+      throw new Error("every BEA indicator supplies its own fetch capability");
+    },
+    sourceUrl: BEA_API_ENDPOINT,
+    citationSuffix: BEA_REQUIRED_SENTENCE,
+    sourceProgram: "BEA Regional",
+    defaultIndicator: first.name,
+    descriptions: {
+      getIndicator: `Get one BEA Regional indicator for a place with its year or quarter, caveats and citation (${definitions.map((d) => d.name).join(", ")}). ${BEA_REQUIRED_SENTENCE}`,
+      comparePlaces:
+        "Compare one BEA Regional indicator across several places in one upstream call; each row carries the value and its caveats, and a place BEA does not publish is reported in its row rather than dropped.",
+      listIndicators:
+        "List every BEA Regional indicator this server reports with its description and vocabularies; given a place, whether each is published at that place's level.",
+    },
+    examples: {
+      getIndicator: [
+        {
+          title: `St. Joseph County, IN: ${first.name}`,
+          input: { place: "St. Joseph County", state: "IN", kind: "county", indicator: first.name },
+        },
+      ],
+      comparePlaces: [
+        {
+          title: `${first.name}: St. Joseph County vs Cook County`,
+          input: { indicator: first.name, places: ["St. Joseph County, IN", "Cook County, IL"] },
+        },
+      ],
+      listIndicators: [{ title: "Everything BEA Regional reports", input: {} }],
+    },
+  });
+}
+
+/** The BEA server's definition: the shared resolver as `bea_resolve_place`, and the indicator tools. */
 export function buildBeaDefinition(deps: BeaDefinitionDeps): ServerDefinition {
   const catalog = () => deps.catalog;
   return {
@@ -38,7 +90,10 @@ export function buildBeaDefinition(deps: BeaDefinitionDeps): ServerDefinition {
     version: BEA_SERVER_VERSION,
     agency: "bea",
     instructions: BEA_INSTRUCTIONS,
-    tools: [...geographyTools({ agency: "bea", catalog, include: ["resolve_place"] })],
+    tools: [
+      ...geographyTools({ agency: "bea", catalog, include: ["resolve_place"] }),
+      ...beaIndicatorToolsFor(deps, catalog),
+    ],
     describeSource,
   };
 }
