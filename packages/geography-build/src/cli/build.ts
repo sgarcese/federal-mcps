@@ -1,11 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
 import { assemble, type Sources } from "../assemble.js";
 import { buildCatalog } from "../catalog.js";
 import { loadVendoredGeocorr } from "../data/geocorr/vendored.js";
+import { mergeAcsTables } from "../parse/acs-population.js";
+import { parseGazetteer } from "../parse/gazetteer.js";
 import {
   fetchCached,
   fetchCachedWithCensusKey,
@@ -37,6 +39,10 @@ async function main(): Promise<void> {
     const zip = await fetchCached(url);
     sources.gazetteers[sumlevel] = unzipSingleText(zip);
   }
+  // The 2020 county-subdivision gazetteer: recoded towns keep their 2020 GEOID (#241).
+  process.stderr.write(`cousubs2020: ${SOURCE_URLS.cousubs2020}\n`);
+  sources.cousubs2020 = unzipSingleText(await fetchCached(SOURCE_URLS.cousubs2020));
+
   for (const key of [
     "lausArea",
     "cesArea",
@@ -73,8 +79,23 @@ async function main(): Promise<void> {
     process.stderr.write(`  acsPopulation ${sumlevel}: ${rowCount} rows\n`);
   }
 
+  // County-subdivision population comes one state per call (#241; a national query is 400).
+  const stateFips = parseGazetteer(sources.gazetteers["040"] ?? "", "040").entities.map(
+    (e) => e.geoid,
+  );
+  const cousubTexts: string[] = [];
+  for (const url of SOURCE_URLS.acsCousubPopulation(stateFips)) {
+    cousubTexts.push((await fetchCachedWithCensusKey(url, censusApiKey)).toString("utf-8"));
+  }
+  acsPopulation["060"] = mergeAcsTables(cousubTexts);
+  process.stderr.write(
+    `  acsPopulation 060: ${Math.max(0, (JSON.parse(acsPopulation["060"]) as unknown[]).length - 1)} rows from ${stateFips.length} states\n`,
+  );
+
   const rows = assemble(sources);
   mkdirSync(outDir, { recursive: true });
+  // A rebuild replaces the previous catalog: the schema is created fresh, never on top of one.
+  for (const suffix of ["", "-wal", "-shm"]) rmSync(`${outPath}${suffix}`, { force: true });
   const db = new BetterSqlite3(outPath);
   buildCatalog(db, rows, { vintage });
   db.close();

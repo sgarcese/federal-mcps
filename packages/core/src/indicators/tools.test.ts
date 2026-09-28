@@ -262,3 +262,41 @@ describe("citationSuffix (#237): an attribution the agency's terms require rides
     expect(res.source.citation).toMatch(/from https:\/\/example\.invalid\/api$/);
   });
 });
+
+describe("unavailableNote (#241): a program says why a place has no series", () => {
+  const noted: IndicatorDefinition = {
+    ...countyThing,
+    name: "noted_thing",
+    unavailableNote: (place) => `Demo publishes ${place.name} by town; ask for a town.`,
+  };
+  const withNote = indicatorTools({
+    agency: "demo",
+    definitions: [noted],
+    catalog: () => catalog,
+    httpClient: () => noClient,
+    now: () => new Date("2025-02-01T00:00:00Z"),
+    defaultFetch: echoFetch,
+    sourceUrl: "https://example.invalid/api",
+    descriptions: { getIndicator: "get", comparePlaces: "compare", listIndicators: "list" },
+    examples: {
+      getIndicator: [{ title: "x", input: { place: "Denver", kind: "county" } }],
+      comparePlaces: [{ title: "y", input: { places: ["Denver County", "Fairfield County"] } }],
+      listIndicators: [{ title: "z", input: {} }],
+    },
+  });
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+  type AnyArgs = any;
+  const run = (n: string, args: Record<string, unknown>) =>
+    withNote.find((t) => t.name === n)?.handler(args as AnyArgs, {} as AnyArgs);
+
+  it("adds the note to an unavailable get_indicator answer", async () => {
+    const res = await run("demo_get_indicator", { place: "Colorado", kind: "state" });
+    expect((res?.data as { status: string } | undefined)?.status).toBe("unavailable");
+    expect(res?.limitations).toContain("Demo publishes Colorado by town; ask for a town.");
+  });
+
+  it("adds the note to an unavailable compare_places row's limitations", async () => {
+    const res = await run("demo_compare_places", { places: ["Colorado", "Denver County"] });
+    expect((res?.limitations ?? []).join(" ")).toContain("Demo publishes Colorado by town");
+  });
+});

@@ -102,6 +102,17 @@ exists) plus its parents. It handles city-vs-county name collisions, cities belo
 LAUS 25,000 threshold falling back to county, metro vs metro division, consolidated
 cities, and New England NECTAs.
 
+County subdivisions (summary level 060: towns, townships, MCDs, CCDs) are a national
+catalog level (#241), nested in their counties. A place and the county subdivision that
+is the same municipality are linked by a place → town edge (same state and FIPS code, or
+a consolidated town unique by name in its state) and resolve as one candidate, the town
+among its parents. Much smaller same-name towns elsewhere never make a city ambiguous;
+same-name towns in one state with none dominant ask for the county, and a query can name
+it (`"Cranberry, Butler County, PA"`) or give a GEOID. Towns carry their LAUS `CS` code
+where BLS publishes one, and a recoded town (Connecticut's 2022 planning regions) its
+2020 GEOID as a `census`/`GEOID2020` code, so agencies that still publish under the old
+id — HUD New England FMR and Income Limits — can be reached for every year.
+
 Each entity also carries an ACS 5-year total population (`B01003_001E`) and the vintage
 it reflects (e.g. "2024" meaning the 2020–2024 5-year), populated by `geography-build`
 from the Census Data API at catalog-build time — no runtime call. `PlaceCandidate.population`
@@ -241,7 +252,7 @@ because the timeseries-API programs can ship to early users before QCEW is done.
 |---|---|---|
 | **M11 HUD User server** (ADR-018) | `packages/server-hud` on the core: a per-minute limiter in the core HTTP client; the bearer token as a header (never cached, recorded or logged); entity ids built from the catalog; `fair_market_rent`, `income_limit`, `area_median_income`, `mtsp_limit`, CHAS cost-burden share and count, Picture of Subsidized Households indicators with city→county fallback; `hud_get_raw` over the five endpoints; HUD User's required sentence on every citation; its own Terraform module and hostname | Rent, income-limit, cost-burden and subsidized-housing questions answer through the family verbs with the fiscal year or release stated; the HUD eval sets pass live at `hud-user.responsive.city` |
 
-Deferred to later releases, deliberately: sub-dimension pickers for Census (by race, age, tenure), county subdivisions, ACS significance testing, SAIPE/PEP, CDC PLACES server,
+Deferred to later releases, deliberately: sub-dimension pickers for Census (by race, age, tenure), ACS significance testing, SAIPE/PEP, CDC PLACES server,
 `server-composite`, the plugin with cross-agency skills, Wikidata aliases, full
 multi-vintage geography.
 

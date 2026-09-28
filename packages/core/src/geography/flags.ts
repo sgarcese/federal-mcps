@@ -40,14 +40,18 @@ export function deriveFlags(
   }
 
   // A place that carries no LAUS code is below the 25,000 threshold; LAUS data for it
-  // comes from the surrounding county.
-  if (
-    entity.sumlevel === "160" &&
-    !agencyCodes.some((c) => c.agency === "bls" && c.program === "LAUS")
-  ) {
+  // comes from the surrounding county. A county subdivision without one (LAUS publishes New
+  // England towns and some townships, #241) falls back the same way.
+  const hasLaus = agencyCodes.some((c) => c.agency === "bls" && c.program === "LAUS");
+  if (entity.sumlevel === "160" && !hasLaus) {
     flags.push("below_threshold");
     caveats.push(
       "below the LAUS 25,000-population threshold; unemployment comes from the surrounding county",
+    );
+  } else if (entity.sumlevel === "060" && !hasLaus) {
+    flags.push("below_threshold");
+    caveats.push(
+      "LAUS publishes no series for this county subdivision; unemployment comes from the surrounding county",
     );
   }
 

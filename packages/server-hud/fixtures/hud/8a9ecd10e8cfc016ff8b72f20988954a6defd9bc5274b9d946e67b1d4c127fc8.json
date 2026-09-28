@@ -1,0 +1,9 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/il/data/2502507000",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"data\":{\"county_name\":\"Suffolk County, MA\",\"counties_msa\":\"\",\"town_name\":\"Boston city\",\"metro_status\":\"1.0\",\"metro_name\":\"Boston-Cambridge-Newton, MA-NH\",\"area_name\":\"Boston-Cambridge-Quincy, MA-NH HUD Metro FMR Area\",\"year\":\"2026\",\"median_income\":164600,\"very_low\":{\"il50_p1\":60000,\"il50_p2\":68600,\"il50_p3\":77150,\"il50_p4\":85700,\"il50_p5\":92600,\"il50_p6\":99450,\"il50_p7\":106300,\"il50_p8\":113150},\"extremely_low\":{\"il30_p1\":36000,\"il30_p2\":41150,\"il30_p3\":46300,\"il30_p4\":51400,\"il30_p5\":55550,\"il30_p6\":59650,\"il30_p7\":63750,\"il30_p8\":67850},\"low\":{\"il80_p1\":96000,\"il80_p2\":109700,\"il80_p3\":123400,\"il80_p4\":137100,\"il80_p5\":148100,\"il80_p6\":159050,\"il80_p7\":170050,\"il80_p8\":181000}}}",
+  "recordedAt": "2026-09-28T19:25:33.462Z"
+}

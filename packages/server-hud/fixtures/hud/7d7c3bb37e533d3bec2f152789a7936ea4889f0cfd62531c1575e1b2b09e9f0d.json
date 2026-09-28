@@ -1,0 +1,9 @@
+{
+  "url": "https://www.huduser.gov/hudapi/public/il/data/0900337070?year=2024",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"data\":{\"county_name\":\"Hartford County, CT\",\"counties_msa\":\"\",\"town_name\":\"Hartford town\",\"metro_status\":\"1\",\"metro_name\":\"Hartford-East Hartford-Middletown, CT\",\"area_name\":\"Hartford-West Hartford-East Hartford, CT HUD Metro FMR Area\",\"year\":\"2024\",\"median_income\":121800,\"very_low\":{\"il50_p1\":42650,\"il50_p2\":48750,\"il50_p3\":54850,\"il50_p4\":60900,\"il50_p5\":65800,\"il50_p6\":70650,\"il50_p7\":75550,\"il50_p8\":80400},\"extremely_low\":{\"il30_p1\":25600,\"il30_p2\":29250,\"il30_p3\":32900,\"il30_p4\":36550,\"il30_p5\":39500,\"il30_p6\":42400,\"il30_p7\":47340,\"il30_p8\":52720},\"low\":{\"il80_p1\":68250,\"il80_p2\":78000,\"il80_p3\":87750,\"il80_p4\":97450,\"il80_p5\":105250,\"il80_p6\":113050,\"il80_p7\":120850,\"il80_p8\":128650}}}",
+  "recordedAt": "2026-09-28T19:25:33.661Z"
+}

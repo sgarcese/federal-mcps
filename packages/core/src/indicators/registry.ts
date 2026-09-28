@@ -192,6 +192,12 @@ export interface IndicatorDefinition {
   ): { url: string; label: string } | undefined;
   /** Where a multi-file answer (a comparison) points when `sourceOf` gives one URL per series. */
   sourceHome?: string;
+  /**
+   * Why this program has no series for `place`, when it can say more than "no series and no
+   * fallback" (#241): e.g. HUD publishes New England Fair Market Rents by town, not county.
+   * Added to an unavailable answer's limitations; undefined when there is nothing to add.
+   */
+  unavailableNote?(place: PlaceCandidate): string | undefined;
   /** The program's below-coverage fallback, if it defines one (undefined when not eligible). */
   fallback?(catalog: GeographyCatalog, place: PlaceCandidate): IndicatorFallback | undefined;
   /**

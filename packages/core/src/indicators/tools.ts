@@ -430,6 +430,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         }),
         limitations: [
           `${def.program} publishes no series for ${top.name} and no fallback was found.`,
+          ...(def.unavailableNote?.(top) ? [def.unavailableNote(top) as string] : []),
         ],
       };
     }
@@ -576,6 +577,13 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         );
         const dimensions = aligned?.dimensions ?? requested;
         const notes: string[] = aligned?.note ? [aligned.note] : [];
+        for (const { resolution } of resolutions) {
+          const why =
+            resolution.status === "unavailable"
+              ? def.unavailableNote?.(resolution.place)
+              : undefined;
+          if (why) notes.push(why);
+        }
         if (aligned) {
           for (const entry of resolutions) {
             if (entry.resolution.status === "ok") {

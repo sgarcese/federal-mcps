@@ -1,6 +1,6 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { describe, expect, it } from "vitest";
-import { parseAcsPopulation } from "./acs-population.js";
+import { mergeAcsTables, parseAcsPopulation } from "./acs-population.js";
 
 describe("parseAcsPopulation", () => {
   it("parses a state row (get=NAME,B01003_001E,for=state:*)", () => {
@@ -101,5 +101,40 @@ describe("parseAcsPopulation", () => {
 
   it("throws when the header lacks B01003_001E", () => {
     expect(() => parseAcsPopulation([["NAME", "state"]], "040")).toThrow(/B01003_001E/);
+  });
+
+  it("parses a county subdivision row from state + county + county subdivision, skipping the undefined 00000 rows (#241)", () => {
+    const json = [
+      ["NAME", "B01003_001E", "state", "county", "county subdivision"],
+      [
+        "County subdivisions not defined, Barnstable County, Massachusetts",
+        "0",
+        "25",
+        "001",
+        "00000",
+      ],
+      ["Boston city, Suffolk County, Massachusetts", "663972", "25", "025", "07000"],
+    ];
+    expect(parseAcsPopulation(json, "060")).toEqual([
+      { ucgid: "0600000US2502507000", population: 663972 },
+    ]);
+  });
+});
+
+describe("mergeAcsTables (#241: county subdivisions come one state per call)", () => {
+  it("keeps the first header and every data row", () => {
+    const a = JSON.stringify([
+      ["NAME", "B01003_001E", "state"],
+      ["x", "1", "25"],
+    ]);
+    const b = JSON.stringify([
+      ["NAME", "B01003_001E", "state"],
+      ["y", "2", "09"],
+    ]);
+    expect(JSON.parse(mergeAcsTables([a, b]))).toEqual([
+      ["NAME", "B01003_001E", "state"],
+      ["x", "1", "25"],
+      ["y", "2", "09"],
+    ]);
   });
 });

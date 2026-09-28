@@ -227,3 +227,146 @@ describe("assemble: weighted overlap and lineage (#55)", () => {
     expect(successors.reduce((sum, l) => sum + l.share, 0)).toBeCloseTo(1, 6);
   });
 });
+
+describe("assemble: county subdivisions (#241)", () => {
+  const H =
+    "USPS|GEOID|GEOIDFQ|ANSICODE|NAME|FUNCSTAT|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG";
+  const cs = (
+    usps: string,
+    geoid: string,
+    ansi: string,
+    name: string,
+    func: string,
+    aland: number,
+  ) => `${usps}|${geoid}|0600000US${geoid}|${ansi}|${name}|${func}|${aland}|0|0|0|0|0`;
+  const COUSUBS = [
+    H,
+    cs("MA", "2502507000", "00619463", "Boston city", "A", 125_000_000),
+    cs("CT", "0911037070", "00213442", "Hartford town", "C", 45_093_709),
+    cs("CT", "0911022630", "00213424", "East Hartford town", "A", 46_638_315),
+    cs("OH", "3904918000", "01086101", "Columbus city", "A", 540_000_000),
+    cs("OH", "3904518000", "01086102", "Columbus city", "A", 60_000_000),
+    cs("PA", "4201916920", "01216544", "Cranberry township", "A", 59_000_000),
+    cs("CO", "0803190000", "01935000", "Denver CCD", "S", 396_000_000),
+  ].join("\n");
+  const COUSUBS_2020 = [
+    "USPS\tGEOID\tANSICODE\tNAME\tFUNCSTAT\tALAND\tAWATER\tALAND_SQMI\tAWATER_SQMI\tINTPTLAT\tINTPTLONG",
+    "CT\t0900337070\t00213442\tHartford town\tC\t45012647\t0\t0\t0\t0\t0",
+    "CT\t0900322630\t00213424\tEast Hartford town\tA\t46638316\t0\t0\t0\t0\t0",
+    "MA\t2502507000\t00619463\tBoston city\tA\t125000000\t0\t0\t0\t0\t0",
+  ].join("\n");
+  const ST = [
+    "USPS\tGEOID\tANSICODE\tNAME\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "MA\t25\t1\tMassachusetts\t1\t1\t0\t0",
+    "CT\t09\t1\tConnecticut\t1\t1\t0\t0",
+    "OH\t39\t1\tOhio\t1\t1\t0\t0",
+    "PA\t42\t1\tPennsylvania\t1\t1\t0\t0",
+    "CO\t08\t1\tColorado\t1\t1\t0\t0",
+  ].join("\n");
+  const CO = [
+    "USPS\tGEOID\tANSICODE\tNAME\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "MA\t25025\t1\tSuffolk County\t1\t1\t0\t0",
+    "CT\t09110\t1\tCapitol Planning Region\t1\t1\t0\t0",
+    "OH\t39049\t1\tFranklin County\t1\t1\t0\t0",
+    "OH\t39045\t1\tFairfield County\t1\t1\t0\t0",
+    "PA\t42019\t1\tButler County\t1\t1\t0\t0",
+    "CO\t08031\t1\tDenver County\t1\t1\t0\t0",
+  ].join("\n");
+  const PL = [
+    "USPS\tGEOID\tANSICODE\tNAME\tLSAD\tFUNCSTAT\tALAND\tAWATER\tINTPTLAT\tINTPTLONG",
+    "MA\t2507000\t1\tBoston city\t25\tA\t125000000\t1\t0\t0",
+    "CT\t0937000\t1\tHartford city\t25\tA\t45000000\t1\t0\t0",
+    "OH\t3918000\t1\tColumbus city\t25\tA\t600000000\t1\t0\t0",
+    "CO\t0820000\t1\tDenver city\t25\tA\t396000000\t1\t0\t0",
+  ].join("\n");
+  const LA = [
+    "area_type_code\tarea_code\tarea_text\tdisplay_level\tselectable\tsort_sequence",
+    "G\tCS4216920000000\tCranberry township (Butler County), PA\t0\tT\t1",
+    "G\tCS2507000000000\tBoston city, MA\t0\tT\t2",
+    "H\tCS2599999000000\tNowhere town, MA\t0\tT\t3",
+  ].join("\n");
+  const rows = assemble({
+    gazetteers: { "040": ST, "050": CO, "160": PL, "060": COUSUBS },
+    cousubs2020: COUSUBS_2020,
+    lausArea: LA,
+  });
+  const edge = (child: string, parent: string) =>
+    rows.containment.find((c) => c.childUcgid === child && c.parentUcgid === parent);
+  const T = (g: string) => ucgidOf("060", g);
+  const P = (g: string) => ucgidOf("160", g);
+
+  it("adds every county subdivision with its functional status and a bare-name alias", () => {
+    const cranberry = rows.entities.find((e) => e.ucgid === T("4201916920"));
+    expect(cranberry).toMatchObject({
+      sumlevel: "060",
+      name: "Cranberry township",
+      funcstat: "A",
+      stateFips: "42",
+    });
+    expect(rows.aliases).toContainEqual({
+      ucgid: T("4201916920"),
+      alias: "Cranberry",
+      source: "lsad-stripped",
+    });
+    expect(rows.aliases).toContainEqual({
+      ucgid: T("0911037070"),
+      alias: "Hartford",
+      source: "lsad-stripped",
+    });
+  });
+
+  it("does not strip 'CCD': a statistical county division never becomes a bare-name match", () => {
+    expect(rows.aliases.some((a) => a.ucgid === T("0803190000"))).toBe(false);
+  });
+
+  it("nests every county subdivision in its county and state (share 1)", () => {
+    expect(edge(T("4201916920"), ucgidOf("050", "42019"))).toMatchObject({
+      share: 1,
+      relation: "nests",
+    });
+    expect(edge(T("4201916920"), ucgidOf("040", "42"))).toMatchObject({
+      share: 1,
+      relation: "nests",
+    });
+  });
+
+  it("links a place to the county subdivision that shares its state and code (Boston)", () => {
+    expect(edge(P("2507000"), T("2502507000"))).toMatchObject({ share: 1, relation: "nests" });
+  });
+
+  it("splits a city across its same-code county subdivisions by land share (Columbus, OH)", () => {
+    expect(edge(P("3918000"), T("3904918000"))?.share).toBeCloseTo(0.9, 6);
+    expect(edge(P("3918000"), T("3904518000"))?.share).toBeCloseTo(0.1, 6);
+  });
+
+  it("pairs a consolidated town with its city when the state has exactly one of each by name (Hartford)", () => {
+    expect(edge(P("0937000"), T("0911037070"))).toMatchObject({ share: 1, relation: "nests" });
+    // East Hartford town is not consolidated and has no city twin: no edge from Hartford city.
+    expect(edge(P("0937000"), T("0911022630"))).toBeUndefined();
+  });
+
+  it("maps LAUS county-subdivision codes (CS + state + town code, no county) onto the town (#241)", () => {
+    const laus = (g: string) =>
+      rows.agencyCodes.find((a) => a.ucgid === T(g) && a.program === "LAUS");
+    expect(laus("4201916920")?.code).toBe("CS4216920000000");
+    expect(laus("2502507000")?.code).toBe("CS2507000000000");
+    // A CS code with no matching town maps to nothing, never to a guess.
+    expect(rows.agencyCodes.some((a) => a.code === "CS2599999000000")).toBe(false);
+  });
+
+  it("carries a recoded county subdivision's 2020 GEOID, joined by ANSI code (Connecticut)", () => {
+    expect(rows.agencyCodes).toContainEqual(
+      expect.objectContaining({
+        ucgid: T("0911037070"),
+        agency: "census",
+        program: "GEOID2020",
+        code: "0900337070",
+        codeVintage: 2020,
+      }),
+    );
+    // An unchanged GEOID (Boston) carries no 2020 row.
+    expect(
+      rows.agencyCodes.some((a) => a.ucgid === T("2502507000") && a.program === "GEOID2020"),
+    ).toBe(false);
+  });
+});

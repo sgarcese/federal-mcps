@@ -79,6 +79,95 @@ export function buildFixtureCatalog(): string {
       population: 5_182_617,
       populationVintage: "2024",
     }),
+    // New England towns (#241): cities with their same-municipality towns, a county HUD does not
+    // publish there, and a Connecticut town whose GEOID changed with the 2022 planning regions.
+    ent("25", "040", "Massachusetts", {
+      stateFips: "25",
+      population: 7_000_000,
+      populationVintage: "2024",
+    }),
+    ent("25025", "050", "Suffolk County", {
+      stateFips: "25",
+      lsad: "06",
+      population: 770_000,
+      populationVintage: "2024",
+    }),
+    ent("2507000", "160", "Boston city", {
+      stateFips: "25",
+      lsad: "25",
+      aland: 125_000_000,
+      population: 663_972,
+      populationVintage: "2024",
+    }),
+    ent("2502507000", "060", "Boston city", {
+      stateFips: "25",
+      funcstat: "A",
+      aland: 125_000_000,
+      population: 663_972,
+      populationVintage: "2024",
+    }),
+    ent("50", "040", "Vermont", {
+      stateFips: "50",
+      population: 648_000,
+      populationVintage: "2024",
+    }),
+    ent("50007", "050", "Chittenden County", {
+      stateFips: "50",
+      lsad: "06",
+      population: 169_000,
+      populationVintage: "2024",
+    }),
+    ent("5010675", "160", "Burlington city", {
+      stateFips: "50",
+      lsad: "25",
+      aland: 27_000_000,
+      population: 44_600,
+      populationVintage: "2024",
+    }),
+    ent("5000710675", "060", "Burlington city", {
+      stateFips: "50",
+      funcstat: "A",
+      aland: 27_000_000,
+      population: 44_600,
+      populationVintage: "2024",
+    }),
+    ent("09", "040", "Connecticut", {
+      stateFips: "09",
+      population: 3_600_000,
+      populationVintage: "2024",
+    }),
+    ent("09110", "050", "Capitol Planning Region", {
+      stateFips: "09",
+      lsad: "PR",
+      population: 980_000,
+      populationVintage: "2024",
+    }),
+    ent("0911037070", "060", "Hartford town", {
+      stateFips: "09",
+      funcstat: "C",
+      aland: 45_000_000,
+      population: 121_000,
+      populationVintage: "2024",
+    }),
+    // Outside New England a township answers with its county's FMR area (#241).
+    ent("42", "040", "Pennsylvania", {
+      stateFips: "42",
+      population: 13_000_000,
+      populationVintage: "2024",
+    }),
+    ent("42019", "050", "Butler County", {
+      stateFips: "42",
+      lsad: "06",
+      population: 198_000,
+      populationVintage: "2024",
+    }),
+    ent("4201916920", "060", "Cranberry township", {
+      stateFips: "42",
+      funcstat: "A",
+      aland: 59_000_000,
+      population: 34_000,
+      populationVintage: "2024",
+    }),
   ];
 
   const uc = (geoid: string): string => {
@@ -95,6 +184,13 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("1871000"), alias: "South Bend", source: "lsad-stripped" },
     { ucgid: uc("43780"), alias: "South Bend", source: "hand" },
     { ucgid: uc("17031"), alias: "Cook", source: "lsad-stripped" },
+    { ucgid: uc("25025"), alias: "Suffolk", source: "lsad-stripped" },
+    { ucgid: uc("2507000"), alias: "Boston", source: "lsad-stripped" },
+    { ucgid: uc("2502507000"), alias: "Boston", source: "lsad-stripped" },
+    { ucgid: uc("5010675"), alias: "Burlington", source: "lsad-stripped" },
+    { ucgid: uc("5000710675"), alias: "Burlington", source: "lsad-stripped" },
+    { ucgid: uc("0911037070"), alias: "Hartford", source: "lsad-stripped" },
+    { ucgid: uc("4201916920"), alias: "Cranberry", source: "lsad-stripped" },
   ];
 
   const containment: ContainmentRow[] = [
@@ -105,13 +201,31 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("1871000"), parentUcgid: uc("18"), share: 1 },
     { childUcgid: uc("18141"), parentUcgid: uc("43780"), share: 1 },
     { childUcgid: uc("17031"), parentUcgid: uc("17"), share: 1 },
+    { childUcgid: uc("25025"), parentUcgid: uc("25"), share: 1 },
+    { childUcgid: uc("2502507000"), parentUcgid: uc("25025"), share: 1 },
+    { childUcgid: uc("2507000"), parentUcgid: uc("25025"), share: 1 },
+    { childUcgid: uc("2507000"), parentUcgid: uc("2502507000"), share: 1 }, // town twin
+    { childUcgid: uc("5000710675"), parentUcgid: uc("50007"), share: 1 },
+    { childUcgid: uc("5010675"), parentUcgid: uc("50007"), share: 1 },
+    { childUcgid: uc("5010675"), parentUcgid: uc("5000710675"), share: 1 }, // town twin
+    { childUcgid: uc("0911037070"), parentUcgid: uc("09110"), share: 1 },
+    { childUcgid: uc("4201916920"), parentUcgid: uc("42019"), share: 1 },
   ];
 
   const rows: CatalogRows = {
     entities,
     aliases,
     containment,
-    agencyCodes: [],
+    agencyCodes: [
+      {
+        ucgid: uc("0911037070"),
+        agency: "census",
+        program: "GEOID2020",
+        code: "0900337070",
+        codeVintage: 2020,
+        note: "the 2020 GEOID, changed since by a Census recode (e.g. Connecticut's 2022 planning regions)",
+      },
+    ],
     publishesAt: [],
     countyChange: [],
     lineage: [],

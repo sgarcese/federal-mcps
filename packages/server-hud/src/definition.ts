@@ -25,8 +25,9 @@ This server gives HUD User Data API statistics organized by place: Fair Market R
 Households. Resolve the place with \`hud_resolve_place\`, then call \`hud_get_indicator\` (one
 value with its fiscal year or release, caveats and citation) or \`hud_compare_places\`;
 \`hud_list_indicators\` names every indicator and its picker arguments. FMR and Income Limits are
-set per county or HUD metro area: a city answers with its county's area, said in the caveats. New
-England publishes those by town, which this server does not resolve yet. \`hud_get_raw\` returns
+set per county or HUD metro area: a city or township answers with its county's area, said in the
+caveats. New England sets them by town: ask for the town (kind "town"); a New England city answers
+with its town. \`hud_get_raw\` returns
 one HUD User endpoint's JSON unchanged (fmr, il, mtspil, chas, picture) for fields the indicators
 do not surface. Cite the result's provenance block rather than a bare number.
 ${HUD_USER_REQUIRED_SENTENCE} All tools are read-only.

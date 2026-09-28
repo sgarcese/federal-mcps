@@ -4,10 +4,12 @@
  * sends the bearer token as a header (so it never enters the cache key, a fixture or an error
  * URL) and turns HUD's "no data" answers into `undefined` rather than a guess.
  *
- * Identifiers verified live 2026-09-24 (docs/spikes/m11-hud-user-server.md):
+ * Identifiers verified live 2026-09-24 (docs/spikes/m11-hud-user-server.md) and 2026-09-28 (#241):
  *   FMR / IL / MTSP  county → SSCCC99999 (St. Joseph IN = 1814199999). New England publishes by
- *                    town (Boston = 2502507000) and answers a county id with 404; towns need
- *                    county-subdivision ids the catalog does not hold yet, so none here.
+ *                    town and answers a county id with 404: the town id is the Census county-
+ *                    subdivision GEOID (Boston = 2502507000). Connecticut's towns were recoded
+ *                    with the 2022 planning regions (Hartford 0900337070 → 0911037070); HUD takes
+ *                    the new id for FMR from FY2026 and for IL/MTSP from FY2025, the 2020 id before.
  *   CHAS             type 2 state (stateId), 3 county (stateId + county), 5 place (stateId + place).
  *   Picture          type 3 state, 9 county, 8 city, 7 tract, 5 CBSA; entity ids are FIPS; state
  *                    by USPS code; `census` 2010 for 2012–2021, 2020 from 2022.
@@ -29,14 +31,46 @@ const PLACE = "160";
 const TRACT = "140";
 const METRO = "310";
 
+const COUSUB = "060";
+
 /** New England states (FIPS): HUD publishes FMR and Income Limits there by town, not county. */
 const NEW_ENGLAND = new Set(["09", "23", "25", "33", "44", "50"]);
 
-/** The FMR / Income Limits / MTSP entity id for a place, or undefined when HUD has none at its level. */
+/** True for a GEOID in a New England state, where HUD's FMR and Income Limits areas are towns. */
+export function isNewEngland(geoid: string): boolean {
+  return NEW_ENGLAND.has(geoid.slice(0, 2));
+}
+
+/**
+ * Joins a recoded town's current id and its 2020 id (`0911037070~0900337070`); the URL builders
+ * pick one by fiscal year. Never in a `hud_get_raw` id (its ids are letters and digits only).
+ */
+const TOWN_ID_SEPARATOR = "~";
+
+/** The first fiscal year HUD takes a recoded Connecticut town's new id (verified 2026-09-28). */
+const NEW_TOWN_ID_FROM = { fmr: 2026, il: 2025 } as const;
+
+/**
+ * The FMR / Income Limits / MTSP entity id for a place, or undefined when HUD has none at its
+ * level: a county outside New England (SSCCC99999), or a New England town (its county-subdivision
+ * GEOID, with its 2020 GEOID after a separator when the town was recoded, #241).
+ */
 export function fmrEntityOf(place: PlaceCandidate): string | undefined {
-  if (place.kind.sumlevel !== COUNTY) return undefined;
-  if (NEW_ENGLAND.has(place.geoid.slice(0, 2))) return undefined;
-  return `${place.geoid}99999`;
+  const sumlevel = place.kind.sumlevel;
+  if (sumlevel === COUNTY) return isNewEngland(place.geoid) ? undefined : `${place.geoid}99999`;
+  if (sumlevel !== COUSUB || !isNewEngland(place.geoid)) return undefined;
+  const before = place.agencyCodes?.find(
+    (c) => c.agency === "census" && c.program === "GEOID2020",
+  )?.code;
+  return before && before !== place.geoid
+    ? `${place.geoid}${TOWN_ID_SEPARATOR}${before}`
+    : place.geoid;
+}
+
+/** The id HUD answers for `year`: a recoded town's 2020 id before `firstNewYear`, else its current id. */
+function idForYear(entity: string, year: number | undefined, firstNewYear: number): string {
+  const [current = entity, before] = entity.split(TOWN_ID_SEPARATOR);
+  return before !== undefined && year !== undefined && year < firstNewYear ? before : current;
 }
 
 export interface ChasEntity {
@@ -95,15 +129,18 @@ const withYear = (url: string, year: number | undefined) =>
   year === undefined ? url : `${url}?year=${year}`;
 
 export function fmrUrl(entity: string, year?: number): string {
-  return withYear(`${HUD_USER_API_ENDPOINT}/fmr/data/${entity}`, year);
+  const id = idForYear(entity, year, NEW_TOWN_ID_FROM.fmr);
+  return withYear(`${HUD_USER_API_ENDPOINT}/fmr/data/${id}`, year);
 }
 
 export function ilUrl(entity: string, year?: number): string {
-  return withYear(`${HUD_USER_API_ENDPOINT}/il/data/${entity}`, year);
+  const id = idForYear(entity, year, NEW_TOWN_ID_FROM.il);
+  return withYear(`${HUD_USER_API_ENDPOINT}/il/data/${id}`, year);
 }
 
 export function mtspUrl(entity: string, year?: number): string {
-  return withYear(`${HUD_USER_API_ENDPOINT}/mtspil/data/${entity}`, year);
+  const id = idForYear(entity, year, NEW_TOWN_ID_FROM.il);
+  return withYear(`${HUD_USER_API_ENDPOINT}/mtspil/data/${id}`, year);
 }
 
 /** A CHAS release is a period such as "2018-2022"; omitted → HUD's latest. */

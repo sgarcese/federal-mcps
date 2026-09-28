@@ -1,17 +1,17 @@
-import {
-  getContainment,
-  type DimensionDefinition,
-  type GeographyCatalog,
-  type HttpClient,
-  type IndicatorDefinition,
-  type IndicatorFallback,
-  type IndicatorFetch,
-  type PlaceCandidate,
-  type SeriesFetchOptions,
-  type SeriesObservation,
-  type SeriesResult,
+import type {
+  DimensionDefinition,
+  GeographyCatalog,
+  HttpClient,
+  IndicatorDefinition,
+  IndicatorFallback,
+  IndicatorFetch,
+  PlaceCandidate,
+  SeriesFetchOptions,
+  SeriesObservation,
+  SeriesResult,
 } from "@federal-mcps/core";
 import { fmrEntityOf, hudGetJson, ilUrl, mtspUrl } from "./hud-api.js";
+import { hudAreaFallback, newEnglandCountyNote } from "./towns.js";
 
 /**
  * Income Limits, area median income and MTSP limits (#234, ADR-018 §3). Income Limits and MTSP
@@ -28,8 +28,8 @@ import { fmrEntityOf, hudGetJson, ilUrl, mtspUrl } from "./hud-api.js";
  * ignores dimensions and uses the bare entity id.
  */
 
-const CITY_SUMLEVEL = "160";
-const COUNTY_SUMLEVEL = "050";
+const _CITY_SUMLEVEL = "160";
+const _COUNTY_SUMLEVEL = "050";
 const KEY_SEPARATOR = "|";
 /** HUD's Income Limits and MTSP open data begin at this fiscal year (docs/spikes/m11-hud-user-server.md). */
 const FLOOR_FISCAL_YEAR = 2017;
@@ -122,37 +122,30 @@ function ilAgencyCodeOf(place: PlaceCandidate): string | undefined {
 }
 
 /**
- * HUD sets Income Limits and MTSP limits per income-limit area (county), not by city: a city falls
- * back to its containing county's entity id, with a caveat naming the substitution — never a silent
- * substitution (mirrors LAUS's below-threshold county fallback, ADR-009 §6).
+ * HUD sets Income Limits and MTSP limits per income-limit area — a county or metro area, a town in
+ * New England — not by city (#241): a city answers with its area, with a caveat naming the
+ * substitution, never silently (mirrors LAUS's below-threshold county fallback, ADR-009 §6).
  */
 function ilCountyFallback(
   catalog: GeographyCatalog,
   place: PlaceCandidate,
 ): IndicatorFallback | undefined {
-  if (place.kind.sumlevel !== CITY_SUMLEVEL) return undefined;
-  const counties = getContainment(catalog, place.ucgid)
-    .filter((e) => e.kind.sumlevel === COUNTY_SUMLEVEL)
-    .sort((a, b) => b.share - a.share);
-  for (const county of counties) {
-    const code = fmrEntityOf({ geoid: county.geoid, kind: county.kind } as PlaceCandidate);
-    if (code) {
-      return {
-        geoid: county.geoid,
-        name: county.name,
-        sumlevel: COUNTY_SUMLEVEL,
-        code,
-        caveat: `Covers ${county.name}, not just ${place.name}: HUD publishes Income Limits and MTSP limits per income-limit area (county), not by city.`,
-      };
-    }
-  }
-  return undefined;
+  return hudAreaFallback(
+    catalog,
+    place,
+    "Income Limits and MTSP limits",
+    (county, name) =>
+      `Covers ${county}, not just ${name}: HUD publishes Income Limits and MTSP limits per income-limit area (county), not by city.`,
+  );
 }
 
-/** Connecticut's 2025 county-FIPS change for Income Limits (planning regions) — a caveat only, no lookup change. */
+/**
+ * Connecticut towns were recoded with the 2022 planning regions (#241): the URL builders send HUD
+ * the new id from FY2025 and the 2020 id before, so a history spans both — said, not hidden.
+ */
 function connecticutPlanningRegionCaveat(place: PlaceCandidate): string | undefined {
-  return place.geoid.slice(0, 2) === "09"
-    ? "Connecticut: HUD changed some county FIPS codes for Income Limits starting FY2025 (planning regions); confirm this area still matches the intended one."
+  return place.geoid.slice(0, 2) === "09" && place.kind.sumlevel === "060"
+    ? "Connecticut: HUD lists this town under its planning-region id from FY2025 and its former county id before; the area name can differ between those years."
     : undefined;
 }
 
@@ -406,6 +399,7 @@ export const ilIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: ilAgencyCodeOf,
     fallback: ilCountyFallback,
+    unavailableNote: (place) => newEnglandCountyNote(place, "Income Limits and MTSP limits"),
     caveatOf: ilCaveatOf,
     dimensions: [IL_LEVEL_DIMENSION, HOUSEHOLD_SIZE_DIMENSION],
     buildSeriesId: (code, { dimensions }) => buildLevelSizeKey(code, dimensions),
@@ -420,6 +414,7 @@ export const ilIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: ilAgencyCodeOf,
     fallback: ilCountyFallback,
+    unavailableNote: (place) => newEnglandCountyNote(place, "Income Limits and MTSP limits"),
     caveatOf: ilCaveatOf,
     buildSeriesId: (code) => code,
     fetch: fetchMedianIncome,
@@ -433,6 +428,7 @@ export const ilIndicatorDefinitions: IndicatorDefinition[] = [
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: ilAgencyCodeOf,
     fallback: ilCountyFallback,
+    unavailableNote: (place) => newEnglandCountyNote(place, "Income Limits and MTSP limits"),
     caveatOf: ilCaveatOf,
     dimensions: [MTSP_LEVEL_DIMENSION, HOUSEHOLD_SIZE_DIMENSION],
     buildSeriesId: (code, { dimensions }) => buildLevelSizeKey(code, dimensions),
