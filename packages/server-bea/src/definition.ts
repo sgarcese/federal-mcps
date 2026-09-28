@@ -11,16 +11,21 @@ import { beaIndicatorDefinitions } from "./indicators.js";
 import { BEA_SERVER_VERSION } from "./version.js";
 
 /**
- * Instructions passed to the SDK so hosts surface them to the model (ADR-019 §1, §10). The shell
- * (#258) resolves places and describes the source; the indicator families extend this text.
+ * Instructions passed to the SDK so hosts surface them to the model (ADR-019 §1, §10): which tool
+ * answers what, the place levels BEA publishes, and the attribution BEA's terms require.
  */
 export const BEA_INSTRUCTIONS = `
-This server gives U.S. Bureau of Economic Analysis Regional statistics organized by place:
-personal income and per capita personal income, GDP and real GDP by industry, and regional price
-parities. This release ships the shell only — \`bea_resolve_place\` and \`bea_describe_source\`;
-the indicator tools follow. Resolve the place first with \`bea_resolve_place\`, and cite a result's
-provenance block (source, release, retrieval date and a ready-to-paste citation) rather than a
-bare number. ${BEA_REQUIRED_SENTENCE} All tools are read-only.
+This server gives U.S. Bureau of Economic Analysis Regional statistics organized by place: personal
+income and per capita personal income (\`personal_income\`, \`per_capita_personal_income\`; states
+also quarterly via \`frequency\`), GDP and real GDP by industry (\`gdp\`, \`real_gdp\`, the
+\`industry\` picker), and regional price parities (\`regional_price_parity\`, the \`item\` picker).
+Resolve the place with \`bea_resolve_place\`, then call \`bea_get_indicator\` or
+\`bea_compare_places\`; \`bea_list_indicators\` names every indicator and picker. Income and GDP are
+by county and state (a city answers with its county; Virginia's small cities are combined with a
+county, said in the caveats); price parities by metro area and state. A 0 BEA marks (D) or (NA) is
+suppressed or unavailable, never zero. \`bea_get_raw\` runs any BEA Regional query for fields the
+indicators do not surface. Cite the result's provenance block rather than a bare number.
+${BEA_REQUIRED_SENTENCE} All tools are read-only.
 `.trim();
 
 export interface BeaDefinitionDeps {
