@@ -15,11 +15,21 @@ export const SOURCE_URLS = {
       "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_counties_national.zip",
     "160":
       "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_place_national.zip",
+    // County subdivisions — towns, townships, MCDs and CCDs — for every state (#241).
+    "060":
+      "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_cousubs_national.zip",
     "310":
       "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_cbsa_national.zip",
     "860":
       "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2025_Gazetteer/2025_Gaz_zcta_national.zip",
   },
+  /**
+   * The 2020 county-subdivision gazetteer, joined to 2025 by ANSI code to carry a recoded
+   * GEOID's 2020 form (#241): Connecticut's 2022 planning regions changed every town's GEOID,
+   * and agencies (HUD FMR through FY2025) still publish under the old one.
+   */
+  cousubs2020:
+    "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_Gaz_cousubs_national.zip",
   lausArea: "https://download.bls.gov/pub/time.series/la/la.area",
   cesArea: "https://download.bls.gov/pub/time.series/sm/sm.area",
   oewsArea: "https://download.bls.gov/pub/time.series/oe/oe.area",
@@ -57,6 +67,15 @@ export const SOURCE_URLS = {
     "020": acsPopulationUrl(vintage, "region"),
     "030": acsPopulationUrl(vintage, "division"),
   }),
+  /**
+   * ACS 5-year population for county subdivisions, one URL per state (#241): the API answers
+   * a national `in=state:*` query for this level with HTTP 400 (verified 2026-09-28).
+   */
+  acsCousubPopulation: (stateFips: readonly string[], vintage = "2024"): string[] =>
+    stateFips.map(
+      (state) =>
+        `https://api.census.gov/data/${vintage}/acs/acs5?get=NAME,B01003_001E&for=${encodeURIComponent("county subdivision")}:*&in=state:${state}`,
+    ),
 } as const;
 
 function acsPopulationUrl(vintage: string, forLevel: string): string {

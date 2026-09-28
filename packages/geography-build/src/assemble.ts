@@ -8,7 +8,7 @@ import {
   parseOewsArea,
   parseQcewArea,
 } from "./parse/bls-area.js";
-import { parseGazetteer } from "./parse/gazetteer.js";
+import { parseGazetteer, stripLsad } from "./parse/gazetteer.js";
 import { parseGeocorr } from "./parse/geocorr.js";
 import {
   parseCdCounty,
@@ -32,6 +32,11 @@ import type {
 export interface Sources {
   /** Census National Gazetteer files, keyed by the summary level they contain. */
   gazetteers: Partial<Record<string, string>>;
+  /**
+   * The 2020 county-subdivision gazetteer (#241), joined to the 2025 one by ANSI code so a
+   * recoded town (Connecticut's 2022 planning regions) carries its 2020 GEOID as a code.
+   */
+  cousubs2020?: string;
   /** BLS LABSTAT area tables, when present. */
   lausArea?: string;
   cesArea?: string;
@@ -91,6 +96,7 @@ export function assemble(sources: Sources): CatalogRows {
   extend(aliases, regional.aliases);
 
   const agencyCodes: AgencyCodeRow[] = [];
+  if (sources.cousubs2020) extend(agencyCodes, recodedCousubGeoids(entities, sources.cousubs2020));
   if (sources.lausArea) extend(agencyCodes, parseLausArea(sources.lausArea));
   if (sources.cesArea) extend(agencyCodes, parseCesArea(sources.cesArea));
   if (sources.oewsArea) extend(agencyCodes, parseOewsArea(sources.oewsArea));
@@ -128,6 +134,7 @@ export function assemble(sources: Sources): CatalogRows {
     aliases,
     containment: [
       ...deriveStrictContainment(entities),
+      ...deriveTownTwins(entities),
       ...regional.containment,
       ...mergeWeighted(weighted, geocorr),
     ],
@@ -216,9 +223,106 @@ function deriveStrictContainment(entities: EntityRow[]): ContainmentRow[] {
       case "160": // place → state (place↔county is weighted, #55)
         add(e.ucgid, ucgidOf("040", e.geoid.slice(0, 2)));
         break;
+      case "060": // county subdivision → county, state (#241)
+        add(e.ucgid, ucgidOf("050", e.geoid.slice(0, 5)));
+        add(e.ucgid, ucgidOf("040", e.geoid.slice(0, 2)));
+        break;
       default:
         break;
     }
+  }
+  return out;
+}
+
+/** County-subdivision functional statuses that mean a working government (Census FUNCSTAT). */
+const CONSOLIDATED_FUNCSTAT = new Set(["B", "C"]);
+
+/**
+ * Place → county-subdivision edges for the same municipality (#241), so the resolver can fold a
+ * town into its city and an agency that publishes by town (HUD in New England) can reach it from
+ * the city. Two rules, both from Census data, never from a typed table:
+ *
+ * 1. Same state and same 5-digit FIPS code — Census gives a place and a county subdivision that
+ *    are the same municipality one code (Boston city 2507000 ↔ Boston city 2502507000). A city
+ *    split across counties has one subdivision per county; its share is that part's land area
+ *    over the parts' total (Columbus, OH).
+ * 2. A consolidated town (FUNCSTAT B or C: one government with a city) whose bare name matches
+ *    exactly one place in its state, when that state has exactly one such town by that name —
+ *    Hartford town 0911037070 ↔ Hartford city 0937000, whose codes differ. Anything less certain
+ *    gets no edge (the resolver then reports both, never guessing).
+ */
+function deriveTownTwins(entities: readonly EntityRow[]): ContainmentRow[] {
+  const cousubsByStateCode = new Map<string, EntityRow[]>();
+  const consolidatedByStateName = new Map<string, EntityRow[]>();
+  const placesByStateName = new Map<string, EntityRow[]>();
+  const push = (m: Map<string, EntityRow[]>, key: string, e: EntityRow) => {
+    const list = m.get(key);
+    if (list) list.push(e);
+    else m.set(key, [e]);
+  };
+  for (const e of entities) {
+    if (e.sumlevel === "060") {
+      push(cousubsByStateCode, `${e.geoid.slice(0, 2)}:${e.geoid.slice(5)}`, e);
+      if (e.funcstat && CONSOLIDATED_FUNCSTAT.has(e.funcstat))
+        push(consolidatedByStateName, `${e.geoid.slice(0, 2)}:${bareName(e.name)}`, e);
+    } else if (e.sumlevel === "160") {
+      push(placesByStateName, `${e.geoid.slice(0, 2)}:${bareName(e.name)}`, e);
+    }
+  }
+
+  const out: ContainmentRow[] = [];
+  const linked = new Set<string>();
+  for (const place of entities) {
+    if (place.sumlevel !== "160") continue;
+    const twins = cousubsByStateCode.get(`${place.geoid.slice(0, 2)}:${place.geoid.slice(2)}`);
+    if (!twins) continue;
+    const total = twins.reduce((sum, t) => sum + (t.aland ?? 0), 0);
+    for (const t of twins) {
+      const share = total > 0 ? (t.aland ?? 0) / total : 1 / twins.length;
+      out.push({ childUcgid: place.ucgid, parentUcgid: t.ucgid, share, relation: "nests" });
+      linked.add(t.ucgid);
+    }
+  }
+  for (const [key, towns] of consolidatedByStateName) {
+    const places = placesByStateName.get(key);
+    const town = towns[0];
+    const place = places?.[0];
+    if (towns.length !== 1 || places?.length !== 1 || !town || !place || linked.has(town.ucgid))
+      continue;
+    out.push({ childUcgid: place.ucgid, parentUcgid: town.ucgid, share: 1, relation: "nests" });
+  }
+  return out;
+}
+
+function bareName(name: string): string {
+  return stripLsad(name).toLowerCase();
+}
+
+/**
+ * The 2020 GEOID of every county subdivision whose GEOID changed since, joined by its permanent
+ * ANSI code (#241): Connecticut's 2022 planning regions recoded all 169 towns (0900337070 →
+ * 0911037070), and agencies keep publishing earlier years under the old code.
+ */
+function recodedCousubGeoids(
+  entities: readonly EntityRow[],
+  gazetteer2020: string,
+): AgencyCodeRow[] {
+  const old = new Map<string, string>();
+  for (const e of parseGazetteer(gazetteer2020, "060").entities)
+    if (e.gnis) old.set(e.gnis, e.geoid);
+  const out: AgencyCodeRow[] = [];
+  for (const e of entities) {
+    if (e.sumlevel !== "060" || !e.gnis) continue;
+    const before = old.get(e.gnis);
+    if (!before || before === e.geoid) continue;
+    out.push({
+      ucgid: e.ucgid,
+      agency: "census",
+      program: "GEOID2020",
+      code: before,
+      codeVintage: 2020,
+      note: "the 2020 GEOID, changed since by a county-equivalent recode (Connecticut planning regions, 2022)",
+    });
   }
   return out;
 }

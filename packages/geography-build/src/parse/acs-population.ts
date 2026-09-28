@@ -22,6 +22,7 @@ const ID_COLUMNS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   "040": ["state"],
   "050": ["state", "county"],
   "160": ["state", "place"],
+  "060": ["state", "county", "county subdivision"],
   "310": ["metropolitan statistical area/micropolitan statistical area"],
   "860": ["zip code tabulation area"],
 });
@@ -60,6 +61,8 @@ export function parseAcsPopulation(
       .map((i) => (row[i] === null || row[i] === undefined ? "" : String(row[i])))
       .join("");
     if (!geoid) continue;
+    // "County subdivisions not defined" rows carry code 00000: not an entity (#241).
+    if (sumlevel === "060" && geoid.endsWith("00000")) continue;
 
     const raw = row[iValue];
     out.push({ ucgid: ucgidOf(sumlevel, geoid), population: toPopulation(raw) });
@@ -72,4 +75,20 @@ function toPopulation(raw: string | number | null | undefined): number | null {
   const n = typeof raw === "number" ? raw : Number(raw);
   if (!Number.isFinite(n) || SENTINELS.has(n)) return null;
   return n;
+}
+
+/**
+ * Concatenates several ACS responses for one summary level into one (#241: county subdivisions
+ * are fetched one state per call): the first response's header, then every data row.
+ */
+export function mergeAcsTables(texts: readonly string[]): string {
+  let header: unknown;
+  const rows: unknown[] = [];
+  for (const text of texts) {
+    const json = JSON.parse(text) as unknown[];
+    if (!Array.isArray(json) || json.length === 0) continue;
+    if (header === undefined) header = json[0];
+    for (const row of json.slice(1)) rows.push(row);
+  }
+  return JSON.stringify(header === undefined ? [] : [header, ...rows]);
 }
