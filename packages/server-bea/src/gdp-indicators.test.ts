@@ -280,9 +280,10 @@ describe("bea_get_indicator and bea_compare_places: gdp through the mounted tool
     if (!t) throw new Error(`no tool ${name}`);
     return t;
   };
-  // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+  type AnyArgs = any;
   const go = (name: string, args: Record<string, unknown>) =>
-    tool(name).handler(args as any, {} as any);
+    tool(name).handler(args as AnyArgs, {} as AnyArgs);
 
   it("mounts bea_get_indicator, bea_compare_places and bea_list_indicators now that gdp exists", () => {
     const names = build().tools.map((t) => t.name);

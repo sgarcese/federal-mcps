@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type {
   DimensionDefinition,
   DimensionSelection,
@@ -29,6 +27,7 @@ import {
   connecticutNote,
 } from "./bea-geo.js";
 
+import VENDORED_GDP_LINES from "./data/gdp-lines.json" with { type: "json" };
 /**
  * GDP and real GDP by industry (#260, ADR-019 §2, §5): county (`CAGDP2` current dollars, `CAGDP9`
  * chained 2017 dollars) and state (`SAGDP2`, `SAGDP9`) — the `industry` picker resolves to each
@@ -71,15 +70,13 @@ interface GdpLineRow {
 }
 type GdpLines = Record<GdpTable, readonly GdpLineRow[]>;
 
-let cachedLines: GdpLines | undefined;
-
-/** Loads and memoizes the vendored line list (`data/gdp-lines.json`, `generate-gdp-lines.mts`). */
+/**
+ * The vendored line list (`data/gdp-lines.json`, `generate-gdp-lines.mts`), imported statically so
+ * the compiler emits it with the package and esbuild inlines it into the Lambda bundle — never read
+ * from disk at runtime (#260).
+ */
 function loadGdpLines(): GdpLines {
-  if (cachedLines === undefined) {
-    const path = join(import.meta.dirname, "data", "gdp-lines.json");
-    cachedLines = JSON.parse(readFileSync(path, "utf-8")) as GdpLines;
-  }
-  return cachedLines;
+  return VENDORED_GDP_LINES as GdpLines;
 }
 
 /** The `industry` vocabulary: every county-table line with a NAICS code, plus `all` and `private`. */
