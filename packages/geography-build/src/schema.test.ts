@@ -62,6 +62,27 @@ describe("createSchema", () => {
     expect(west.population_vintage).toBeNull();
   });
 
+  it("carries a keyed_by column on publishes_at, defaulting to 'agency' (#294)", () => {
+    db = new BetterSqlite3(":memory:");
+    createSchema(db);
+    db.prepare(
+      `INSERT INTO publishes_at (agency, program, sumlevel, constraint_note)
+       VALUES ('bls', 'LAUS', '050', NULL)`,
+    ).run();
+    db.prepare(
+      `INSERT INTO publishes_at (agency, program, sumlevel, constraint_note, keyed_by)
+       VALUES ('bls', 'QCEW', '050', NULL, 'census')`,
+    ).run();
+    const defaulted = db
+      .prepare("SELECT keyed_by FROM publishes_at WHERE program = 'LAUS'")
+      .get() as { keyed_by: string };
+    const explicit = db
+      .prepare("SELECT keyed_by FROM publishes_at WHERE program = 'QCEW'")
+      .get() as { keyed_by: string };
+    expect(defaulted.keyed_by).toBe("agency");
+    expect(explicit.keyed_by).toBe("census");
+  });
+
   it("indexes names for trigram fuzzy search", () => {
     db = new BetterSqlite3(":memory:");
     createSchema(db);
