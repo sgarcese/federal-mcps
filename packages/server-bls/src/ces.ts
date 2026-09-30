@@ -38,6 +38,22 @@ export function buildSmSeriesId(stateAndArea: string, options: SmSeriesOptions =
   return `SM${seasonal}${stateAndArea}${SM_TOTAL_NONFARM}${SM_ALL_EMPLOYEES}`;
 }
 
+/**
+ * Build the NATIONAL CES headline id (#290): total nonfarm, all employees, in thousands —
+ * `CE` · seasonal · supersector+industry `00000000` · data type `01`. National CES is its own
+ * survey estimate (the CE series), not the sum of the State & Area (SM) series. Recorded live
+ * 2026-09-30 (fixtures/bls): CEU0000000001 Dec 2025 = 159,358 thousand.
+ */
+export function buildCesNationalSeriesId(options: SmSeriesOptions = {}): string {
+  const seasonal = options.seasonallyAdjusted ? "S" : "U";
+  return `CE${seasonal}${SM_TOTAL_NONFARM}${SM_ALL_EMPLOYEES}`;
+}
+
+/** True for a well-formed national CES id (`CE` + S/U + 10 digits). */
+export function isCesNationalSeriesId(id: string): boolean {
+  return /^CE[SU]\d{10}$/.test(id);
+}
+
 /** True for a well-formed 20-char SM series id (`SM` + S/U + 17 digits). */
 export function isSmSeriesId(id: string): boolean {
   return /^SM[SU]\d{17}$/.test(id);

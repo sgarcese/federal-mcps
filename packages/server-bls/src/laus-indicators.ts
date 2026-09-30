@@ -4,7 +4,10 @@ import {
   type PlaceCandidate,
   ucgidOf,
 } from "@federal-mcps/core";
+import { buildCpsSeriesId, isCpsSeriesId } from "./cps.js";
+import { BLS_TIMESERIES_ENDPOINT } from "./describe-source.js";
 import { buildLausSeriesId, LAUS_MEASURE_DESCRIPTIONS, LAUS_MEASURES } from "./laus.js";
+import { isNation, NATION_CODE } from "./nation.js";
 import type { IndicatorDefinition, IndicatorFallback, PlaceAgencyCodes } from "@federal-mcps/core";
 
 /**
@@ -59,14 +62,47 @@ function lausFallback(
   };
 }
 
-/** The four LAUS indicators as registry definitions. */
+/**
+ * The nation's caveat (#290): LAUS publishes no national figure, so the nation's number is the
+ * Current Population Survey's — the national household survey LAUS's own estimates are controlled
+ * to — and the answer says so.
+ */
+export const CPS_NATIONAL_CAVEAT =
+  "National figure from the Current Population Survey (CPS), the national household survey, not LAUS: LAUS publishes no national series. LAUS state estimates are benchmarked to the CPS national totals, so the two are consistent.";
+
+/**
+ * The LAUS agency code for a place, or the nation's marker (#290): the nation reads CPS, since
+ * LAUS has no national series.
+ */
+function lausOrNationCodeOf(place: PlaceCandidate): string | undefined {
+  return isNation(place) ? NATION_CODE : lausCodeOf(place);
+}
+
+/** A CPS answer names its program and survey in the source block and citation (#290). */
+function cpsSourceOf(
+  seriesKey: string,
+): { url: string; label: string; program: string } | undefined {
+  return isCpsSeriesId(seriesKey)
+    ? {
+        url: BLS_TIMESERIES_ENDPOINT,
+        label: `${seriesKey} (Current Population Survey)`,
+        program: "CPS",
+      }
+    : undefined;
+}
+
+/** The four LAUS indicators as registry definitions; the nation answers from CPS (#290). */
 export const lausIndicatorDefinitions: IndicatorDefinition[] = LAUS_MEASURES.map((measure) => ({
   name: measure,
   program: LAUS_PROGRAM,
   description: LAUS_MEASURE_DESCRIPTIONS[measure],
   defaultSeasonallyAdjusted: false,
-  agencyCodeOf: lausCodeOf,
+  agencyCodeOf: lausOrNationCodeOf,
   buildSeriesId: (code, { seasonallyAdjusted }) =>
-    buildLausSeriesId(code, measure, { seasonallyAdjusted }),
+    code === NATION_CODE
+      ? buildCpsSeriesId(measure, { seasonallyAdjusted })
+      : buildLausSeriesId(code, measure, { seasonallyAdjusted }),
+  caveatOf: (place) => (isNation(place) ? CPS_NATIONAL_CAVEAT : undefined),
+  sourceOf: cpsSourceOf,
   fallback: lausFallback,
 }));

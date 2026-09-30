@@ -4,13 +4,14 @@
  *
  *   OE · seasonal(1) · areatype(1) · area(7) · industry(6) · occupation(6) · datatype(2)
  *
- * OEWS is an annual, unadjusted-only survey (seasonal is always `U`). Two area shapes are
- * supported (ADR-013 §1, §3):
+ * OEWS is an annual, unadjusted-only survey (seasonal is always `U`). Three area shapes are
+ * supported (ADR-013 §1, §3; #290):
+ *   - the nation (areatype `N`, area "0000000")
  *   - a state (areatype `S`, area = state FIPS + "00000")
  *   - a metro (areatype `M`, area = the catalog's 7-digit OEWS metro code, read off `oe.area` at
  *     build time — no server-side FIPS table)
- * `oewsCodeOf` (oe-indicators.ts) encodes which shape a resolved place carries as `"S:<fips>"` or
- * `"M:<7-digit code>"`; that string is the `code` this module's builder parses. Industry stays
+ * `oewsCodeOf` (oe-indicators.ts) encodes which shape a resolved place carries as `"N"`,
+ * `"S:<fips>"` or `"M:<7-digit code>"`; that string is the `code` this module's builder parses. Industry stays
  * cross-industry (`000000`); data type is always `04` (annual mean wage). Occupation is one of the
  * 22 SOC major groups (2-digit group + "0000"), default `000000` (all occupations) — see
  * `oewsIndicatorDefinitions` in oe-indicators.ts for the published vocabulary.
@@ -30,6 +31,7 @@
  * 470000 $65,880 · 490000 $68,080 · 510000 $56,410 · 530000 $58,350 (2026-09-17).
  */
 
+const OE_AREA_TYPE_NATION = "N";
 const OE_AREA_TYPE_STATE = "S";
 const OE_AREA_TYPE_METRO = "M";
 const OE_CROSS_INDUSTRY = "000000"; // industry: cross-industry (all industries)
@@ -52,6 +54,9 @@ export interface OeSeriesOptions {
  * only from validated parts.
  */
 function parseOeAreaSpec(spec: string): { areaType: string; area: string } {
+  // The nation (#290): area type N, area 0000000 — OEUN000000000000000000004, recorded 2026-09-30
+  // (2025 annual mean wage, all occupations = $69,770).
+  if (spec === OE_AREA_TYPE_NATION) return { areaType: OE_AREA_TYPE_NATION, area: "0000000" };
   const state = /^S:(\d{2})$/.exec(spec);
   if (state?.[1] !== undefined) {
     return { areaType: OE_AREA_TYPE_STATE, area: `${state[1]}00000` };
@@ -61,7 +66,7 @@ function parseOeAreaSpec(spec: string): { areaType: string; area: string } {
     return { areaType: OE_AREA_TYPE_METRO, area: metro[1] };
   }
   throw new Error(
-    `OEWS area spec must be "S:<2-digit state FIPS>" (e.g. "S:08") or "M:<7-digit OEWS metro code>" (e.g. "M:0019740"); got "${spec}".`,
+    `OEWS area spec must be "N" (the nation), "S:<2-digit state FIPS>" (e.g. "S:08") or "M:<7-digit OEWS metro code>" (e.g. "M:0019740"); got "${spec}".`,
   );
 }
 

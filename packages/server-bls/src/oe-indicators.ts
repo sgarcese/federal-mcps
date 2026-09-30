@@ -1,4 +1,5 @@
 import type { PlaceCandidate } from "@federal-mcps/core";
+import { isNation } from "./nation.js";
 import { buildOeSeriesId } from "./oe.js";
 import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 
@@ -19,6 +20,7 @@ const METRO_SUMLEVEL = "310";
  * Undefined for any other place (no fabrication) or a metro without a stored OEWS code.
  */
 export function oewsCodeOf(place: PlaceCandidate): string | undefined {
+  if (isNation(place)) return "N"; // the national estimate, area type N (#290)
   if (place.kind.sumlevel === STATE_SUMLEVEL) {
     return `S:${place.geoid}`;
   }

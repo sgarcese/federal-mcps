@@ -32,11 +32,20 @@ const COUNTY_AGGLVL = { total: "70", ownership: "71", sector: "74" } as const;
 const STATE_AGGLVL = { total: "50", ownership: "51", sector: "54" } as const;
 /** MSA (`C`-code areas, #153): verified live 2026-09-17 on C1974 (Denver): 40 / 41 / 44. */
 const MSA_AGGLVL = { total: "40", ownership: "41", sector: "44" } as const;
+/**
+ * The U.S. total (`US000`, #290): verified 2026-09-30 on the 2026 Q1 slice — total 10, ownership
+ * 11, NAICS sector 14, 3- to 6-digit NAICS 15–18.
+ */
+const NATION_AGGLVL = { total: "10", ownership: "11", sector: "14" } as const;
 
-type QcewAreaLevel = "county" | "state" | "msa";
+/** The QCEW area code of the U.S. total (#290). */
+export const QCEW_US_TOTAL_AREA = "US000";
 
-/** A QCEW area's geography level, inferred from its area_fips shape (county 5-digit, state SS000, MSA C####). */
+type QcewAreaLevel = "county" | "state" | "msa" | "nation";
+
+/** A QCEW area's geography level, from its area_fips shape (county 5-digit, state SS000, MSA C####, US000). */
 function qcewAreaLevel(areaFips: string): QcewAreaLevel | undefined {
+  if (areaFips === QCEW_US_TOTAL_AREA) return "nation";
   if (/^C\d{4}$/.test(areaFips)) return "msa";
   if (/^\d{2}000$/.test(areaFips)) return "state";
   if (/^\d{5}$/.test(areaFips)) return "county";
@@ -50,7 +59,12 @@ function qcewAreaLevel(areaFips: string): QcewAreaLevel | undefined {
  * metro C1974 (44–48).
  */
 function expectedAgglvl(level: QcewAreaLevel, ownCode: string, industryCode: string): string {
-  const set = level === "state" ? STATE_AGGLVL : level === "msa" ? MSA_AGGLVL : COUNTY_AGGLVL;
+  const set = {
+    nation: NATION_AGGLVL,
+    state: STATE_AGGLVL,
+    msa: MSA_AGGLVL,
+    county: COUNTY_AGGLVL,
+  }[level];
   if (/^\d{3,6}$/.test(industryCode)) {
     return String(Number(set.sector) + (industryCode.length - 2));
   }

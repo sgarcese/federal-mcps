@@ -13,7 +13,9 @@ import {
   qcewAnnualUrl,
   qcewAreaUrl,
   qcewDisclosureText,
+  QCEW_US_TOTAL_AREA,
 } from "./qcew.js";
+import { isNation } from "./nation.js";
 import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 import type { IndicatorFetch, SeriesObservation, SeriesResult } from "./series-fetch.js";
 
@@ -44,10 +46,11 @@ const CBSA_SUMLEVEL = "310";
 
 /**
  * The QCEW area code for a place: county = 5-digit FIPS, state = SS000 (both GEOID-derived), metro
- * = the `C`-code the catalog stores on the CBSA from QCEW's own area file (#153, ADR-013 §5).
- * Undefined otherwise — never a fabricated area.
+ * = the `C`-code the catalog stores on the CBSA from QCEW's own area file (#153, ADR-013 §5), the
+ * nation = `US000`, the U.S. total (#290). Undefined otherwise — never a fabricated area.
  */
 export function qcewAreaCodeOf(place: PlaceCandidate): string | undefined {
+  if (isNation(place)) return QCEW_US_TOTAL_AREA;
   if (place.kind.sumlevel === COUNTY_SUMLEVEL) return place.geoid; // 5-digit county FIPS
   if (place.kind.sumlevel === STATE_SUMLEVEL) return `${place.geoid}000`; // SS000 statewide
   if (place.kind.sumlevel === CBSA_SUMLEVEL) {
