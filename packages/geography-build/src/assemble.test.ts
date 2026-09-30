@@ -67,7 +67,7 @@ describe("assemble", () => {
     expect(rows.countyChange.some((c) => c.oldUcgid === ucgidOf("050", "09001"))).toBe(true);
   });
 
-  it("marks levels QCEW keys by the Census FIPS itself as keyedBy \"census\", its C-coded metro as \"agency\" (#294)", () => {
+  it('marks levels QCEW keys by the Census FIPS itself as keyedBy "census", its C-coded metro as "agency" (#294)', () => {
     const qcewCounty = rows.publishesAt.find((p) => p.program === "QCEW" && p.sumlevel === "050");
     const qcewState = rows.publishesAt.find((p) => p.program === "QCEW" && p.sumlevel === "040");
     const qcewMetro = rows.publishesAt.find((p) => p.program === "QCEW" && p.sumlevel === "310");
@@ -76,7 +76,7 @@ describe("assemble", () => {
     expect(qcewMetro?.keyedBy ?? "agency").toBe("agency");
   });
 
-  it("marks CES/OEWS/JOLTS state levels keyedBy \"census\" (computed from the FIPS, no catalog code, #294)", () => {
+  it('marks CES/OEWS/JOLTS state levels keyedBy "census" (computed from the FIPS, no catalog code, #294)', () => {
     const sm = rows.publishesAt.find((p) => p.program === "SM" && p.sumlevel === "040");
     const oews = rows.publishesAt.find((p) => p.program === "OEWS" && p.sumlevel === "040");
     const jolts = rows.publishesAt.find((p) => p.program === "JOLTS" && p.sumlevel === "040");

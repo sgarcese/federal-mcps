@@ -93,16 +93,22 @@ describe("buildCatalog", () => {
       ...emptyRows(),
       publishesAt: [
         { agency: "bls", program: "LAUS", sumlevel: "050", constraintNote: null },
-        { agency: "bls", program: "QCEW", sumlevel: "050", constraintNote: null, keyedBy: "census" },
+        {
+          agency: "bls",
+          program: "QCEW",
+          sumlevel: "050",
+          constraintNote: null,
+          keyedBy: "census",
+        },
       ],
     };
     buildCatalog(db, rows, { vintage: "2025" });
-    const laus = db
-      .prepare("SELECT keyed_by FROM publishes_at WHERE program = 'LAUS'")
-      .get() as { keyed_by: string };
-    const qcew = db
-      .prepare("SELECT keyed_by FROM publishes_at WHERE program = 'QCEW'")
-      .get() as { keyed_by: string };
+    const laus = db.prepare("SELECT keyed_by FROM publishes_at WHERE program = 'LAUS'").get() as {
+      keyed_by: string;
+    };
+    const qcew = db.prepare("SELECT keyed_by FROM publishes_at WHERE program = 'QCEW'").get() as {
+      keyed_by: string;
+    };
     expect(laus.keyed_by).toBe("agency");
     expect(qcew.keyed_by).toBe("census");
     db.close();

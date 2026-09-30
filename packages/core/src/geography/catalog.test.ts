@@ -22,7 +22,13 @@ describe("GeographyCatalog.publishesAt", () => {
     ).run();
     const catalog = new GeographyCatalog(db);
     expect(catalog.publishesAt("050")).toEqual([
-      { agency: "bls", program: "LAUS", sumlevel: "050", constraint_note: null, keyed_by: "agency" },
+      {
+        agency: "bls",
+        program: "LAUS",
+        sumlevel: "050",
+        constraint_note: null,
+        keyed_by: "agency",
+      },
     ]);
     catalog.close();
   });
@@ -41,7 +47,13 @@ describe("GeographyCatalog.publishesAt", () => {
     ).run();
     const catalog = new GeographyCatalog(db);
     expect(catalog.publishesAt("050")).toEqual([
-      { agency: "bls", program: "QCEW", sumlevel: "050", constraint_note: null, keyed_by: "census" },
+      {
+        agency: "bls",
+        program: "QCEW",
+        sumlevel: "050",
+        constraint_note: null,
+        keyed_by: "census",
+      },
     ]);
     catalog.close();
   });

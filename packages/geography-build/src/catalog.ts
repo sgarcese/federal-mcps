@@ -56,7 +56,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
     for (const c of rows.containment)
       insertContainment.run({ ...c, relation: c.relation ?? "nests" });
     for (const a of rows.agencyCodes) insertAgencyCode.run(a);
-    for (const p of rows.publishesAt) insertPublishesAt.run({ ...p, keyedBy: p.keyedBy ?? "agency" });
+    for (const p of rows.publishesAt)
+      insertPublishesAt.run({ ...p, keyedBy: p.keyedBy ?? "agency" });
     for (const c of rows.countyChange) insertCountyChange.run(c);
     for (const l of rows.lineage) insertLineage.run(l);
 
