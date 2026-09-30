@@ -5,7 +5,7 @@ import type { Database } from "better-sqlite3";
  * read-only at serve time. Fuzzy name resolution uses an FTS5 table with the `trigram`
  * tokenizer so substring and typo-tolerant matching work without a search service.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const STATEMENTS = [
   // Entities are keyed by UCGID, not GEOID: a GEOID is not unique across summary levels
@@ -58,11 +58,16 @@ const STATEMENTS = [
   `CREATE INDEX agency_code_ucgid ON agency_code (ucgid)`,
   `CREATE INDEX agency_code_lookup ON agency_code (agency, program, code)`,
 
+  // `keyed_by`: "agency" (default) when a place needs its own catalog `agency_code` row to be
+  // covered at this level; "census" when the program keys this level by the Census GEOID/FIPS
+  // itself (QCEW county/state; CES, OEWS and JOLTS state), so every resolved place at that level
+  // counts as covered with no catalog code needed (#294).
   `CREATE TABLE publishes_at (
      agency          TEXT NOT NULL,
      program         TEXT NOT NULL,
      sumlevel        TEXT NOT NULL,
      constraint_note TEXT,
+     keyed_by        TEXT NOT NULL DEFAULT 'agency',
      PRIMARY KEY (agency, program, sumlevel)
    ) WITHOUT ROWID`,
 
