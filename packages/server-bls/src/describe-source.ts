@@ -35,7 +35,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "LAUS",
     name: "Local Area Unemployment Statistics",
     granularity:
-      "state, metro (CBSA), county, city (incorporated places with population 25,000 or more)",
+      "state, metro (CBSA), county, city (incorporated places with population 25,000 or more); no national figure — the nation reads the Current Population Survey (CPS) instead, labelled CPS",
     cadence: "monthly",
     status: "available",
   },
@@ -43,7 +43,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "SM",
     name: "Current Employment Statistics, State & Area",
     granularity:
-      "state and metro (CBSA; a multi-state metro is filed under its first state, flagged), total nonfarm",
+      "state and metro (CBSA; a multi-state metro is filed under its first state, flagged), total nonfarm; the nation reads CES national (CE series), labelled CES",
     cadence: "monthly",
     status: "available",
   },
@@ -51,7 +51,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "QCEW",
     name: "Quarterly Census of Employment and Wages",
     granularity:
-      "county, state and metro; by NAICS industry (sector, or any 3- to 6-digit code) and ownership, default all industries total covered; quarterly or annual averages, from 2014",
+      "nation (U.S. total, US000), county, state and metro; by NAICS industry (sector, or any 3- to 6-digit code) and ownership, default all industries total covered; quarterly or annual averages, from 2014",
     cadence: "quarterly, with an annual average release",
     status: "available",
   },
@@ -59,7 +59,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "OEWS",
     name: "Occupational Employment and Wage Statistics",
     granularity:
-      "state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations; detailed 6-digit occupations, medians and percentiles through bls_get_raw",
+      "nation, state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations; detailed 6-digit occupations, medians and percentiles through bls_get_raw",
     cadence: "annual",
     status: "available",
   },
@@ -67,7 +67,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "CPI",
     name: "Consumer Price Index",
     granularity:
-      "about 23 named metro areas, census divisions and regions, and the U.S. city average; by expenditure group (item)",
+      "about 23 named metro areas, census divisions and regions, and the U.S. city average (the nation's CPI); by expenditure group (item)",
     cadence:
       "monthly nationally; many of the ~23 metro-area indexes publish bimonthly or semiannually",
     status: "available",
@@ -75,7 +75,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
   {
     code: "JOLTS",
     name: "Job Openings and Labor Turnover Survey",
-    granularity: "state; openings, hires, quits, layoffs and discharges",
+    granularity: "nation and state; openings, hires, quits, layoffs and discharges",
     cadence: "monthly",
     status: "available",
   },
@@ -100,6 +100,12 @@ const CAVEATS: readonly string[] = [
     "programs are available: QCEW (covered employment and average weekly wage, county, state and metro) " +
     "is fetched from its own CSV data-slice API, not the timeseries API; PPI (producer_price_index) " +
     "is national only — place is optional and, when given, only names the caveat.",
+  'The United States resolves as a place (bls_resolve_place: "United States", "US", kind "nation"), ' +
+    "the parent of every state, so a local figure can sit beside a national benchmark. Each program " +
+    "answers the nation from its own national series: CPS for unemployment, employment and labor force " +
+    "(LAUS publishes no national figure; the answer is labelled CPS and says so), CES national for " +
+    "payroll employment, JOLTS and OEWS national estimates, the CPI U.S. city average and the QCEW U.S. " +
+    "total (US000).",
   "Producer prices — including construction material prices — are published nationally only (PPI); " +
     "there is no state or metro PPI. Construction labor cost by place is QCEW construction-sector " +
     "(industry 23) wages and employment.",
