@@ -226,6 +226,13 @@ export function buildFixtureCatalog(): string {
       population: 20_700,
       populationVintage: "2024",
     }),
+    ent("0816000", "160", "Colorado Springs city", {
+      stateFips: "08",
+      lsad: "25",
+      aland: 505_000_000,
+      population: 488_000,
+      populationVintage: "2024",
+    }),
     ent("3651000", "160", "New York city", {
       stateFips: "36",
       lsad: "25",

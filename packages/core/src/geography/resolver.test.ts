@@ -410,7 +410,7 @@ describe("a state dominates much smaller same-name places (#291)", () => {
     const r = resolvePlace(catalog, "Colorado");
     expect(r.status).toBe("ok");
     expect(r.candidates[0]?.geoid).toBe("08");
-    expect(r.candidates.map((c) => c.geoid)).toContain("48089");
+    expect(r.candidates[1]?.geoid).toBe("48089");
   });
 
   it("New York stays ambiguous: the state is only 2.4× the city (owner ruling)", () => {
