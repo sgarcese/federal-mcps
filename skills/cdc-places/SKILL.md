@@ -130,7 +130,7 @@ ACS variables — use the Census server for those.
 - **Denver city vs county diabetes:** `eav7-hnsx` `0820000` age-adjusted 8.0% (7.1–9.0) vs
   `swc5-untb` `08031` 7.8% (6.7–9.0), 2023 — intervals overlap; no meaningful difference.
 - **Highest-smoking tract in Denver County:** `cwsq-ngmh`, `WHERE countyfips='08031' AND
-  measureid='CSMOKING' ORDER BY data_value DESC` → 08031000800, crude 26.8% (23.7–29.9).
+  measureid='CSMOKING' ORDER BY data_value DESC LIMIT 1` → 08031000800, crude 26.8% (23.7–29.9).
 - **Loving County, TX:** `swc5-untb` `48301` → null, "Estimates suppressed for population less
   than 50" (population 43). Say suppressed; no number.
 - **Colorado statewide:** not published by PLACES; point to BRFSS.
@@ -146,3 +146,7 @@ ACS variables — use the Census server for those.
   both work (`locationid='08031'` or `locationid="08031"`). A "Type mismatch: expected text, but
   found number" error means an id reached Socrata unquoted (often a shell-quoting slip); re-send
   it quoted rather than switching tools.
+- `execute_sql` and `query_dataset` render every row a query returns, up to a character budget;
+  past it, whole rows are dropped from the end with a "Showing N of M" notice. A query with no
+  `LIMIT` returns up to 100 rows (SoQL's default page), so give top- or bottom-N questions an
+  explicit `LIMIT`, and read a truncated result as "narrow the query", not missing data.

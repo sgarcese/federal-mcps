@@ -1,8 +1,8 @@
 {
   "$comment": "The OpenContext source the portal Lambdas are built from (ADR-016 §4). scripts/bundle-opencontext.sh clones exactly this commit at deploy time; bump it in a reviewed PR. Never vendored.",
   "repository": "https://github.com/sgarcese/OpenContext-upstream.git",
-  "commit": "b7eae5de67cc055e14887199bf656b34d5af9c2a",
-  "note": "fork main after PR #26 (ArcGIS layer resolution + f=json schema, optional Socrata token), 2026-09-21",
+  "commit": "94037239756e6de96e90985e5e398c43e0963bf7",
+  "note": "fork main after PR #39 (#33 render every returned record instead of the first 10 (core, applies to Socrata too); #34 dependency upgrades (uv.lock only, requirements.txt unchanged); #35-38 ArcGIS-only: query_data paging/total count/json/csv, layer argument, aggregate_data, full descriptions/data dates/field domains in get_schema; #39 docs), 2026-09-30",
   "runtimeRequirements": [
     "httpx",
     "pydantic",
