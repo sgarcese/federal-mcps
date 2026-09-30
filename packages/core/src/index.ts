@@ -7,7 +7,7 @@
  */
 
 /** The package version, read at build time so servers can report it in `initialize`. */
-export const CORE_VERSION = "0.7.0";
+export const CORE_VERSION = "0.7.1";
 
 /**
  * The family's tool verbs (ADR-001 §2). A tool whose name ends in one of these

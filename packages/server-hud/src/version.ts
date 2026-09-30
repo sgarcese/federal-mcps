@@ -2,4 +2,4 @@
  * The package version, reported in `initialize` and by the auto-registered
  * `hud_describe_source` tool. Kept in sync with `package.json` by hand.
  */
-export const HUD_SERVER_VERSION = "0.7.0";
+export const HUD_SERVER_VERSION = "0.7.1";
