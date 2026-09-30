@@ -382,6 +382,12 @@ describe("a metro named with its state suffix (#293)", () => {
     );
   });
 
+  it("a city or county named with its state does not also pull in the metro by alias", () => {
+    const r = resolvePlace(catalog, "Denver, CO");
+    expect(r.candidates.map((c) => c.kind.sumlevel)).not.toContain("310");
+    expect(r.explanation ?? "").not.toMatch(/metro/i);
+  });
+
   it("a metro kind with a state works too", () => {
     const r = resolvePlace(catalog, "Denver-Aurora-Centennial", { kind: "metro", state: "CO" });
     expect(r.candidates[0]?.geoid).toBe("19740");
