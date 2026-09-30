@@ -119,6 +119,11 @@ state of its own, so it matches when the state is in its title or one of its cou
 (`"Chicago-Naperville-Elgin, IN"`). With no kind given, a metro found this way answers only
 when nothing else matches exactly, so `"Denver, CO"` still means the city or the county (#293).
 
+The same 10× population rule settles a state against a smaller same-name place (#291): an
+exact match a tenth of the state's size or less is listed after it but neither wins nor makes
+the query ambiguous, so "Colorado" is the state and Colorado County, TX comes second; New York
+and Utah, where the city or county is larger than that, still ask which is meant.
+
 Each entity also carries an ACS 5-year total population (`B01003_001E`) and the vintage
 it reflects (e.g. "2024" meaning the 2020–2024 5-year), populated by `geography-build`
 from the Census Data API at catalog-build time — no runtime call. `PlaceCandidate.population`
