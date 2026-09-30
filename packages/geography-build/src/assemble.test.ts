@@ -28,7 +28,7 @@ describe("assemble", () => {
 
   it("collects entities and aliases across gazetteer files", () => {
     // Gazetteer entities plus the 4 regions and 9 divisions the build always adds (#154).
-    const gazetteer = rows.entities.filter((e) => !["020", "030"].includes(e.sumlevel));
+    const gazetteer = rows.entities.filter((e) => !["010", "020", "030"].includes(e.sumlevel));
     expect(gazetteer.map((e) => e.geoid).sort()).toEqual(["08", "08031", "0820000"]);
     expect(rows.aliases).toContainEqual({
       ucgid: ucgidOf("050", "08031"),
@@ -111,6 +111,82 @@ describe("assemble", () => {
       ucgid: ucgidOf("030", "8"),
       alias: "Mountain division",
       source: "hand",
+    });
+  });
+
+  it("adds the United States (010) with Census's UCGID and the TIGER GEOID (#290)", () => {
+    const nation = rows.entities.filter((e) => e.sumlevel === "010");
+    expect(nation).toEqual([
+      expect.objectContaining({
+        ucgid: "0100000US",
+        geoid: "US",
+        name: "United States",
+        stateFips: null,
+      }),
+    ]);
+  });
+
+  it("gives the nation the names people use for it, short ones included (#290)", () => {
+    const aliases = rows.aliases.filter((a) => a.ucgid === "0100000US").map((a) => a.alias);
+    for (const alias of [
+      "U.S.",
+      "US",
+      "USA",
+      "U.S.A.",
+      "United States of America",
+      "the United States",
+      "nation",
+      "the nation",
+    ]) {
+      expect(aliases).toContain(alias);
+    }
+    // "National" and "America" are real place names (National City, CA; America township).
+    expect(aliases).not.toContain("national");
+    expect(aliases).not.toContain("America");
+    expect(rows.aliases.filter((a) => a.ucgid === "0100000US").every((a) => a.source === "hand")).toBe(
+      true,
+    );
+  });
+
+  it("nests every present state and region in the nation, never Puerto Rico (#290)", () => {
+    const withPr = assemble({
+      gazetteers: {
+        "040": [STATES, "PR\t72\t01779808\tPuerto Rico\t1\t1\t18\t-66"].join("\n"),
+      },
+    });
+    const toNation = withPr.containment.filter((c) => c.parentUcgid === "0100000US");
+    expect(toNation).toContainEqual({
+      childUcgid: ucgidOf("040", "08"),
+      parentUcgid: "0100000US",
+      share: 1,
+      relation: "nests",
+    });
+    expect(toNation.some((c) => c.childUcgid === ucgidOf("040", "72"))).toBe(false);
+    expect(toNation.filter((c) => c.childUcgid.startsWith("0200000US"))).toHaveLength(4);
+    expect(toNation).toHaveLength(5); // Colorado + 4 regions
+  });
+
+  it("publishes the national programs at 010 without claiming a national LAUS (#290)", () => {
+    const national = rows.publishesAt.filter((p) => p.sumlevel === "010");
+    expect(national.map((p) => p.program).sort()).toEqual(
+      ["CES", "CPI", "CPS", "JOLTS", "OEWS", "QCEW"].sort(),
+    );
+    expect(national.some((p) => p.program === "LAUS")).toBe(false);
+  });
+
+  it("sets the nation's population from the ACS for=us:* row (#290)", () => {
+    const withPop = assemble({
+      gazetteers: { "040": STATES },
+      acsPopulation: {
+        "010": JSON.stringify([
+          ["NAME", "B01003_001E", "us"],
+          ["United States", "334922499", "1"],
+        ]),
+      },
+    });
+    expect(withPop.entities.find((e) => e.ucgid === "0100000US")).toMatchObject({
+      population: 334_922_499,
+      populationVintage: "2024",
     });
   });
 

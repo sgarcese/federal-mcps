@@ -114,9 +114,18 @@ describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
   });
 
   it("CPI maps a bespoke area code through the hand table", () => {
-    const cu = ["area_code\tarea_name", "S48B\tDenver", "0000\tUS city average"].join("\n");
+    const cu = ["area_code\tarea_name", "S48B\tDenver", "D200\tMidwest - Size Class D"].join(
+      "\n",
+    );
     const rows = parseCpiArea(cu);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ ucgid: ucgidOf("310", "19740"), program: "CPI" });
+  });
+
+  it("CPI maps the U.S. city average (0000) onto the nation (#290)", () => {
+    const cu = ["area_code\tarea_name", "0000\tU.S. city average"].join("\n");
+    expect(parseCpiArea(cu)).toEqual([
+      expect.objectContaining({ ucgid: "0100000US", program: "CPI", code: "0000", note: null }),
+    ]);
   });
 });

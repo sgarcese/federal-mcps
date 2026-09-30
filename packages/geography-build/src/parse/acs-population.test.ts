@@ -33,6 +33,16 @@ describe("parseAcsPopulation", () => {
     ]);
   });
 
+  it("parses the nation's row (for=us:*, id column us = 1) onto 0100000US (#290)", () => {
+    const json = [
+      ["NAME", "B01003_001E", "us"],
+      ["United States", "334922499", "1"],
+    ];
+    expect(parseAcsPopulation(json, "010")).toEqual([
+      { ucgid: "0100000US", population: 334_922_499 },
+    ]);
+  });
+
   it("parses a CBSA row keyed by the metro/micro column", () => {
     const json = [
       ["NAME", "B01003_001E", "metropolitan statistical area/micropolitan statistical area"],
