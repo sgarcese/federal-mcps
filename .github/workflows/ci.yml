@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           # gitleaks scans the whole history so a key that was committed and
           # later removed still fails the gate.
@@ -41,7 +41,7 @@ jobs:
           gitleaks version
           gitleaks git --no-banner --redact --exit-code 1 --config .gitleaks.toml .
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -67,7 +67,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
         with:
           terraform_version: "1.15.5"
           terraform_wrapper: false
@@ -99,7 +99,7 @@ jobs:
             terraform -chdir="$root" test
           done
 
-      - uses: terraform-linters/setup-tflint@v6
+      - uses: terraform-linters/setup-tflint@6ffdbaa3be476b3431f7275c26966ef32ff60337 # v6.3.2
         with:
           tflint_version: latest
 
