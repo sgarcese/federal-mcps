@@ -1,6 +1,6 @@
 import type { EntityRecord, GeographyCatalog } from "./catalog.js";
-import { dcidOf } from "./identifiers.js";
 import { deriveFlags } from "./flags.js";
+import { dcidOf } from "./identifiers.js";
 import {
   type Availability,
   type GeographyEdge,
@@ -152,12 +152,19 @@ export function resolvePlace(
   const searchText = county.name;
   const normQuery = normalizeName(searchText);
 
-  const searchOpts: { stateFips?: string; sumlevels?: string[]; limit: number } = { limit: 50 };
-  if (stateFips) searchOpts.stateFips = stateFips;
+  const searchOpts: SearchOpts = { limit: 50 };
+  if (stateFips) {
+    searchOpts.stateFips = stateFips;
+    const usps = FIPS_TO_USPS[stateFips];
+    if (usps) searchOpts.stateUsps = usps;
+  }
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
   const rows = searchSplittingTowns(catalog, searchText, searchOpts);
-  const folded = foldTownTwins(rows.map((e) => scoreCandidate(catalog, e, normQuery)));
+  const folded = metrosAsFallback(
+    foldTownTwins(rows.map((e) => scoreCandidate(catalog, e, normQuery))),
+    stateFips !== undefined && !sumlevels,
+  );
   // A dominated same-name town (isDominatedTown) ranks after every other match: a big rural
   // township's land area must not put it ahead of the city a name usually means (#241).
   const inCounty = county.county
@@ -224,13 +231,27 @@ export function resolvePlace(
 }
 
 /**
+ * Under a state filter with no kind, a metro answers only when nothing else matches exactly (#293):
+ * "Denver-Aurora-Centennial, CO" finds the metro, while "Denver, CO" stays the city and county it
+ * meant before metros could match a state.
+ */
+function metrosAsFallback(scored: Scored[], applies: boolean): Scored[] {
+  if (!applies || !scored.some((c) => c.isExact && c.candidate.kind.sumlevel !== "310")) {
+    return scored;
+  }
+  return scored.filter((c) => c.candidate.kind.sumlevel !== "310");
+}
+
+type SearchOpts = { stateFips?: string; stateUsps?: string; sumlevels?: string[]; limit: number };
+
+/**
  * Searches county subdivisions apart from everything else (#241): a name like Springfield has more
  * same-name townships than one search page holds, and they must not crowd the cities out.
  */
 function searchSplittingTowns(
   catalog: GeographyCatalog,
   text: string,
-  opts: { stateFips?: string; sumlevels?: string[]; limit: number },
+  opts: SearchOpts,
 ): EntityRecord[] {
   const wantsTowns = !opts.sumlevels || opts.sumlevels.includes("060");
   const others = opts.sumlevels?.filter((s) => s !== "060");

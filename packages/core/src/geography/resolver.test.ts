@@ -1,10 +1,9 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { labelForSumlevel } from "./types.js";
+import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { GeographyCatalog } from "./catalog.js";
 import { ucgidOf } from "./identifiers.js";
-import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import {
   getAvailability,
   getContainment,
@@ -13,6 +12,7 @@ import {
   resolvePlace,
 } from "./resolver.js";
 import type { PlaceCandidate } from "./types.js";
+import { labelForSumlevel } from "./types.js";
 
 let path: string;
 let catalog: GeographyCatalog;
@@ -344,5 +344,52 @@ describe("county subdivisions (#241)", () => {
     const r = resolvePlace(catalog, "Plainfield, CT");
     expect(r.status).toBe("ambiguous");
     expect(r.explanation).toMatch(/county subdivision/);
+  });
+});
+
+describe("a metro named with its state suffix (#293)", () => {
+  let path: string;
+  let catalog: GeographyCatalog;
+  beforeAll(() => {
+    path = buildFixtureCatalog();
+    catalog = new GeographyCatalog(path);
+  });
+  afterAll(() => {
+    catalog.close();
+    rmSync(dirname(path), { recursive: true, force: true });
+  });
+
+  it("finds the metro when the query ends in its state ('Denver-Aurora-Centennial, CO')", () => {
+    const r = resolvePlace(catalog, "Denver-Aurora-Centennial, CO");
+    expect(r.candidates.map((c) => c.geoid)).toContain("19740");
+  });
+
+  it("finds a multi-state metro by any state in its title ('…, IN')", () => {
+    expect(resolvePlace(catalog, "Chicago-Naperville-Elgin, IN").candidates[0]?.geoid).toBe(
+      "16980",
+    );
+    expect(resolvePlace(catalog, "Chicago-Naperville-Elgin, IL").candidates[0]?.geoid).toBe(
+      "16980",
+    );
+  });
+
+  it("an explicit state argument filters metros the same way, and excludes a metro outside it", () => {
+    expect(
+      resolvePlace(catalog, "Chicago-Naperville-Elgin", { state: "IN" }).candidates[0]?.geoid,
+    ).toBe("16980");
+    expect(resolvePlace(catalog, "Chicago-Naperville-Elgin", { state: "CO" }).candidates).toEqual(
+      [],
+    );
+  });
+
+  it("a city or county named with its state does not also pull in the metro by alias", () => {
+    const r = resolvePlace(catalog, "Denver, CO");
+    expect(r.candidates.map((c) => c.kind.sumlevel)).not.toContain("310");
+    expect(r.explanation ?? "").not.toMatch(/metro/i);
+  });
+
+  it("a metro kind with a state works too", () => {
+    const r = resolvePlace(catalog, "Denver-Aurora-Centennial", { kind: "metro", state: "CO" });
+    expect(r.candidates[0]?.geoid).toBe("19740");
   });
 });

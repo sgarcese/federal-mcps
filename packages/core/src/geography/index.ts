@@ -3,8 +3,12 @@
  * versioned SQLite catalog serves every server in the family: place-name resolution with
  * ambiguity-stops and structured flags, containment, overlap and lineage.
  */
-export { GeographyCatalog, type EntityRecord } from "./catalog.js";
+
+export { openBundledCatalog, setCatalogForTest } from "./bundled-catalog.js";
+export { type EntityRecord, GeographyCatalog } from "./catalog.js";
 export { deriveFlags, type EntityFacts } from "./flags.js";
+export { GEOGRAPHY_GUIDE, GEOGRAPHY_GUIDE_URI, geographyGuideResource } from "./guide.js";
+export { dcidOf, ucgidOf } from "./identifiers.js";
 export {
   getAvailability,
   getContainment,
@@ -13,8 +17,5 @@ export {
   resolvePlace,
   uspsOfStateFips,
 } from "./resolver.js";
+export { type GeographyToolName, type GeographyToolsOptions, geographyTools } from "./tools.js";
 export * from "./types.js";
-export { geographyTools, type GeographyToolsOptions, type GeographyToolName } from "./tools.js";
-export { GEOGRAPHY_GUIDE, GEOGRAPHY_GUIDE_URI, geographyGuideResource } from "./guide.js";
-export { openBundledCatalog, setCatalogForTest } from "./bundled-catalog.js";
-export { dcidOf, ucgidOf } from "./identifiers.js";

@@ -56,6 +56,8 @@ export class GeographyCatalog {
     query: string,
     filters: {
       stateFips?: string;
+      /** The state's USPS code, to match it in a metro's title (#293). */
+      stateUsps?: string;
       sumlevels?: string[];
       /** Summary levels to leave out (the resolver searches county subdivisions apart, #241). */
       excludeSumlevels?: string[];
@@ -79,10 +81,17 @@ export class GeographyCatalog {
         sumlevelParams[`xl${i}`] = s;
       });
     }
-    if (filters.stateFips) clauses.push("e.state_fips = @state");
+    // A metro has no state of its own: it is in a state when the state's code is in its title
+    // ("Chicago-Naperville-Elgin, IL-IN") or one of its counties is (#293).
+    if (filters.stateFips) {
+      clauses.push(`(e.state_fips = @state OR (e.sumlevel = '310' AND (
+        instr('-' || replace(replace(substr(e.name, instr(e.name, ', ') + 2), ' Metro Area', ''), ' Micro Area', '') || '-', '-' || @usps || '-') > 0
+        OR EXISTS (SELECT 1 FROM containment c JOIN entity k ON k.ucgid = c.child_ucgid
+                   WHERE c.parent_ucgid = e.ucgid AND k.state_fips = @state))))`);
+    }
     const params = {
       q: ftsQuery(query),
-      ...(filters.stateFips ? { state: filters.stateFips } : {}),
+      ...(filters.stateFips ? { state: filters.stateFips, usps: filters.stateUsps ?? "" } : {}),
       ...sumlevelParams,
     };
     const limit = filters.limit ?? 50;
