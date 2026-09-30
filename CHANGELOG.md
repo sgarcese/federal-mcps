@@ -3,7 +3,9 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## Unreleased — M15 Security hardening
+## 0.7.1 — M15 Security hardening (2026-09-30)
+
+Live eval after deploy: 77/77.
 
 Changed
 - Every GitHub Action in the workflows is pinned to a full commit SHA with its version in a comment
@@ -19,12 +21,11 @@ Changed
   open-ranged `requirements.txt` with its development tools; the bundle refuses a lock stamped for
   another commit; CI runs `pip-audit` on the lock and imports the Lambda handler from it (#277).
 
-## 0.7.1 — dependency advisories (M15)
-
 Fixed
 - Three transitive npm advisories (#276): `fast-uri` 3.1.7 → 3.1.8 (moderate; shipped in every agency
   Lambda through the MCP SDK's `ajv`), `brace-expansion` 5.0.9 → 5.0.12 (high; dev tooling only) and
   `ip-address` 10.7.0 → 10.7.2 (moderate; not bundled). `npm audit` reports 0 vulnerabilities.
+- Runtime updates (Dependabot #251): `@modelcontextprotocol/sdk` 1.30.1 and `zod` 4.6.5.
 
 ## 0.7.0 — M14 BEA regional server, and towns (2026-09-28)
 
