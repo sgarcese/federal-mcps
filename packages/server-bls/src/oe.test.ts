@@ -22,6 +22,13 @@ describe("buildOeSeriesId", () => {
     expect(buildOeSeriesId("M:0019740")).toBe("OEUM001974000000000000004");
   });
 
+  it("builds the national series id (area type N, area 0000000) — a known-good published id (#290)", () => {
+    // Recorded 2026-09-30 (fixtures/bls): OEUN000000000000000000004, 2025 annual mean = $69,770.
+    expect(buildOeSeriesId("N")).toBe("OEUN000000000000000000004");
+    expect(buildOeSeriesId("N", { occupation: "470000" })).toBe("OEUN000000000000047000004");
+    expect(() => buildOeSeriesId("N:00")).toThrow();
+  });
+
   it("stays unadjusted (U) even when seasonallyAdjusted is requested — OEWS is annual, unadjusted", () => {
     expect(buildOeSeriesId("S:08", { seasonallyAdjusted: true })).toBe("OEUS080000000000000000004");
   });

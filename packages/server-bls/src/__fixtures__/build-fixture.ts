@@ -7,6 +7,8 @@ import {
   type CatalogRows,
   type ContainmentRow,
   type EntityRow,
+  nationRows,
+  PUBLISHES_AT,
 } from "@federal-mcps/geography-build";
 import BetterSqlite3 from "better-sqlite3";
 import { ucgidOf } from "@federal-mcps/core";
@@ -79,6 +81,11 @@ export function buildFixtureCatalog(): string {
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
   ];
+  // The United States (#290), built by the production helper so the fixture mirrors the catalog.
+  const nation = nationRows(entities);
+  for (const e of nation.entities) {
+    entities.push({ ...e, population: 334_922_499, populationVintage: "2024" });
+  }
   // In this fixture every referenced geoid is a distinct entity, so a geoid → ucgid map is
   // unambiguous (the collision #73 addresses only appears at national scale).
   const uc = (geoid: string): string => {
@@ -95,6 +102,7 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
     { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
     { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },
+    ...nation.aliases,
   ];
 
   const containment: ContainmentRow[] = [
@@ -107,6 +115,7 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("0899999"), parentUcgid: uc("08031"), share: 1 }, // town nests in its county
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
     { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
+    ...nation.containment,
   ];
 
   const agencyCodes: AgencyCodeRow[] = [
@@ -124,6 +133,7 @@ export function buildFixtureCatalog(): string {
     },
     code(uc("19740"), "OEWS", "0019740"), // OEWS metro area code: "00" + CBSA 19740 (#152)
     code(uc("09001"), "LAUS", "CN0900100000000"), // Fairfield County CT, for compare_places
+    code(uc("US"), "CPI", "0000"), // the U.S. city average is the nation's CPI (#290)
 
     // Smallburg (0899999) and Bazville (0888888) have NO LAUS code → below_threshold.
   ];
@@ -142,6 +152,8 @@ export function buildFixtureCatalog(): string {
         sumlevel: "160",
         constraintNote: "incorporated place, population >= 25000",
       },
+      // The nation's rows exactly as the production catalog carries them (#290).
+      ...PUBLISHES_AT.filter((p) => p.sumlevel === "010"),
     ],
     countyChange: [
       {

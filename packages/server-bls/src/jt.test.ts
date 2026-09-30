@@ -10,6 +10,12 @@ describe("buildJtSeriesId", () => {
     );
   });
 
+  it("builds the national id from state code 00 — a known-good published id (#290)", () => {
+    // Recorded 2026-09-30 (fixtures/bls): JTU000000000000000JOL, Dec 2025 = 6,088 thousand.
+    expect(buildJtSeriesId("00", "JO")).toBe("JTU000000000000000JOL");
+    expect(buildJtSeriesId("00", "JO", { seasonallyAdjusted: true })).toBe("JTS000000000000000JOL");
+  });
+
   it("builds the other data elements by swapping only the data-element code", () => {
     // Verified against the live BLS API: Colorado, Dec 2023, NSA, in thousands.
     expect(buildJtSeriesId("08", "HI")).toBe("JTU000000080000000HIL"); // hires = 81
