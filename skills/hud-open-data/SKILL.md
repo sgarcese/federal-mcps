@@ -44,7 +44,7 @@ without the HUD User server.
 | Low-Mod Income Population by Tract | `3bd6767dcc5e4937a6232d9db04dd447` | `GEOID` | `LOWMODPCT` (0–100) | its only layer is id 4; reachable since the 2026-09-22 connector fix (tract 08031000800 → 100) |
 | Qualified Census Tracts 2026 | `f55f80843c9a436ba8e578a54cdd8cea` | `GEOID`, `STATE`, `COUNTY` (padded) | presence = QCT | 2026 designation |
 | Difficult Development Areas 2026 | `87d645f216024a07936c0f8bb0f20366` | `ZCTA5` | `DDA_CODE`, `DDA_TYPE`, `DDA_NAME` | 2026 |
-| LIHTC Properties | `810ccb34dd464ec4ad4697d35fff21a5` | `STATE2KX`, `CNTY2KX` **unpadded strings** (`'8'`, `'31'`), `PLACE2KX` 5-digit, `TRACT2KX` | `PROJECT`, `LI_UNITS`, `N_UNITS`, `YR_PIS`, `QCT`, `DDA`, `NONPROG` | current HUD LIHTC database |
+| LIHTC Properties | `810ccb34dd464ec4ad4697d35fff21a5` | `STATE2KX`, `CNTY2KX` **unpadded strings** (`'8'`, `'31'`), `PLACE2KX` 5-digit, `TRACT2KX`; **also `COUNTY_LEVEL`, `PLACE_LEVEL` — unpadded too** (Denver: `COUNTY_LEVEL='8031'`, `PLACE_LEVEL='820000'`, both 184 rows; padded `'08031'`/`'0820000'` return 0; verified 2026-09-24) | `PROJECT`, `LI_UNITS`, `N_UNITS`, `YR_PIS`, `QCT`, `DDA`, `NONPROG` | current HUD LIHTC database |
 | Public Housing Developments | `5c96143f79c940a0a8cedae99a1ac562` | `STATE2KX`, `CNTY2KX` **zero-padded** (`'08'`, `'031'`), `PLACE2KX` | `PROJECT_NAME`, `TOTAL_UNITS`, `PCT_OCCUPIED`, resident-mix `PCT_*` | current PIH extract |
 | Multifamily Properties – Assisted | `f4721da932a94b218bdb5a861fd7429e` | `STATE2KX`, `CNTY2KX` zero-padded | `PROPERTY_NAME_TEXT`, `TOTAL_ASSISTED_UNIT_COUNT`, `TOTAL_UNIT_COUNT` | current |
 | Opportunity Zones | `ef143299845841f8abb95969c01f88b5` | `GEOID10` (2010 tracts) | — | only layer is id 13; reachable since the 2026-09-22 connector fix |
@@ -74,6 +74,16 @@ Subsidized Households (all on the HUD User server above); PIT counts by year (HU
 
 - Never build a county key with the wrong padding: LIHTC uses `'8'`/`'31'`, public housing and
   multifamily use `'08'`/`'031'`. A zero count from the wrong padding is not "none".
+- Never pad `COUNTY_LEVEL` or `PLACE_LEVEL` on LIHTC either — they are unpadded too (verified
+  2026-09-24: Denver `COUNTY_LEVEL='8031'`, `PLACE_LEVEL='820000'`, 184 rows each;
+  `'08031'`/`'0820000'` return 0). Public Housing Developments uses the padded forms
+  (`'08031'`, `'0820000'`) for its own county/place columns — don't carry LIHTC's padding
+  there either. Padding either way silently returns zero LIHTC properties in every state
+  with FIPS < 10 (AL, AK, AZ, AR, CA, CO, CT, DE, DC). Safe filter: `COUNTY_LEVEL =
+  '<FIPS without leading zero>'` (or `PLACE_LEVEL` unpadded), or `STATE2KX`+`CNTY2KX`
+  unpadded — never the padded shape on this dataset
+  ([spike: the HUD surface](../../docs/spikes/hud-surface-cost-benefit.md) costs
+  normalising these codes server-side as one surface option; #215).
 - Never sum `LI_UNITS` as "affordable units in the city" without saying LIHTC only, and that
   `NONPROG` rows may have left the program.
 - Never report a CoC PIT count as this year's without saying the layer carries no year.
