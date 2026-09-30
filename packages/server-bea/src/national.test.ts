@@ -45,7 +45,7 @@ describe("bea_get_indicator for the United States (#290)", () => {
       }).tools.find((t) => t.name === "bea_get_indicator");
       // biome-ignore lint/suspicious/noExplicitAny: reading the envelope's untyped data in tests.
       const res = await get?.handler({ place: "United States", indicator } as any, {} as any);
-      expect((res?.data as { status: string }).status).toBe("unavailable");
+      expect((res?.data as { status: string } | undefined)?.status).toBe("unavailable");
       expect(res?.place).toMatchObject({ geoid: "US", ucgid: "0100000US" });
       const limitations = res?.limitations?.join(" ") ?? "";
       expect(limitations).toMatch(/no national \(United States\) series/);
