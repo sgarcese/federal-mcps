@@ -40,6 +40,14 @@ const SOURCE = {
 };
 
 /**
+ * BLS Public Data API v2's per-query span limit for a registered key: "50 series and 20 years
+ * per query" (`describe-source.ts`, `docs/architecture.md` "Server one: BLS"). `bls_get_raw`
+ * uses this both to fill a missing `startYear`/`endYear` and to cap a span the caller gave that
+ * is longer than BLS allows (#292).
+ */
+const MAX_RAW_YEAR_SPAN = 20;
+
+/**
  * The shape of any BLS Public Data API timeseries id: a two-letter survey prefix, then capitals
  * and digits, 5–30 characters in all (e.g. `LNU04000000`, `CEU2000000003`, `CUUR0000SA0`). The
  * API is the authority on whether a series exists; this only keeps garbage and QCEW's internal
@@ -146,13 +154,54 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
           `not BLS timeseries ids: ${bad.join(", ")}. A BLS id is a two-letter survey prefix followed by capitals and digits (e.g. LNU04000000, CEU2000000003); take ids from a bls_get_indicator result's source block or from BLS's series lookup.`,
         );
       }
+
+      // BLS's API errors ("If a startyear is specified then an endyear must be specified too")
+      // rather than defaulting the missing end, so bls_get_raw fills it — loudly (#292 ruling).
+      const limitations: string[] = [];
+      let startYear = q.startYear;
+      let endYear = q.endYear;
+      if (startYear !== undefined && endYear === undefined) {
+        endYear = now().getFullYear();
+        limitations.push(`No endYear given: used ${endYear}, the current year.`);
+      } else if (endYear !== undefined && startYear === undefined) {
+        startYear = endYear - (MAX_RAW_YEAR_SPAN - 1);
+        limitations.push(
+          `No startYear given: used ${startYear}, the earliest year BLS's ${MAX_RAW_YEAR_SPAN}-year-per-query limit allows for endYear ${endYear}.`,
+        );
+      }
+      if (
+        startYear !== undefined &&
+        endYear !== undefined &&
+        endYear - startYear + 1 > MAX_RAW_YEAR_SPAN
+      ) {
+        const requestedStart = startYear;
+        startYear = endYear - (MAX_RAW_YEAR_SPAN - 1);
+        limitations.push(
+          `Span capped to BLS's ${MAX_RAW_YEAR_SPAN}-year-per-query limit: used startYear ${startYear} instead of ${requestedStart} (endYear ${endYear} unchanged).`,
+        );
+      }
+
       const responses = await fetchSeriesRaw(options.httpClient(), q.ids, {
-        ...(q.startYear === undefined ? {} : { startYear: q.startYear }),
-        ...(q.endYear === undefined ? {} : { endYear: q.endYear }),
+        ...(startYear === undefined ? {} : { startYear }),
+        ...(endYear === undefined ? {} : { endYear }),
         ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
       });
+
+      // BLS's own message[] text is never the only signal that an id came back empty (#292): a
+      // series absent from every batch's Results earns its own limitation regardless of message.
+      const returnedIds = new Set<string>();
+      for (const response of responses) {
+        const r = response as { Results?: { series?: { seriesID?: unknown }[] } };
+        for (const series of r.Results?.series ?? []) {
+          if (typeof series.seriesID === "string") returnedIds.add(series.seriesID);
+        }
+      }
+      for (const id of q.ids) {
+        if (!returnedIds.has(id)) limitations.push(`No series returned for ${id}.`);
+      }
+
       return {
-        data: { ids: q.ids, responses },
+        data: { ids: q.ids, responses, ...(limitations.length > 0 ? { limitations } : {}) },
         source: {
           ...SOURCE,
           ids: q.ids,
@@ -161,6 +210,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
             now(),
           ),
         },
+        ...(limitations.length > 0 ? { limitations } : {}),
       };
     },
   };

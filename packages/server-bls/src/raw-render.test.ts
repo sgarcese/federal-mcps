@@ -55,4 +55,17 @@ describe("renderBlsRaw (#210, ADR-017)", () => {
   it("declines (undefined) when the data is not a BLS response, so the JSON rendering is used", () => {
     expect(renderBlsRaw({ nope: true })).toBeUndefined();
   });
+
+  it("puts the handler's own limitations (defaulted/capped years, an empty id, #292) before the column header", () => {
+    const r = renderBlsRaw({
+      ids: ["CEU2000000003"],
+      responses: [response],
+      limitations: ["No endYear given: used 2026, the current year."],
+    });
+    expect(r?.head).toEqual([
+      "No endYear given: used 2026, the current year.",
+      "columns: year,period,value,footnotes",
+      "note: No Data Available for Series LNU04000000 Year: 2015",
+    ]);
+  });
 });
