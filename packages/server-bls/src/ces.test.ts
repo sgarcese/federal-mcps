@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildSmSeriesId, isSmSeriesId } from "./ces.js";
+import { buildCesNationalSeriesId, buildSmSeriesId, isSmSeriesId } from "./ces.js";
+
+describe("buildCesNationalSeriesId (#290)", () => {
+  it("builds the national total-nonfarm all-employees id — a known-good published id", () => {
+    // Recorded 2026-09-30 (fixtures/bls): CEU0000000001 Dec 2025 = 159,358 thousand.
+    expect(buildCesNationalSeriesId()).toBe("CEU0000000001");
+    expect(buildCesNationalSeriesId({ seasonallyAdjusted: true })).toBe("CES0000000001");
+  });
+});
 
 describe("buildSmSeriesId", () => {
   it("builds the statewide total-nonfarm id (Colorado, NSA) — a known-good published id", () => {

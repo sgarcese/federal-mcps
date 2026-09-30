@@ -94,7 +94,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     defaultIndicator: "unemployment_rate",
     descriptions: {
       getIndicator:
-        "Get one BLS indicator for a place, with footnote flags and a citation: unemployment, employment and labor force (LAUS); payroll employment (CES); occupational wage (OEWS); the all-items price index (CPI); job openings, hires, quits and layoffs (JOLTS); covered employment and average weekly wage (QCEW); producer price indexes (PPI, national only — place optional). Coverage gaps fall back and are flagged: a city below the 25,000 LAUS threshold returns its county's value; a place with no local CPI returns the U.S. city average.",
+        "Get one BLS indicator for a place, with footnote flags and a citation: unemployment, employment and labor force (LAUS); payroll employment (CES); occupational wage (OEWS); the all-items price index (CPI); job openings, hires, quits and layoffs (JOLTS); covered employment and average weekly wage (QCEW); producer price indexes (PPI, national only — place optional). Coverage gaps fall back and are flagged: a city below the 25,000 LAUS threshold returns its county's value; a place with no local CPI returns the U.S. city average. The United States is a place too: it answers from each program's national series (CPS for unemployment, since LAUS has no national figure).",
       comparePlaces:
         "Compare one indicator across several places, aligned on the latest period they all share. Each place is resolved and labelled; a place below coverage (e.g. a small city on LAUS) is flagged with its fallback, and an ambiguous or unmatched place is reported in its row rather than dropped.",
       listIndicators:

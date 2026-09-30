@@ -263,6 +263,66 @@ describe("citationSuffix (#237): an attribution the agency's terms require rides
   });
 });
 
+describe("the nation as a place (#290)", () => {
+  it("a national-scope indicator asked for the United States carries no 'not a local figure' caveat", async () => {
+    for (const place of ["United States", "US", "nation"]) {
+      const res = await go("demo_get_indicator", { indicator: "national_thing", place });
+      expect(res.limitations ?? []).toEqual([]);
+      expect(res.place).toMatchObject({ geoid: "US", ucgid: "0100000US", dcid: "country/USA" });
+    }
+    const local = await go("demo_get_indicator", {
+      indicator: "national_thing",
+      place: "Colorado",
+    });
+    expect(local.limitations?.join(" ")).toMatch(/nationally only; this is not a Colorado figure/);
+  });
+
+  it("a place-scoped program with no national series says so at the nation level", async () => {
+    const res = await go("demo_get_indicator", {
+      place: "United States",
+      indicator: "county_thing",
+    });
+    expect((res.data as { status: string }).status).toBe("unavailable");
+    expect(res.place).toMatchObject({ geoid: "US", ucgid: "0100000US" });
+    expect(res.limitations?.join(" ")).toMatch(
+      /DEMO publishes no national \(United States\) series.*state, county or metro/i,
+    );
+  });
+
+  it("a definition's sourceOf may name the program that actually answered (CPS for LAUS)", async () => {
+    const relabelled: IndicatorDefinition = {
+      ...countyThing,
+      name: "relabelled_thing",
+      agencyCodeOf: (place) => (place.kind.sumlevel === "010" ? "US" : undefined),
+      buildSeriesId: () => "LNU04000000",
+      sourceOf: (key) => ({
+        url: "https://example.invalid/api",
+        label: key,
+        program: "CPS",
+      }),
+    };
+    const t = indicatorTools({
+      agency: "demo",
+      definitions: [relabelled],
+      catalog: () => catalog,
+      httpClient: () => noClient,
+      now: () => new Date("2025-02-01T00:00:00Z"),
+      defaultFetch: echoFetch,
+      sourceUrl: "https://example.invalid/api",
+      descriptions: { getIndicator: "get", comparePlaces: "compare", listIndicators: "list" },
+      examples: {
+        getIndicator: [{ title: "x", input: { place: "US" } }],
+        comparePlaces: [{ title: "y", input: { places: ["US", "Colorado"] } }],
+        listIndicators: [{ title: "z", input: {} }],
+      },
+    });
+    // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+    const res = await t[0]?.handler({ place: "US" } as any, {} as any);
+    expect(res?.source.program).toBe("CPS");
+    expect(res?.source.citation).toMatch(/, CPS, series LNU04000000\./);
+  });
+});
+
 describe("unavailableNote (#241): a program says why a place has no series", () => {
   const noted: IndicatorDefinition = {
     ...countyThing,

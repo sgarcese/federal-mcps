@@ -70,6 +70,7 @@ export const SOURCE_URLS = {
     "860": acsPopulationUrl(vintage, "zip code tabulation area"),
     "020": acsPopulationUrl(vintage, "region"),
     "030": acsPopulationUrl(vintage, "division"),
+    "010": acsPopulationUrl(vintage, "us"), // the nation (#290), one row
   }),
   /**
    * ACS 5-year population for county subdivisions, one URL per state (#241): the API answers

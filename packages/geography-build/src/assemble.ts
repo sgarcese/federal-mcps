@@ -1,5 +1,6 @@
 import { ucgidOf } from "@federal-mcps/core";
 import { CENSUS_DIVISIONS, CENSUS_REGIONS, COUNTY_CHANGES, PUBLISHES_AT } from "./data/static.js";
+import { nationRows } from "./nation.js";
 import { parseAcsPopulation } from "./parse/acs-population.js";
 import { parseBeaCombinations } from "./parse/bea-geofips.js";
 import { parseDelineation } from "./parse/delineation.js";
@@ -104,6 +105,11 @@ export function assemble(sources: Sources): CatalogRows {
   extend(entities, regional.entities);
   extend(aliases, regional.aliases);
 
+  // The United States (#290): the parent of every state and region, read by a nation benchmark.
+  const nation = nationRows(entities);
+  extend(entities, nation.entities);
+  extend(aliases, nation.aliases);
+
   const agencyCodes: AgencyCodeRow[] = [];
   if (sources.cousubs2020) extend(agencyCodes, recodedCousubGeoids(entities, sources.cousubs2020));
   if (sources.beaGeoFips) extend(agencyCodes, parseBeaCombinations(sources.beaGeoFips, entities));
@@ -150,6 +156,7 @@ export function assemble(sources: Sources): CatalogRows {
       ...deriveTownTwins(entities),
       ...countyCbsaEdges(entities, sources.cbsaDelineation),
       ...regional.containment,
+      ...nation.containment,
       ...mergeWeighted(weighted, geocorr),
     ],
     agencyCodes,

@@ -185,11 +185,13 @@ export interface IndicatorDefinition {
    * The indicator's own source for one answer (#212): the URL actually read and a readable label
    * for the citation, when the server-wide `sourceUrl` is wrong for this program (QCEW reads CSV
    * slices, not the timeseries API). `ids` keep the opaque key; the citation uses the label.
+   * `program`, when given, names the program that actually answered where it differs from the
+   * definition's (#290: the nation's unemployment comes from CPS, not LAUS).
    */
   sourceOf?(
     seriesKey: string,
     latest: SeriesObservation | undefined,
-  ): { url: string; label: string } | undefined;
+  ): { url: string; label: string; program?: string } | undefined;
   /** Where a multi-file answer (a comparison) points when `sourceOf` gives one URL per series. */
   sourceHome?: string;
   /**

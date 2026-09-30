@@ -30,5 +30,6 @@ export {
   parseZctaPlace,
   parseZctaTract,
 } from "./parse/relationship.js";
-export { COUNTY_CHANGES, CPI_AREA_TO_CBSA, PUBLISHES_AT } from "./data/static.js";
+export { COUNTY_CHANGES, CPI_AREA_TO_CBSA, NATION, PUBLISHES_AT } from "./data/static.js";
+export { nationRows } from "./nation.js";
 export type * from "./types.js";

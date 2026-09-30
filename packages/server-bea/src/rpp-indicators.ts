@@ -108,8 +108,12 @@ function rppFallback(
   return nonmetroPortionFallback(place);
 }
 
-/** Only reached when even the nonmetro-portion fallback cannot be built (no known state FIPS). */
+/**
+ * Only reached when even the nonmetro-portion fallback cannot be built (no known state FIPS). The
+ * nation has no state to miss; the shared tool says it has no national series here (#290).
+ */
 function rppUnavailableNote(place: PlaceCandidate): string | undefined {
+  if (place.kind.sumlevel === "010") return undefined;
   return (
     "BEA publishes regional price parities for metropolitan areas and states; " +
     `${place.name}'s state could not be determined, so not even its nonmetropolitan portion can be reported.`

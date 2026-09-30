@@ -8,6 +8,7 @@ import {
   type CatalogRows,
   type ContainmentRow,
   type EntityRow,
+  nationRows,
 } from "@federal-mcps/geography-build";
 import BetterSqlite3 from "better-sqlite3";
 
@@ -95,6 +96,11 @@ export function buildFixtureCatalog(): string {
       ...pop(980_000),
     }),
   ];
+  // The United States (#290), built by the production helper so the fixture mirrors the catalog.
+  const nation = nationRows(entities);
+  for (const e of nation.entities) {
+    entities.push({ ...e, population: 334_922_499, populationVintage: "2024" });
+  }
 
   const uc = (geoid: string, sumlevel?: string): string => {
     const e = entities.find((x) => x.geoid === geoid && (!sumlevel || x.sumlevel === sumlevel));
@@ -116,6 +122,7 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("51540", "050"), alias: "Charlottesville", source: "lsad-stripped" },
     { ucgid: uc("5114968"), alias: "Charlottesville", source: "lsad-stripped" },
     { ucgid: uc("09110"), alias: "Capitol", source: "lsad-stripped" },
+    ...nation.aliases,
   ];
 
   const nests = (child: string, parent: string, share = 1): ContainmentRow => ({
@@ -141,6 +148,7 @@ export function buildFixtureCatalog(): string {
     nests(uc("51540", "050"), uc("51")),
     nests(uc("5114968"), uc("51540", "050")),
     nests(uc("09110"), uc("09")),
+    ...nation.containment,
   ];
 
   const combination = (geoid: string, name: string): AgencyCodeRow => ({

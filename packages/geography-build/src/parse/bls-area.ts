@@ -3,8 +3,12 @@ import type { AgencyCodeRow } from "../types.js";
 import {
   CPI_AREA_TO_CBSA,
   CPI_AREA_TO_REGION_DIVISION,
+  NATION,
   US_STATE_POSTAL_TO_FIPS,
 } from "../data/static.js";
+
+/** The CPI `cu.area` code of the U.S. city average. */
+const CPI_US_CITY_AVERAGE = "0000";
 
 /**
  * Decodes a BLS LAUS `la.area` code into the Census GEOID it names and that GEOID's
@@ -173,6 +177,17 @@ export function parseOewsArea(text: string): AgencyCodeRow[] {
 export function parseCpiArea(text: string): AgencyCodeRow[] {
   return parseBlsAreaFile(text, (areaCode) => {
     const code = areaCode.trim();
+    if (code === CPI_US_CITY_AVERAGE) {
+      // The U.S. city average is the nation's CPI (#290).
+      return {
+        ucgid: ucgidOf("010", NATION.geoid),
+        agency: "bls",
+        program: "CPI",
+        code,
+        codeVintage: 2023,
+        note: null,
+      };
+    }
     const regional = CPI_AREA_TO_REGION_DIVISION[code];
     if (regional) {
       return {

@@ -70,7 +70,7 @@ function cpiFallback(catalog: GeographyCatalog, place: PlaceCandidate): Indicato
     }
   }
   return {
-    geoid: CPI_US_CITY_AVERAGE_AREA,
+    geoid: "US", // the nation's catalog GEOID (#290); its CPI area code is 0000
     name: "U.S. city average",
     sumlevel: "010",
     code: CPI_US_CITY_AVERAGE_AREA,

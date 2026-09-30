@@ -85,6 +85,24 @@ describe("acsIndicatorDefinitions (ADR-014 §1): the thirteen headline indicator
   });
 });
 
+describe("census_get_indicator for the United States (#290)", () => {
+  it("answers the nation through the existing ucgid path, 1-year by population", async () => {
+    // Recorded 2026-09-30: ACS 2024 1-year, ucgid=0100000US → 81,604 ± 128.
+    const res = await go("census_get_indicator", {
+      place: "United States",
+      indicator: "median_household_income",
+    });
+    expect(res.source.ids).toEqual(["acs:2024:1-year:detailed:B19013_001:0100000US"]);
+    expect(res.place).toMatchObject({ geoid: "US", ucgid: "0100000US", dcid: "country/USA" });
+    const data = res.data as {
+      latest: { period: string; value: number };
+      observations: { marginOfError: number | null }[];
+    };
+    expect(data.latest).toEqual({ period: "2024-A01", value: 81604 });
+    expect(data.observations[0]?.marginOfError).toBe(128);
+  });
+});
+
 describe("census_get_indicator end to end over recorded fixtures", () => {
   it("Denver city population: 1-year by population, controlled estimate with no margin, product stated", async () => {
     const res = await go("census_get_indicator", {

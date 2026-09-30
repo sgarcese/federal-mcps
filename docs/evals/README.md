@@ -101,4 +101,8 @@ guide only on a clean pass; the ground truth was verified live on the date in th
 
 `bls-m12.jsonl` (run by `run.mjs` with the other sets): QCEW history, a 3-digit NAICS industry,
 annual averages, an unpublished code (must be a note, not a number), the OEWS one-year horizon
-(must say the range was not applied), and national CES/CPS ids through `bls_get_raw`.
+(must say the range was not applied), and national CES/CPS ids through `bls_get_raw`. The national
+benchmark cases (#290) ask for the United States as a place: the unemployment rate (program CPS,
+with the caveat that it is not LAUS), the labor force by the short alias "US", QCEW's U.S. total
+(US000) wage and private construction employment, CES national payroll employment, a state beside
+the nation in `bls_compare_places`, and `bls_list_indicators` for the nation.

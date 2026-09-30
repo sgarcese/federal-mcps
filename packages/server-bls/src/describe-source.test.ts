@@ -80,3 +80,21 @@ describe("OEWS: detailed occupations and the one-year API horizon are documented
     expect(oews?.granularity).toMatch(/bls_get_raw/);
   });
 });
+
+describe("the nation in describe_source (#290)", () => {
+  const d = describeSource();
+  const g = (code: string) => d.programs.find((p) => p.code === code)?.granularity ?? "";
+  it("says LAUS has no national figure and the nation reads CPS", () => {
+    expect(g("LAUS")).toMatch(/nation.*Current Population Survey \(CPS\)/i);
+  });
+
+  it("names the nation in each program that publishes it", () => {
+    expect(g("SM")).toMatch(/nation.*CES national/i);
+    for (const code of ["QCEW", "OEWS", "JOLTS"]) expect(g(code)).toMatch(/nation/i);
+    expect(g("CPI")).toMatch(/U\.S\. city average/);
+  });
+
+  it("tells the model the United States resolves as a place, for a national benchmark", () => {
+    expect(d.caveats.join(" ")).toMatch(/United States.*place.*benchmark/i);
+  });
+});

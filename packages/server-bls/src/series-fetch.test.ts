@@ -48,6 +48,40 @@ describe("fetchSeriesObservations (recorded fixture)", () => {
   });
 });
 
+describe("the national benchmark series (recorded fixture, #290)", () => {
+  it("replays the nation's CPS, CES, JOLTS, OEWS and CPI series offline", async () => {
+    // Recorded 2026-09-30 in one keyless request, 2024–2025.
+    const ids = [
+      "LNU04000000",
+      "LNU03000000",
+      "LNU02000000",
+      "LNU01000000",
+      "LNS14000000",
+      "CEU0000000001",
+      "JTU000000000000000JOL",
+      "OEUN000000000000000000004",
+      "CUUR0000SA0",
+    ];
+    const out = await fetchSeriesObservations(replayClient(), ids, {
+      startYear: 2024,
+      endYear: 2025,
+    });
+    expect(out.map((s) => s.seriesId)).toEqual(ids);
+    const latest = Object.fromEntries(out.map((s) => [s.seriesId, s.observations[0]?.value]));
+    expect(latest).toMatchObject({
+      LNU04000000: 4.1,
+      LNS14000000: 4.4,
+      LNU03000000: 7003,
+      LNU02000000: 163720,
+      LNU01000000: 170723,
+      CEU0000000001: 159358,
+      JTU000000000000000JOL: 6088,
+      OEUN000000000000000000004: 69770,
+      CUUR0000SA0: 324.054,
+    });
+  });
+});
+
 describe("fetchSeriesObservations parsing and batching", () => {
   const ok = (series: unknown[]) =>
     new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series } }), {

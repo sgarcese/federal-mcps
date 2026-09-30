@@ -1,18 +1,27 @@
 import type { PlaceCandidate } from "@federal-mcps/core";
 import { buildJtSeriesId, JT_DATA_ELEMENTS } from "./jt.js";
+import { isNation } from "./nation.js";
 import type { IndicatorDefinition } from "@federal-mcps/core";
 
 /**
  * JOLTS (Job Openings and Labor Turnover Survey) registered as indicator definitions (ADR-010
- * §1–§2). Below national, JOLTS publishes at the state level only — no metro JOLTS — so a state
- * resolves to its own FIPS geoid and every other place kind is unavailable (no fallback: JOLTS has
- * no below-state substitute the way LAUS falls back to a county).
+ * §1–§2). JOLTS publishes the nation and, below it, states only — no metro JOLTS — so a state
+ * resolves to its own FIPS geoid, the nation to JOLTS's national state code `00` (#290), and every
+ * other place kind is unavailable (no fallback: JOLTS has no below-state substitute the way LAUS
+ * falls back to a county).
  */
 const JOLTS_PROGRAM = "JOLTS";
 const STATE_SUMLEVEL = "040";
 
-/** The JOLTS "agency code" for a place: a state's FIPS geoid; undefined otherwise (no fabrication). */
+/** JOLTS's state code for the nation (`JTU000000000000000JOL`, recorded 2026-09-30, #290). */
+const JT_NATIONAL_STATE = "00";
+
+/**
+ * The JOLTS "agency code" for a place: a state's FIPS geoid, `00` for the nation (#290); undefined
+ * otherwise (no fabrication).
+ */
 export function joltsStateCode(place: PlaceCandidate): string | undefined {
+  if (isNation(place)) return JT_NATIONAL_STATE;
   return place.kind.sumlevel === STATE_SUMLEVEL ? place.geoid : undefined;
 }
 

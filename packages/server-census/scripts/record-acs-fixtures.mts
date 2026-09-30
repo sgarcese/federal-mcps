@@ -37,6 +37,7 @@ const cases: [string, string, string, string][] = [
   ["2024", "acs/acs5", acs("B19013_001"), "1400000US08031980001"], // sentinel median
   ["2024", "acs/acs5", acs("B19013_001"), "1400000US08031000503"], // low reliability
   ["2020", "dec/pl", "NAME,P1_001N", "0500000US08031"], // decennial
+  ["2024", "acs/acs1", acs("B19013_001"), "0100000US"], // the nation (#290), recorded 2026-09-30
 ];
 for (const [vintage, dataset, get, ucgid] of cases) {
   const url = `${E}/${vintage}/${dataset}?get=${get}&ucgid=${ucgid}`;

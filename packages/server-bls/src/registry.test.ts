@@ -59,10 +59,15 @@ describe("lausIndicatorDefinitions (LAUS on the registry)", () => {
   it("reads the LAUS agency code off a resolved place, or undefined when absent", () => {
     const reg = createIndicatorRegistry(lausIndicatorDefinitions);
     const def = reg.get("employment");
+    const county = { sumlevel: "050", label: "county" };
     const withCode = {
+      kind: county,
       agencyCodes: [{ agency: "bls", program: "LAUS", code: "CN0803100000000" }],
     };
-    const withoutCode = { agencyCodes: [{ agency: "bls", program: "QCEW", code: "X" }] };
+    const withoutCode = {
+      kind: county,
+      agencyCodes: [{ agency: "bls", program: "QCEW", code: "X" }],
+    };
     expect(def?.agencyCodeOf(withCode)).toBe("CN0803100000000");
     expect(def?.agencyCodeOf(withoutCode)).toBeUndefined();
     // The exported helper agrees with the definition.

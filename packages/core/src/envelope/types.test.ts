@@ -41,6 +41,12 @@ describe("placeRef", () => {
     expect(zcta.dcid).toBe("zip/80202");
   });
 
+  it("gives the nation Census's UCGID and its Data Commons DCID (#290)", () => {
+    const us = placeRef({ geoid: "US", sumlevel: "010", label: "nation", name: "United States" });
+    expect(us.ucgid).toBe("0100000US");
+    expect(us.dcid).toBe("country/USA");
+  });
+
   it("keeps parents shallow (parents of parents are empty)", () => {
     const colorado = placeRef({
       geoid: "08",

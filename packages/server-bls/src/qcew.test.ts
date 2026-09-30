@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { HttpClient, HttpResult } from "@federal-mcps/core";
 import { describe, expect, it, vi } from "vitest";
 import { createHttpClient, MemoryBudgetStore, MemoryCacheStore } from "@federal-mcps/core";
@@ -168,6 +170,35 @@ describe("parseQcewRow for a metro (MSA) slice (#153)", () => {
     expect(parseQcewRow(MSA)?.averageWeeklyWage).toBe(2000);
     expect(parseQcewRow(MSA, { ownCode: "5", industryCode: "10" })?.averageWeeklyWage).toBe(1900);
     expect(parseQcewRow(MSA, { ownCode: "5", industryCode: "23" })?.averageWeeklyWage).toBe(1500);
+  });
+});
+
+describe("parseQcewRow for the U.S. total (US000, #290)", () => {
+  // Recorded 2026-09-30 from data.bls.gov/cew/data/api/2026/1/area/US000.csv, trimmed to the
+  // rows and columns read here. National agglvl codes: total 10, ownership 11, sector 14, 3-digit 15.
+  const US = readFileSync(
+    fileURLToPath(new URL("../fixtures/qcew/US000-2026-Q1.csv", import.meta.url)),
+    "utf8",
+  );
+  it("reads the national headline: covered employment and average weekly wage", () => {
+    const row = parseQcewRow(US);
+    expect(row).toMatchObject({ areaFips: "US000", year: 2026, quarter: 1 });
+    expect(row?.employment).toBe(Math.round((154172010 + 154387351 + 154771941) / 3));
+    expect(row?.averageWeeklyWage).toBe(1654);
+  });
+
+  it("picks the national ownership, sector and 3-digit rows by their agglvl", () => {
+    // A same-pair row at the wrong level (as a county slice can carry) must not be picked.
+    const withDecoy = `${US.trim()}\n"US000","5","23","15","0","2026","1","",1,1,1,1,1,1,1,9999`;
+    expect(parseQcewRow(withDecoy, { ownCode: "5", industryCode: "10" })?.averageWeeklyWage).toBe(
+      1681,
+    );
+    expect(parseQcewRow(withDecoy, { ownCode: "5", industryCode: "23" })?.averageWeeklyWage).toBe(
+      1634,
+    );
+    expect(parseQcewRow(withDecoy, { ownCode: "5", industryCode: "236" })?.averageWeeklyWage).toBe(
+      1854,
+    );
   });
 });
 

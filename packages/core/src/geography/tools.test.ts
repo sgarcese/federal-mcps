@@ -111,6 +111,29 @@ describe("geographyTools", () => {
     await client.close();
   });
 
+  it("resolves 'US' to the nation, and names it as a state's parent with its own ids (#290)", async () => {
+    const client = await connect(geoServer());
+    const us = await client.callTool({ name: "geo_resolve_place", arguments: { query: "US" } });
+    const usEnv = us.structuredContent as {
+      data: { status: string; candidates: { ucgid: string }[] };
+      place?: { ucgid: string; dcid: string };
+    };
+    expect(usEnv.data.candidates[0]?.ucgid).toBe("0100000US");
+    expect(usEnv.place).toMatchObject({ ucgid: "0100000US", dcid: "country/USA" });
+
+    const co = await client.callTool({
+      name: "geo_resolve_place",
+      arguments: { query: "Colorado", kind: "state" },
+    });
+    const coEnv = co.structuredContent as {
+      place?: { parents: { name: string; ucgid: string; dcid: string }[] };
+    };
+    expect(coEnv.place?.parents).toContainEqual(
+      expect.objectContaining({ name: "United States", ucgid: "0100000US", dcid: "country/USA" }),
+    );
+    await client.close();
+  });
+
   it("serves the geography guide resource", async () => {
     const client = await connect(geoServer());
     const read = await client.readResource({ uri: GEOGRAPHY_GUIDE_URI });

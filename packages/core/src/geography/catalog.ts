@@ -114,6 +114,13 @@ export class GeographyCatalog {
       | undefined;
   }
 
+  /** Every entity at one summary level — for the tiny levels only (the nation, #290). */
+  entitiesAtLevel(sumlevel: string): EntityRecord[] {
+    return this.db
+      .prepare("SELECT * FROM entity WHERE sumlevel = ?")
+      .all(sumlevel) as EntityRecord[];
+  }
+
   /** Entities sharing a bare GEOID (a county and a ZCTA can collide) — for disambiguation. */
   entitiesByGeoid(geoid: string): EntityRecord[] {
     return this.db.prepare("SELECT * FROM entity WHERE geoid = ?").all(geoid) as EntityRecord[];

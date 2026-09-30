@@ -45,6 +45,10 @@ describe("SOURCE_URLS.acsPopulation", () => {
     expect(urls["030"]).toBe(
       "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E&for=division:*",
     );
+    // The nation (#290): one row, id column `us` = 1 (verified live 2026-09-30).
+    expect(urls["010"]).toBe(
+      "https://api.census.gov/data/2024/acs/acs5?get=NAME,B01003_001E&for=us:*",
+    );
   });
 
   it("accepts a different vintage", () => {

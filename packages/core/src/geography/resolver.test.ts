@@ -447,3 +447,80 @@ describe("a state dominates much smaller same-name places (#291)", () => {
     );
   });
 });
+
+describe("the United States (#290)", () => {
+  it("resolves 'United States' to the nation with Census's identifiers and its population", () => {
+    const us = only(resolvePlace(catalog, "United States"));
+    expect(us).toMatchObject({
+      geoid: "US",
+      ucgid: "0100000US",
+      dcid: "country/USA",
+      name: "United States",
+      kind: { sumlevel: "010", label: "nation" },
+      stateFips: null,
+      population: 334_922_499,
+    });
+    expect(us.parents).toEqual([]);
+  });
+
+  it.each([
+    "US",
+    "us",
+    "U.S.",
+    "USA",
+    "U.S.A.",
+    "the U.S.",
+    "United States of America",
+    "the United States",
+    "nation",
+    "the nation",
+  ])("finds the nation by its alias %j", (query) => {
+    const r = resolvePlace(catalog, query);
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.ucgid).toBe("0100000US");
+  });
+
+  it("answers a two-letter query only when it is the nation's exact alias; others stay empty", () => {
+    expect(resolvePlace(catalog, "US").candidates.map((c) => c.ucgid)).toEqual(["0100000US"]);
+    expect(resolvePlace(catalog, "de").candidates).toEqual([]);
+    expect(resolvePlace(catalog, "CO").candidates).toEqual([]);
+    expect(resolvePlace(catalog, "U").candidates).toEqual([]);
+  });
+
+  it.each(["nation", "country", "us", "010"])("accepts the kind hint %j", (kind) => {
+    const us = only(resolvePlace(catalog, "United States", { kind }));
+    expect(us.kind.sumlevel).toBe("010");
+    expect(resolvePlace(catalog, "Denver", { kind }).candidates).toEqual([]);
+  });
+
+  it("is found even when more than a search page of places contain 'nation'", () => {
+    // The fixture holds 55 "Nationwood N CDP" places: a full trigram page without the nation.
+    expect(catalog.searchNames("nation", { limit: 50 }).length).toBe(50);
+    expect(resolvePlace(catalog, "nation").candidates[0]?.ucgid).toBe("0100000US");
+  });
+
+  it("a place whose name contains 'nation' neither wins nor makes the nation ambiguous", () => {
+    const r = resolvePlace(catalog, "nation");
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.ucgid).toBe("0100000US");
+    expect(only(resolvePlace(catalog, "Carnation")).geoid).toBe("5310950");
+  });
+
+  it("is not found under a state filter (the nation is in no state)", () => {
+    expect(resolvePlace(catalog, "United States", { state: "CO" }).candidates).toEqual([]);
+    expect(resolvePlace(catalog, "US", { state: "CO" }).candidates).toEqual([]);
+  });
+
+  it("is the parent of every state; a county's own parents are unchanged", () => {
+    const colorado = only(resolvePlace(catalog, "Colorado", { kind: "state" }));
+    expect(colorado.parents.map((p) => p.name)).toEqual(
+      expect.arrayContaining(["United States", "Mountain"]),
+    );
+    const county = only(resolvePlace(catalog, "Denver", { kind: "county" }));
+    expect(county.parents.map((p) => p.name)).toEqual(["Colorado"]);
+  });
+
+  it("labels the nation", () => {
+    expect(labelForSumlevel("010")).toBe("nation");
+  });
+});
