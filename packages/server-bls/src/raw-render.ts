@@ -11,6 +11,14 @@ export function renderBlsRaw(data: unknown): CompactRendering | undefined {
   const responses = (data as { responses?: unknown } | null)?.responses;
   if (!Array.isArray(responses)) return undefined;
 
+  // The handler's own limitations (a defaulted/capped year span, a series that came back empty,
+  // #292) go first, ahead of the column header, so a host reading only text sees them before any
+  // row — the same text the envelope's `limitations` array carries.
+  const ownLimitations = (data as { limitations?: unknown } | null)?.limitations;
+  const limitationLines = Array.isArray(ownLimitations)
+    ? ownLimitations.filter((l): l is string => typeof l === "string")
+    : [];
+
   const notes: string[] = [];
   const items: string[] = [];
   for (const response of responses) {
@@ -44,7 +52,7 @@ export function renderBlsRaw(data: unknown): CompactRendering | undefined {
   }
 
   return {
-    head: ["columns: year,period,value,footnotes", ...notes],
+    head: [...limitationLines, "columns: year,period,value,footnotes", ...notes],
     items,
     unit: "series",
     narrowHint: "Narrow the call: fewer ids per call, or a shorter startYear–endYear span.",

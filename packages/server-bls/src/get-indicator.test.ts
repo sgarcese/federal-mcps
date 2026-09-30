@@ -259,6 +259,103 @@ describe("bls_get_raw", () => {
   });
 });
 
+describe("bls_get_raw: missing startYear/endYear defaults loudly, span is capped (#292)", () => {
+  /** Records each POST body sent to BLS, so a test can see what `startyear`/`endyear` went out. */
+  function recordingClient(value = "3.9") {
+    const seen: Record<string, unknown>[] = [];
+    const notUsed = () => {
+      throw new Error("only postJson is supported");
+    };
+    const client: HttpClient = {
+      getJson: notUsed,
+      getText: notUsed,
+      async postJson<T>(_url: string, body: unknown): Promise<HttpResult<T>> {
+        seen.push(body as Record<string, unknown>);
+        const ids = ((body as { seriesid?: string[] }).seriesid ?? []) as string[];
+        const series = ids.map((seriesID) => ({
+          seriesID,
+          data: [{ year: "2024", period: "M12", periodName: "December", value, footnotes: [] }],
+        }));
+        return {
+          value: { status: "REQUEST_SUCCEEDED", Results: { series } } as T,
+          status: 200,
+          cache: { hit: false },
+        };
+      },
+    };
+    return { client, seen };
+  }
+
+  it("startYear without endYear sends the current year and states it first, loudly", async () => {
+    const { client, seen } = recordingClient();
+    const res = await call(rawTool(client), { ids: ["LAUCN080310000000003"], startYear: 2015 });
+    expect(seen[0]).toMatchObject({ startyear: "2015", endyear: "2025" }); // NOW = 2025-02-01
+    expect(res.limitations?.[0]).toBe("No endYear given: used 2025, the current year.");
+    // The same line rides on `data`, so the compact rendering shows it before the rows.
+    const data = res.data as { limitations?: string[] };
+    expect(data.limitations?.[0]).toBe("No endYear given: used 2025, the current year.");
+  });
+
+  it("endYear without startYear picks a start from BLS's 20-year span limit, stated just as loudly", async () => {
+    const { client, seen } = recordingClient();
+    const res = await call(rawTool(client), { ids: ["LAUCN080310000000003"], endYear: 2020 });
+    expect(seen[0]).toMatchObject({ startyear: "2001", endyear: "2020" });
+    expect(res.limitations?.[0]).toMatch(
+      /No startYear given: used 2001.*20-year-per-query limit.*endYear 2020/,
+    );
+  });
+
+  it("a span longer than BLS allows is capped, and the cap is stated", async () => {
+    const { client, seen } = recordingClient();
+    const res = await call(rawTool(client), {
+      ids: ["LAUCN080310000000003"],
+      startYear: 1990,
+      endYear: 2020,
+    });
+    expect(seen[0]).toMatchObject({ startyear: "2001", endyear: "2020" });
+    expect(res.limitations?.[0]).toMatch(
+      /Span capped to BLS's 20-year-per-query limit: used startYear 2001 instead of 1990/,
+    );
+  });
+
+  it("a fully-specified span within the limit is untouched and earns no limitation", async () => {
+    const { client, seen } = recordingClient();
+    const res = await call(rawTool(client), {
+      ids: ["LAUCN080310000000003"],
+      startYear: 2010,
+      endYear: 2020,
+    });
+    expect(seen[0]).toMatchObject({ startyear: "2010", endyear: "2020" });
+    expect(res.limitations ?? []).toEqual([]);
+  });
+
+  it("a requested id that comes back with no series earns its own limitation, not only BLS's message", async () => {
+    const client: HttpClient = {
+      getJson: () => {
+        throw new Error("not used");
+      },
+      getText: () => {
+        throw new Error("not used");
+      },
+      async postJson<T>(): Promise<HttpResult<T>> {
+        return {
+          value: {
+            status: "REQUEST_SUCCEEDED",
+            message: [],
+            Results: { series: [{ seriesID: "LAUCN080310000000003", data: [] }] },
+          } as T,
+          status: 200,
+          cache: { hit: false },
+        };
+      },
+    };
+    const res = await call(rawTool(client), {
+      ids: ["LAUCN080310000000003", "LNU04000000"],
+    });
+    expect(res.limitations).toContain("No series returned for LNU04000000.");
+  });
+});
+
 describe("bls_compare_places", () => {
   it("compares one indicator across places, aligned on the latest common period", async () => {
     const res = await call(compareTool(), {
