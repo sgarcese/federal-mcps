@@ -73,6 +73,14 @@ export interface PublishesAtRow {
   sumlevel: string;
   /** Human/model-readable constraint, e.g. "incorporated place, pop >= 25000". */
   constraintNote: string | null;
+  /**
+   * "agency" (default when omitted) when this level needs its own catalog `agency_code` row to
+   * be covered; "census" when the program keys this level by the Census GEOID/FIPS itself —
+   * e.g. QCEW's county (the 5-digit FIPS) and state (FIPS + "000") areas, and CES/OEWS/JOLTS'
+   * state areas, are all computed from the geoid with no catalog lookup (#294). A "census"-keyed
+   * level is covered for every resolved place at that level, agency_code row or not.
+   */
+  keyedBy?: "census" | "agency";
 }
 
 /** A county-equivalent boundary change (CT planning regions, AK, SD, VA). */

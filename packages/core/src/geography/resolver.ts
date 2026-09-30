@@ -502,7 +502,12 @@ function availabilityFor(
     agency: p.agency,
     program: p.program,
     sumlevel: p.sumlevel,
-    hasCode: agencyCodes.some((c) => c.agency === p.agency && c.program === p.program),
+    // A "census"-keyed level (#294) is covered for every resolved place at it — the program
+    // reads the Census GEOID/FIPS directly, with no catalog agency_code row to check.
+    hasCode:
+      p.keyed_by === "census" ||
+      agencyCodes.some((c) => c.agency === p.agency && c.program === p.program),
+    keyedBy: p.keyed_by,
     constraintNote: p.constraint_note,
   }));
 }

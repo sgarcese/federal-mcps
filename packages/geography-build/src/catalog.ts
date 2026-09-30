@@ -31,8 +31,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
      VALUES (@ucgid, @agency, @program, @code, @codeVintage, @note)`,
   );
   const insertPublishesAt = db.prepare(
-    `INSERT OR REPLACE INTO publishes_at (agency, program, sumlevel, constraint_note)
-     VALUES (@agency, @program, @sumlevel, @constraintNote)`,
+    `INSERT OR REPLACE INTO publishes_at (agency, program, sumlevel, constraint_note, keyed_by)
+     VALUES (@agency, @program, @sumlevel, @constraintNote, @keyedBy)`,
   );
   const insertCountyChange = db.prepare(
     `INSERT INTO county_change (old_ucgid, new_ucgid, effective, kind)
@@ -56,7 +56,8 @@ export function buildCatalog(db: Database, rows: CatalogRows, options: BuildOpti
     for (const c of rows.containment)
       insertContainment.run({ ...c, relation: c.relation ?? "nests" });
     for (const a of rows.agencyCodes) insertAgencyCode.run(a);
-    for (const p of rows.publishesAt) insertPublishesAt.run(p);
+    for (const p of rows.publishesAt)
+      insertPublishesAt.run({ ...p, keyedBy: p.keyedBy ?? "agency" });
     for (const c of rows.countyChange) insertCountyChange.run(c);
     for (const l of rows.lineage) insertLineage.run(l);
 

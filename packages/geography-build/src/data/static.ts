@@ -179,9 +179,13 @@ export const PUBLISHES_AT: readonly PublishesAtRow[] = [
     sumlevel: "160",
     constraintNote: "incorporated place, population >= 25000",
   },
-  { agency: "bls", program: "SM", sumlevel: "040", constraintNote: null },
+  // CES (SM) and OEWS state areas are computed straight from the state FIPS (`cesCodeOf`,
+  // `oewsCodeOf`, server-bls) — the build never stores a state-level catalog code for either
+  // (#294) — so both are keyedBy "census". Their metro levels still need the catalog's own
+  // state+area / OEWS area code, so stay the "agency" default.
+  { agency: "bls", program: "SM", sumlevel: "040", constraintNote: null, keyedBy: "census" },
   { agency: "bls", program: "SM", sumlevel: "310", constraintNote: null },
-  { agency: "bls", program: "OEWS", sumlevel: "040", constraintNote: null },
+  { agency: "bls", program: "OEWS", sumlevel: "040", constraintNote: null, keyedBy: "census" },
   { agency: "bls", program: "OEWS", sumlevel: "310", constraintNote: null },
   {
     agency: "bls",
@@ -201,8 +205,23 @@ export const PUBLISHES_AT: readonly PublishesAtRow[] = [
     sumlevel: "020",
     constraintNote: "census region; some region series publish bimonthly",
   },
-  { agency: "bls", program: "QCEW", sumlevel: "050", constraintNote: null },
-  { agency: "bls", program: "JOLTS", sumlevel: "040", constraintNote: "state only" },
+  // QCEW's county and state areas are the Census FIPS itself (5-digit county, FIPS + "000"
+  // statewide; `qcewAreaCodeOf`, server-bls) — never a catalog lookup — so both are keyedBy
+  // "census" (#294, trial finding: Denver County reported hasCode: false though QCEW publishes
+  // it). QCEW's metro area is still the catalog's own `C`-code (parsed from QCEW's area_titles.csv,
+  // #153) and stays the "agency" default.
+  { agency: "bls", program: "QCEW", sumlevel: "040", constraintNote: null, keyedBy: "census" },
+  { agency: "bls", program: "QCEW", sumlevel: "050", constraintNote: null, keyedBy: "census" },
+  { agency: "bls", program: "QCEW", sumlevel: "310", constraintNote: null },
+  // JOLTS state is a bare FIPS geoid (`joltsStateCode`, server-bls) — JOLTS never stores a
+  // catalog agency_code at all — so it too is keyedBy "census" (#294).
+  {
+    agency: "bls",
+    program: "JOLTS",
+    sumlevel: "040",
+    constraintNote: "state only",
+    keyedBy: "census",
+  },
 ];
 
 /**

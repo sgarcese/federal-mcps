@@ -87,6 +87,33 @@ afterEach(() => {
 });
 
 describe("buildCatalog", () => {
+  it("inserts publishes_at rows with keyed_by, defaulting to 'agency' when absent (#294)", () => {
+    const db = new BetterSqlite3(":memory:");
+    const rows: CatalogRows = {
+      ...emptyRows(),
+      publishesAt: [
+        { agency: "bls", program: "LAUS", sumlevel: "050", constraintNote: null },
+        {
+          agency: "bls",
+          program: "QCEW",
+          sumlevel: "050",
+          constraintNote: null,
+          keyedBy: "census",
+        },
+      ],
+    };
+    buildCatalog(db, rows, { vintage: "2025" });
+    const laus = db.prepare("SELECT keyed_by FROM publishes_at WHERE program = 'LAUS'").get() as {
+      keyed_by: string;
+    };
+    const qcew = db.prepare("SELECT keyed_by FROM publishes_at WHERE program = 'QCEW'").get() as {
+      keyed_by: string;
+    };
+    expect(laus.keyed_by).toBe("agency");
+    expect(qcew.keyed_by).toBe("census");
+    db.close();
+  });
+
   it("inserts rows and stamps the vintage", () => {
     const db = new BetterSqlite3(":memory:");
     buildCatalog(db, denver, { vintage: "2025" });
