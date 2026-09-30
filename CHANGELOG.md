@@ -3,6 +3,46 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## 0.8.0 — M16 Resolver and BLS fixes, M13 HUD guide (2026-09-30)
+
+Live eval after deploy: pending. The deploy must rebuild the geography catalog (`npm run
+geography:build`), because the United States and census-keyed availability live in it.
+
+Added
+- The United States is a place (#290): summary level 010, GEOID `US`, UCGID `0100000US`, DCID
+  `country/USA`, the parent of every state and region, with aliases "US", "U.S.", "USA", "nation", ….
+  `resolve_place` takes kind `nation`, and "US" resolves although it is below the three-character
+  search minimum. BLS answers the nation from national series: CPS for unemployment, employment
+  and labor force (LAUS publishes no national figure, and the caveat says so), CES `CEU0000000001`,
+  JOLTS, OEWS (area type N), CPI U.S. city average and QCEW `US000`. Census answers through its
+  `ucgid` path. HUD and BEA say they read no national series.
+- Availability reports `keyedBy` (#294): `census` for levels a program keys by the FIPS itself
+  (QCEW county and state; CES, OEWS and JOLTS state; the national series), so those report
+  `hasCode: true` without a catalog code. QCEW's state and metro levels are listed.
+
+Changed
+- A state dominates a much smaller same-name place (#291): an exact match with a tenth of the
+  state's population or less is listed after it but never wins or asks. "Colorado", "Texas",
+  "Ohio", "Virginia" and "Washington" are the states; "New York" and "Utah" still ask (owner ruling:
+  keep the 10× rule).
+- `bls_get_raw` fills a missing `endYear` with the current year (and a missing `startYear` with the
+  earliest BLS allows), caps a span over 20 years, and says so first in the text (#292, owner
+  ruling: default loudly). An id that returns no series gets its own limitation.
+- The CDC PLACES portal runs OpenContext fork main `9403723` (#295): every returned row is
+  rendered up to a character budget, not ten. The `cdc-places` skill notes the `LIMIT` to use.
+- `skills/hud-open-data` (#215, #220): LIHTC `COUNTY_LEVEL`/`PLACE_LEVEL` are unpadded; CHAS on the
+  Hub; voucher sums are floors; `-4` means suppressed; LIHTC `8888`/`9999` sentinels and code
+  tables; what is not on the Hub and where it is; the current connector's paging and layers.
+- Development tooling: vitest 5; actions/checkout and setup-node v7; Terraform provider minor updates
+  (Dependabot #283–#287).
+
+Fixed
+- A metro named with its state suffix resolves (#293): "Denver-Aurora-Centennial, CO" and
+  "Chicago-Naperville-Elgin, IN" found nothing because CBSAs have no state. A state now matches a
+  metro by the states in its title or its counties; without a kind a metro answers only when
+  nothing else matches exactly, so "Denver, CO" is unchanged.
+- National PPI answers carried UCGID `0100000USUS`, and a metro parent's DCID lacked its `C` (#290).
+
 ## 0.7.1 — M15 Security hardening (2026-09-30)
 
 Live eval after deploy: 77/77.
