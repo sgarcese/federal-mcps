@@ -47,6 +47,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/security-review-2026-09.md](spikes/security-review-2026-09.md) — security review after
+  v0.7.0: the three npm advisories (one ships), no throttling in front of public endpoints sharing
+  upstream quotas, unpinned OpenContext Python deps, tag-pinned Actions, no Dependabot config or
+  CodeQL; eight owner decisions and an M15 build cut.
 - [spikes/m14-bea-regional.md](spikes/m14-bea-regional.md) — BEA Regional verified with a key:
   tables and units, zero-valued suppression markers, the key echoed in every body, errors as HTTP
   200, push-down (all counties in one call), Virginia/Maui combinations, Connecticut's 2024 break,
