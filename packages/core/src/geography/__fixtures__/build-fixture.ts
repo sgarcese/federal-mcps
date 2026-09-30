@@ -217,6 +217,37 @@ export function buildFixtureCatalog(): string {
       population: 9_260_000,
       populationVintage: "2024",
     }),
+    // A state and much smaller same-name places (#291): Colorado County, TX is dominated; New York
+    // city (the state is 2.4× it) and Utah County (a fifth of Utah) are not.
+    ent("48089", "050", "Colorado County", {
+      stateFips: "48",
+      lsad: "06",
+      aland: 2_487_000_000,
+      population: 20_700,
+      populationVintage: "2024",
+    }),
+    ent("0816000", "160", "Colorado Springs city", {
+      stateFips: "08",
+      lsad: "25",
+      aland: 505_000_000,
+      population: 488_000,
+      populationVintage: "2024",
+    }),
+    ent("3651000", "160", "New York city", {
+      stateFips: "36",
+      lsad: "25",
+      aland: 778_000_000,
+      population: 8_300_000,
+      populationVintage: "2024",
+    }),
+    ent("49", "040", "Utah", { stateFips: "49", population: 3_420_000, populationVintage: "2024" }),
+    ent("49049", "050", "Utah County", {
+      stateFips: "49",
+      lsad: "06",
+      aland: 5_200_000_000,
+      population: 700_000,
+      populationVintage: "2024",
+    }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
@@ -233,6 +264,9 @@ export function buildFixtureCatalog(): string {
     { ucgid: uc("08031"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("0820000"), alias: "Denver", source: "lsad-stripped" },
     { ucgid: uc("19740"), alias: "Denver", source: "hand" }, // the metro is a strong match too
+    { ucgid: uc("48089"), alias: "Colorado", source: "lsad-stripped" },
+    { ucgid: uc("3651000"), alias: "New York", source: "lsad-stripped" },
+    { ucgid: uc("49049"), alias: "Utah", source: "lsad-stripped" },
     { ucgid: uc("0899999"), alias: "Smallburg", source: "lsad-stripped" },
     { ucgid: uc("0888888"), alias: "Bazville", source: "lsad-stripped" },
     { ucgid: uc("09001"), alias: "Fairfield", source: "lsad-stripped" },

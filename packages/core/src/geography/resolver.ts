@@ -174,10 +174,16 @@ export function resolvePlace(
         ),
       )
     : folded;
-  const dominated = new Set(inCounty.filter((c) => isDominatedTown(c, inCounty)));
-  const scored = inCounty.sort(
-    (a, b) => Number(dominated.has(a)) - Number(dominated.has(b)) || b.score - a.score,
-  );
+  // A place dominated by a same-name state (#291) keeps its rank among the exact matches: it is
+  // listed right after the state, only never the answer and never a reason to ask.
+  const dominatedTowns = new Set(inCounty.filter((c) => isDominatedTown(c, inCounty)));
+  const dominated = new Set([
+    ...dominatedTowns,
+    ...inCounty.filter((c) => isDominatedByState(c, inCounty)),
+  ]);
+  const tier = (c: Scored): number =>
+    dominatedTowns.has(c) ? 3 : !c.isExact ? 2 : dominated.has(c) ? 1 : 0;
+  const scored = inCounty.sort((a, b) => tier(a) - tier(b) || b.score - a.score);
 
   const limit = options.limit ?? 10;
   const candidates = scored.slice(0, limit);
@@ -364,6 +370,21 @@ function isDominatedTown(c: Scored, scored: readonly Scored[]): boolean {
 }
 
 /** True when the most populous rival has STATE_DOMINANCE_RATIO× the best rival in any other state. */
+/**
+ * True when an exact-name state has STATE_DOMINANCE_RATIO× this exact match's population (#291):
+ * Colorado County, TX (20,700) neither wins nor makes "Colorado" ambiguous; New York city (the
+ * state is 2.4× it) and Utah County (a fifth of Utah) still do, by the owner's ruling.
+ */
+function isDominatedByState(c: Scored, scored: readonly Scored[]): boolean {
+  if (!c.isExact || c.candidate.kind.sumlevel === "040" || c.candidate.population === null) {
+    return false;
+  }
+  const state = scored
+    .filter((s) => s.isExact && s.candidate.kind.sumlevel === "040")
+    .reduce((max, s) => Math.max(max, s.candidate.population ?? 0), 0);
+  return state > 0 && state >= STATE_DOMINANCE_RATIO * c.candidate.population;
+}
+
 function hasDominantState(rivals: readonly Scored[]): boolean {
   const byPop = [...rivals].sort(
     (a, b) => (b.candidate.population ?? 0) - (a.candidate.population ?? 0),

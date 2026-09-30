@@ -393,3 +393,37 @@ describe("a metro named with its state suffix (#293)", () => {
     expect(r.candidates[0]?.geoid).toBe("19740");
   });
 });
+
+describe("a state dominates much smaller same-name places (#291)", () => {
+  let path: string;
+  let catalog: GeographyCatalog;
+  beforeAll(() => {
+    path = buildFixtureCatalog();
+    catalog = new GeographyCatalog(path);
+  });
+  afterAll(() => {
+    catalog.close();
+    rmSync(dirname(path), { recursive: true, force: true });
+  });
+
+  it("Colorado resolves to the state, Colorado County, TX still listed after it", () => {
+    const r = resolvePlace(catalog, "Colorado");
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.geoid).toBe("08");
+    expect(r.candidates[1]?.geoid).toBe("48089");
+  });
+
+  it("New York stays ambiguous: the state is only 2.4× the city (owner ruling)", () => {
+    expect(resolvePlace(catalog, "New York").status).toBe("ambiguous");
+  });
+
+  it("Utah stays ambiguous: Utah County holds a fifth of the state (owner ruling)", () => {
+    expect(resolvePlace(catalog, "Utah").status).toBe("ambiguous");
+  });
+
+  it("a kind still picks the dominated place", () => {
+    expect(resolvePlace(catalog, "Colorado", { kind: "county" }).candidates[0]?.geoid).toBe(
+      "48089",
+    );
+  });
+});
