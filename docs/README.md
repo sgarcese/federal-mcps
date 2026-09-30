@@ -47,6 +47,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/data-mirror.md](spikes/data-mirror.md) — #51 hosted data mirror, measured 2026-09-30: quota
+  not shown to bind (and uninstrumented), QCEW history the heaviest upstream path, OEWS history the
+  real gap; LABSTAT/QCEW/OEWS sizes in Parquet, Hugging Face vs S3 vs bundled, a structured push-down
+  grammar on `compare_places`; staged path starting with a bundled OEWS history; nine decisions.
 - [spikes/security-review-2026-09.md](spikes/security-review-2026-09.md) — security review after
   v0.7.0: the three npm advisories (one ships), no throttling in front of public endpoints sharing
   upstream quotas, unpinned OpenContext Python deps, tag-pinned Actions, no Dependabot config or
