@@ -7,6 +7,7 @@ import {
   type CatalogRows,
   type ContainmentRow,
   type EntityRow,
+  nationRows,
 } from "@federal-mcps/geography-build";
 import BetterSqlite3 from "better-sqlite3";
 import { ucgidOf } from "../identifiers.js";
@@ -251,7 +252,31 @@ export function buildFixtureCatalog(): string {
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
+    // A place whose name contains "nation" must not make the nation ambiguous (#290).
+    ent("5310950", "160", "Carnation city", {
+      stateFips: "53",
+      lsad: "25",
+      aland: 3_000_000,
+      population: 2_200,
+      populationVintage: "2024",
+    }),
+    // More "nation"-containing places than one search page holds (#290).
+    ...Array.from({ length: 55 }, (_, i) =>
+      ent(`539${String(i).padStart(4, "0")}`, "160", `Nationwood ${i + 1} CDP`, {
+        stateFips: "53",
+        lsad: "57",
+        aland: 1_000_000,
+        population: 100 + i,
+        populationVintage: "2024",
+      }),
+    ),
   ];
+  // The United States (#290), built by the production helper so the fixture mirrors the catalog:
+  // the 010 entity, its hand aliases, and every present state and region nested in it.
+  const nation = nationRows(entities);
+  for (const e of nation.entities) {
+    entities.push({ ...e, population: 334_922_499, populationVintage: "2024" });
+  }
   // In this fixture every referenced geoid is a distinct entity, so a geoid → ucgid map is
   // unambiguous (the collision #73 addresses only appears at national scale).
   const uc = (geoid: string): string => {
@@ -286,6 +311,8 @@ export function buildFixtureCatalog(): string {
       .map((e) => ({ ucgid: e.ucgid, alias: "Springfield", source: "lsad-stripped" })),
     { ucgid: uc("0960120"), alias: "Plainfield", source: "lsad-stripped" },
     { ucgid: uc("0915059980"), alias: "Plainfield", source: "lsad-stripped" },
+    { ucgid: uc("5310950"), alias: "Carnation", source: "lsad-stripped" },
+    ...nation.aliases,
   ];
 
   const containment: ContainmentRow[] = [
@@ -306,6 +333,7 @@ export function buildFixtureCatalog(): string {
     { childUcgid: uc("0960120"), parentUcgid: uc("09"), share: 1 },
     { childUcgid: uc("08031000101"), parentUcgid: uc("80202"), share: 0.6, relation: "overlaps" },
     { childUcgid: uc("08031000102"), parentUcgid: uc("80202"), share: 0.4, relation: "overlaps" },
+    ...nation.containment,
   ];
 
   const agencyCodes: AgencyCodeRow[] = [
