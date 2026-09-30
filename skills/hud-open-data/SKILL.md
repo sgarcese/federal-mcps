@@ -113,7 +113,10 @@ program. PIT counts by year: HUD Exchange (not the Hub or HUD User).
 - Never answer Picture of Subsidized Households, Income Limits, FMR history or SAFMR tables
   from the Hub: they are not there. Say so and point to the HUD User server.
 
-## Worked examples (verified 2026-09-20)
+## Worked examples
+
+Verified 2026-09-20:
+
 
 - **Denver metro FMR FY2026:** `FMR_CODE='METRO19740M19740'` → 0BR $1,643 · 1BR $1,754 · 2BR $2,089.
 - **Sedona, AZ (Yavapai County):** metro Prescott Valley-Prescott → `METRO39150M39150`, 2BR $1,637.
@@ -126,7 +129,7 @@ program. PIT counts by year: HUD Exchange (not the Hub or HUD User).
 - **Metropolitan Denver CoC (CO-503):** sheltered 7,324, unsheltered 81, sheltered veterans
   390, unsheltered veterans 257 — year not stated in the layer.
 
-## Worked examples (verified 2026-09-30)
+Verified 2026-09-30:
 
 - **Denver County CHAS households:** `T2_EST1` 287,755 (`GEOID='08031'`, layer 4) — 2016–2020
   ACS special tabulation; any other field needs the CHAS data dictionary.
