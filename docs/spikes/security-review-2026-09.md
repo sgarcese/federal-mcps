@@ -44,8 +44,13 @@ fork this project deploys (`sgarcese/OpenContext-upstream`, pinned in `openconte
    `setup-terraform@v4`, `setup-tflint@v6`). A moved tag runs new code in CI. Mitigations already in
    place: `permissions: contents: read`, no `pull_request_target`, no deploy credentials in CI
    (ADR-007), and gitleaks is itself verified by checksum.
-4. **No automated dependency updates or code scanning.** No `.github/dependabot.yml`; no CodeQL
-   workflow; `npm audit` does not run in CI.
+4. **Incomplete automated updates, no code scanning.** *(Corrected 2026-09-30: this review first
+   said there was no `.github/dependabot.yml`; one has existed since M1 — the check that missed it
+   aborted on a shell glob.)* The config covers npm and GitHub Actions but not Terraform, and its
+   groups mix major and minor updates; three of its PRs sat open (#251 runtime minor/patch, #228
+   dev tooling including majors vitest 4→5 and `@types/node` 22→26 — above the Node 22 runtime —,
+   #197 checkout/setup-node v5→v7, now conflicting with SHA pins). No CodeQL workflow; `npm audit`
+   does not run in CI.
 5. **Secrets are Lambda environment variables** (ADR-006): BLS, Census, HUD and BEA keys, encrypted
    at rest with the AWS-managed key, readable by anyone with `lambda:GetFunctionConfiguration` in the
    account. Acceptable for public-data keys; Secrets Manager or SSM would narrow who can read them.

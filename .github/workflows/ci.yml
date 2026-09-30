@@ -49,6 +49,15 @@ jobs:
       - name: Install
         run: npm ci
 
+      # A high or critical advisory in a production dependency blocks the merge (#279); the full
+      # audit, dev tooling included, is reported without blocking.
+      - name: npm audit (production, blocking)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit (all, report only)
+        continue-on-error: true
+        run: npm audit
+
       - name: Lint
         run: npm run lint
 

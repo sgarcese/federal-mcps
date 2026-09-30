@@ -9,6 +9,10 @@ Changed
 - Every GitHub Action in the workflows is pinned to a full commit SHA with its version in a comment
   (checkout v5.1.0, setup-node v5.0.0, setup-terraform v4.0.1, setup-tflint v6.3.2), and a unit test
   fails on any tag pin (#278).
+- Dependabot: Terraform providers added; groups carry minor and patch updates only, majors arrive one
+  per PR; `@types/node` held to the Node 22 runtime's major. CodeQL scans the TypeScript on pull
+  requests, `main` and weekly. The `ci` job blocks on a high or critical advisory in a production
+  dependency and reports the full `npm audit` (#279).
 
 ## 0.7.1 — dependency advisories (M15)
 
