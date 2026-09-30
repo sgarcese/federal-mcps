@@ -116,3 +116,17 @@ jobs:
         run: |
           tflint --init
           tflint --recursive --chdir=terraform
+
+      # The OpenContext portal's Python dependencies (#277): audit the hash-pinned lock, then prove
+      # it is enough to import the Lambda handler on the Lambda's Python.
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.11"
+
+      - name: OpenContext portal dependencies — pip-audit (blocking)
+        run: pipx run pip-audit==2.10.1 -r opencontext.requirements.lock --require-hashes --no-deps --disable-pip --progress-spinner off
+
+      - name: OpenContext portal — install the lock and import the Lambda handler
+        env:
+          PYTHON: python3.11
+        run: scripts/check-opencontext-lock.sh

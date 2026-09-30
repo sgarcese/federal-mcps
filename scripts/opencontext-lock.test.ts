@@ -72,3 +72,24 @@ describe("the bundle installs only from the lock (#277)", () => {
     expect(script()).not.toMatch(/-r "\$SRC\/requirements\.txt"/);
   });
 });
+
+describe("the ci job checks the portal's lock (#277)", () => {
+  const ci = () => readFileSync(join(ROOT, ".github", "workflows", "ci.yml"), "utf-8");
+
+  it("audits the lock with pip-audit, blocking, with hashes and no resolution", () => {
+    expect(ci()).toMatch(
+      /- name: OpenContext portal dependencies — pip-audit \(blocking\)\n\s+run: pipx run pip-audit==[\d.]+ -r opencontext\.requirements\.lock --require-hashes --no-deps --disable-pip/,
+    );
+  });
+
+  it("installs the lock on Python 3.11 and imports the Lambda handler", () => {
+    expect(ci()).toMatch(/python-version: "3\.11"/);
+    expect(ci()).toMatch(
+      /- name: OpenContext portal — install the lock and import the Lambda handler/,
+    );
+    expect(ci()).toContain("run: scripts/check-opencontext-lock.sh");
+    const check = readFileSync(join(ROOT, "scripts", "check-opencontext-lock.sh"), "utf-8");
+    expect(check).toContain('importlib.import_module("server.adapters.aws_lambda")');
+    expect(check).toContain("--require-hashes --no-deps");
+  });
+});

@@ -50,11 +50,14 @@ Socrata Lambda on `data.cdc.gov`, the hosted connector behind the CDC PLACES sou
 `naming.cdcService` — add both to your `instances.json` (see the example). Its execution role is
 the fourth `admin-create-exec-role.sh` run above.
 
-- **Source pin.** `opencontext.lock.json` names the OpenContext repository and commit;
-  `scripts/bundle-opencontext.sh` (run by `deploy.sh`) fetches that commit into `build/`, installs
-  the Python dependencies for the Lambda platform and zips them. It needs `git` and `uv` (or
-  `pip3`). To take a newer OpenContext: change the `commit` in the lock file in a PR, then
-  redeploy.
+- **Source pin.** `opencontext.lock.json` names the OpenContext repository and commit, and the
+  portal's runtime packages (`runtimeRequirements`); `opencontext.requirements.lock` holds those
+  packages and their dependencies, hash-pinned and stamped with the commit (#277).
+  `scripts/bundle-opencontext.sh` (run by `deploy.sh`) fetches that commit into `build/`, refuses a
+  lock stamped for another commit, installs only the lock (`--require-hashes`) for the Lambda
+  platform and zips. It needs `git` and `uv` (or `pip3`). To take a newer OpenContext: change the
+  `commit`, run `scripts/lock-opencontext.sh`, commit both files in one PR — CI audits the lock
+  with `pip-audit` and imports the Lambda handler from it — then redeploy.
 - **Token (optional).** `SOCRATA_APP_TOKEN` in `.env` becomes `TF_VAR_socrata_app_token` and
   travels inside the Lambda's `OPENCONTEXT_CONFIG`. Without it the portal still works;
   data.cdc.gov may throttle heavy untokened use.

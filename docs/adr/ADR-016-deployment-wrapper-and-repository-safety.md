@@ -44,6 +44,12 @@ could be moved or deleted.
    packages, installs `requirements.txt` for the Lambda platform and zips. Bumping the pin is a
    one-line PR reviewed like any other. CI validates the module against a committed placeholder
    zip and never fetches.
+   *Amended 2026-09-30 (#277, security review decision 4):* the bundle no longer installs the
+   commit's `requirements.txt` (open version ranges, development tools included). It installs
+   `opencontext.requirements.lock` — the runtime packages named in the lock file's
+   `runtimeRequirements`, compiled with hashes by `scripts/lock-opencontext.sh` and stamped with the
+   commit — with `--require-hashes`. CI audits that lock with `pip-audit` and, fetching the pinned
+   commit, imports the Lambda handler from it; a pin bump now changes both files.
 5. **The OpenContext portal module mirrors the agency modules**: Lambda + HTTP API + custom
    domain + aliases, rc-naming (`rc-cdc-mcp-<env>`), the execution role read by data source and
    provisioned by the administrator script (ADR-007 §4, extended with a `cdc` server). Its
