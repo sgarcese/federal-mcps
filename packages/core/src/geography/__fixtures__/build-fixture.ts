@@ -332,6 +332,12 @@ export function buildFixtureCatalog(): string {
         sumlevel: "160",
         constraintNote: "incorporated place, population >= 25000",
       },
+      // QCEW county/state key by the Census FIPS itself, no catalog code needed (#294); its
+      // metro level still depends on the catalog's C-code, so it keeps the "agency" default —
+      // and the fixture carries no QCEW code for the Denver metro, so that stays hasCode: false.
+      { agency: "bls", program: "QCEW", sumlevel: "050", constraintNote: null, keyedBy: "census" },
+      { agency: "bls", program: "QCEW", sumlevel: "040", constraintNote: null, keyedBy: "census" },
+      { agency: "bls", program: "QCEW", sumlevel: "310", constraintNote: null },
     ],
     countyChange: [
       {

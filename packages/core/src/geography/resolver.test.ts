@@ -91,7 +91,27 @@ describe("resolvePlace", () => {
     const county = only(resolvePlace(catalog, "Denver", { kind: "county" }));
     const laus = county.availableAt.find((a) => a.program === "LAUS");
     expect(laus?.hasCode).toBe(true);
+    expect(laus?.keyedBy).toBe("agency");
     expect(county.agencyCodes.some((c) => c.program === "LAUS")).toBe(true);
+  });
+
+  it("marks a census-keyed level covered with no catalog code (QCEW county/state, #294)", () => {
+    const county = only(resolvePlace(catalog, "Denver", { kind: "county" }));
+    const qcewCounty = county.availableAt.find((a) => a.program === "QCEW");
+    expect(qcewCounty).toMatchObject({ sumlevel: "050", keyedBy: "census", hasCode: true });
+    expect(county.agencyCodes.some((c) => c.program === "QCEW")).toBe(false); // no catalog code, yet covered
+
+    const state = only(resolvePlace(catalog, "Colorado", { kind: "state" }));
+    const qcewState = state.availableAt.find((a) => a.program === "QCEW");
+    expect(qcewState).toMatchObject({ sumlevel: "040", keyedBy: "census", hasCode: true });
+  });
+
+  it("still ties metro QCEW to the catalog C-code, unlike county/state (#294)", () => {
+    const metro = only(resolvePlace(catalog, "Denver", { kind: "metro" }));
+    const qcewMetro = metro.availableAt.find((a) => a.program === "QCEW");
+    // The fixture stores no QCEW C-code for this metro, so an agency-keyed level reports
+    // hasCode: false — the metro still needs its own catalog code, not just a resolved place.
+    expect(qcewMetro).toMatchObject({ sumlevel: "310", keyedBy: "agency", hasCode: false });
   });
 
   it("filters by state", () => {
@@ -185,7 +205,7 @@ describe("containment, overlap, lineage", () => {
     const availability = getAvailability(catalog, ucgidOf("050", "08031")); // Denver County, has a LAUS code
     expect(availability.length).toBeGreaterThan(0);
     const laus = availability.find((a) => a.agency === "bls" && a.program === "LAUS");
-    expect(laus).toMatchObject({ sumlevel: "050", hasCode: true });
+    expect(laus).toMatchObject({ sumlevel: "050", hasCode: true, keyedBy: "agency" });
   });
 
   it("marks hasCode false when the level publishes but this place has no code", () => {
