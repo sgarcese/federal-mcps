@@ -44,6 +44,12 @@ Which level each program publishes at (Release 1, BLS):
   have no local CPI.
 - JOLTS job openings: state only.
 
+A program's availability (\`hasCode\` on \`resolve_place\`'s \`availableAt\`) does not always need
+its own catalog code: QCEW's county and state areas, and CES/OEWS/JOLTS' state areas, are keyed
+by the Census FIPS itself, so every resolved place at that level is covered. Metro-level codes
+(QCEW's C-code, CES/OEWS's area code) still come from the catalog, so a metro with no stored
+code reports \`hasCode: false\`.
+
 Two containment relations: "nests" is the hierarchy (a place allocated to its counties,
 a county in its state); "overlaps" is areal (a ZCTA's tracts). A ZCTA is not a ZIP code —
 PO-box and single-building ZIPs have no ZCTA. Every result carries a GEOID, a UCGID, and
