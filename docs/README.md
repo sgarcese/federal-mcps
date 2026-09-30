@@ -51,6 +51,11 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   v0.7.0: the three npm advisories (one ships), no throttling in front of public endpoints sharing
   upstream quotas, unpinned OpenContext Python deps, tag-pinned Actions, no Dependabot config or
   CodeQL; eight owner decisions and an M15 build cut.
+- [spikes/public-use-protection.md](spikes/public-use-protection.md) — M17 (#297): limits and
+  monitoring for the public endpoints without authentication: identity keys (source IP, the
+  claude.ai egress pool; no session ids), edge throttling and reserved concurrency, a DynamoDB
+  service budget and per-identity shares, the refusal message, monitoring and costs, default
+  limits; twelve owner decisions and a build cut to v1.0.
 - [spikes/m14-bea-regional.md](spikes/m14-bea-regional.md) — BEA Regional verified with a key:
   tables and units, zero-valued suppression markers, the key echoed in every body, errors as HTTP
   200, push-down (all counties in one call), Virginia/Maui combinations, Connecticut's 2024 break,
