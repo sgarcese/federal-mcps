@@ -1,0 +1,32 @@
+name: CodeQL
+
+# Code scanning for the TypeScript packages and scripts (#279, docs/spikes/security-review-2026-09.md
+# decision 6). Results appear in the repository's Security tab. Not a required check: the owner
+# decides whether findings block merges.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "37 6 * * 1" # Mondays 06:37 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: codeql
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          languages: javascript-typescript
+          build-mode: none
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          category: /language:javascript-typescript

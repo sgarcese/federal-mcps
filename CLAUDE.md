@@ -131,8 +131,8 @@ from Claude, Claude Code, other MCP hosts, and any agent framework that speaks M
 ## Commands
 
 Pre-PR gate suite, run each visibly (same order as the `ci` job):
-`npm ci` · `npm run lint` · `npm run format:check` · `npm run typecheck` · `npm test` ·
-`npm run test:contract` · `npm run build` · `npm run infra:check`.
+`npm ci` · `npm audit --omit=dev --audit-level=high` · `npm run lint` · `npm run format:check` ·
+`npm run typecheck` · `npm test` · `npm run test:contract` · `npm run build` · `npm run infra:check`.
 `npm run format` fixes formatting. `npm run geography:build` joins the list when M2 lands.
 Deploy (local, ADR-007): `AWS_PROFILE=rc-deploy scripts/deploy.sh dev`; see
 `docs/runbooks/bootstrap-instance.md`.

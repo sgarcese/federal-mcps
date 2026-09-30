@@ -18,7 +18,8 @@ extraction path.
 ## What's in scope
 
 - The MCP servers in `packages/server-*` and the shared `packages/core`.
-- The deployed endpoints (`bls-mcp.responsive.city`, `geo-mcp.responsive.city`).
+- The deployed endpoints (`bls.responsive.city`, `census.responsive.city`, `hud-user.responsive.city`,
+  `bea.responsive.city`, `geo.responsive.city`, and the OpenContext portal `cdc.responsive.city`).
 - The build and deploy tooling in `scripts/` and `terraform/`.
 
 ## What to know about the threat model
@@ -33,6 +34,17 @@ extraction path.
   report it privately as above.
 - **Upstream quotas are respected** through the shared HTTP client; please don't use a
   reported issue as cover for load-testing the public endpoints.
+
+## Automated checks
+
+- **Secrets:** `gitleaks` scans the full history in the `ci` job on every change; GitHub secret
+  scanning and push protection are on.
+- **Dependencies:** Dependabot opens weekly update PRs for npm, GitHub Actions and Terraform
+  providers (minor and patch grouped, majors one at a time) and security-update PRs as advisories
+  land. The `ci` job fails on a high or critical advisory in a production dependency
+  (`npm audit --omit=dev --audit-level=high`) and reports the full audit.
+- **Code:** CodeQL scans the TypeScript on every pull request, on `main` and weekly.
+- **Supply chain:** every GitHub Action is pinned to a commit SHA, enforced by a unit test.
 
 ## Supported versions
 

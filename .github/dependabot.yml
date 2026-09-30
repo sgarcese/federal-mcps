@@ -1,7 +1,11 @@
+# Automated dependency updates (#279, docs/spikes/security-review-2026-09.md decision 6).
+# Groups carry minor and patch updates only; a major version arrives as its own PR so it is
+# reviewed on its own. Security updates (Dependabot security PRs) are enabled in the repository
+# settings and are not limited by these groups.
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: weekly
       day: monday
@@ -9,21 +13,45 @@ updates:
     groups:
       dev-tooling:
         dependency-type: development
+        update-types: ["minor", "patch"]
         patterns: ["*"]
       runtime:
         dependency-type: production
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
+    ignore:
+      # The Lambda runtime is Node 22 (terraform/modules/*: nodejs22.x); types for a newer Node
+      # would let code compile against APIs the runtime lacks. Bump with the runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    labels: [infra]
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    # Workflows pin actions to commit SHAs (#278); Dependabot updates the SHA and its version comment.
+    groups:
+      actions:
+        update-types: ["minor", "patch"]
         patterns: ["*"]
     labels: [infra]
     commit-message:
       prefix: "deps"
 
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "terraform"
+    directories:
+      - "/terraform/modules/*"
+      - "/terraform/instances/dev"
     schedule:
       interval: weekly
       day: monday
     groups:
-      actions:
+      terraform-providers:
+        update-types: ["minor", "patch"]
         patterns: ["*"]
     labels: [infra]
     commit-message:
