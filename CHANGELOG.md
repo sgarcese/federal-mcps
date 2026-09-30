@@ -3,6 +3,13 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
+## 0.7.1 — dependency advisories (M15)
+
+Fixed
+- Three transitive npm advisories (#276): `fast-uri` 3.1.7 → 3.1.8 (moderate; shipped in every agency
+  Lambda through the MCP SDK's `ajv`), `brace-expansion` 5.0.9 → 5.0.12 (high; dev tooling only) and
+  `ip-address` 10.7.0 → 10.7.2 (moderate; not bundled). `npm audit` reports 0 vulnerabilities.
+
 ## 0.7.0 — M14 BEA regional server, and towns (2026-09-28)
 
 Live at `https://bea.responsive.city/mcp`. This product uses the Bureau of Economic Analysis (BEA)
