@@ -13,6 +13,11 @@ Changed
   per PR; `@types/node` held to the Node 22 runtime's major. CodeQL scans the TypeScript on pull
   requests, `main` and weekly. The `ci` job blocks on a high or critical advisory in a production
   dependency and reports the full `npm audit` (#279).
+- The OpenContext portal Lambda installs a hash-pinned lock of its runtime dependencies (15
+  packages: httpx, pydantic, PyYAML, tenacity, python-json-logger, sqlparse and their dependencies),
+  compiled for the pinned commit by `scripts/lock-opencontext.sh`, instead of the commit's
+  open-ranged `requirements.txt` with its development tools; the bundle refuses a lock stamped for
+  another commit; CI runs `pip-audit` on the lock and imports the Lambda handler from it (#277).
 
 ## 0.7.1 — dependency advisories (M15)
 

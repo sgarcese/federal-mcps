@@ -3,9 +3,10 @@
 #
 # The source is never vendored: opencontext.lock.json names the repository and the exact
 # commit, this script fetches that commit into the gitignored build/ directory, copies the
-# runtime packages (core/ plugins/ server/ custom_plugins/), installs requirements.txt for
-# the Lambda platform (x86_64-manylinux2014, Python 3.11 — must match the module's runtime
-# and architecture), and zips the result to build/opencontext-lambda.zip.
+# runtime packages (core/ plugins/ server/ custom_plugins/), installs the hash-pinned runtime lock
+# opencontext.requirements.lock (#277; compiled for that commit by scripts/lock-opencontext.sh) for
+# the Lambda platform (x86_64-manylinux2014, Python 3.11 — must match the module's runtime and
+# architecture), and zips the result to build/opencontext-lambda.zip.
 #
 #   scripts/bundle-opencontext.sh            # from the repo root; run by scripts/deploy.sh
 #
@@ -19,6 +20,14 @@ LOCK="opencontext.lock.json"
 REPO="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).repository)' "$LOCK")"
 COMMIT="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).commit)' "$LOCK")"
 [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "::error:: $LOCK commit must be a full 40-hex SHA, got '$COMMIT'"; exit 1; }
+
+# The dependency lock must have been compiled for this exact commit (#277).
+REQ_LOCK="opencontext.requirements.lock"
+[ -f "$REQ_LOCK" ] || { echo "::error:: $REQ_LOCK not found; run scripts/lock-opencontext.sh"; exit 1; }
+grep -qx "# opencontext-commit: $COMMIT" "$REQ_LOCK" || {
+  echo "::error:: $REQ_LOCK was compiled for a different OpenContext commit; run scripts/lock-opencontext.sh and commit the result"
+  exit 1
+}
 
 BUILD="build/opencontext"
 SRC="$BUILD/src"
@@ -43,12 +52,12 @@ for d in core plugins server; do
 done
 if [ -d "$SRC/custom_plugins" ]; then cp -R "$SRC/custom_plugins" "$PKG/"; else mkdir -p "$PKG/custom_plugins"; fi
 
-echo "== install dependencies for $PLATFORM / py$PYTHON_VERSION"
+echo "== install the locked runtime dependencies for $PLATFORM / py$PYTHON_VERSION"
 if command -v uv >/dev/null 2>&1; then
-  uv pip install -q -r "$SRC/requirements.txt" --target "$PKG" \
+  uv pip install -q -r "$REQ_LOCK" --require-hashes --no-deps --target "$PKG" \
     --python-platform "$PLATFORM" --python-version "$PYTHON_VERSION" --no-compile
 elif command -v pip3 >/dev/null 2>&1; then
-  pip3 install -q -r "$SRC/requirements.txt" --target "$PKG" \
+  pip3 install -q -r "$REQ_LOCK" --require-hashes --no-deps --target "$PKG" \
     --platform manylinux2014_x86_64 --python-version "$PYTHON_VERSION" --only-binary :all: --no-compile
 else
   echo "::error:: neither uv nor pip3 is available"; exit 1
