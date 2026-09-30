@@ -135,8 +135,18 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         .array(z.string())
         .min(1)
         .describe("BLS timeseries ids, e.g. ['LAUCN080310000000003']."),
-      startYear: z.number().int().optional().describe("First year (optional)."),
-      endYear: z.number().int().optional().describe("Last year (optional)."),
+      startYear: z
+        .number()
+        .int()
+        .optional()
+        .describe(
+          "First year (optional). With only endYear given, 19 years before it (BLS allows 20 per query).",
+        ),
+      endYear: z
+        .number()
+        .int()
+        .optional()
+        .describe("Last year (optional). With only startYear given, the current year."),
     }),
     examples: [{ title: "raw Denver County rate", input: { ids: ["LAUCN080310000000003"] } }],
     renderData: renderBlsRaw,
