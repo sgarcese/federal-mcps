@@ -3,13 +3,13 @@ import { dirname } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { assertFamilyContract } from "../testing/index.js";
+import type { ServerDefinition } from "../server/definition.js";
 import { createServer } from "../server/index.js";
-import { GeographyCatalog } from "./catalog.js";
+import { assertFamilyContract } from "../testing/index.js";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+import { GeographyCatalog } from "./catalog.js";
 import { GEOGRAPHY_GUIDE_URI, geographyGuideResource } from "./guide.js";
 import { geographyTools } from "./tools.js";
-import type { ServerDefinition } from "../server/definition.js";
 
 let path: string;
 let catalog: GeographyCatalog;

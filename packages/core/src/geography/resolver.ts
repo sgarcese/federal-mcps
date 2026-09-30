@@ -1,6 +1,6 @@
 import type { EntityRecord, GeographyCatalog } from "./catalog.js";
-import { dcidOf } from "./identifiers.js";
 import { deriveFlags } from "./flags.js";
+import { dcidOf } from "./identifiers.js";
 import {
   type Availability,
   type GeographyEdge,
@@ -152,8 +152,12 @@ export function resolvePlace(
   const searchText = county.name;
   const normQuery = normalizeName(searchText);
 
-  const searchOpts: { stateFips?: string; sumlevels?: string[]; limit: number } = { limit: 50 };
-  if (stateFips) searchOpts.stateFips = stateFips;
+  const searchOpts: SearchOpts = { limit: 50 };
+  if (stateFips) {
+    searchOpts.stateFips = stateFips;
+    const usps = FIPS_TO_USPS[stateFips];
+    if (usps) searchOpts.stateUsps = usps;
+  }
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
   const rows = searchSplittingTowns(catalog, searchText, searchOpts);
@@ -223,6 +227,8 @@ export function resolvePlace(
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
 }
 
+type SearchOpts = { stateFips?: string; stateUsps?: string; sumlevels?: string[]; limit: number };
+
 /**
  * Searches county subdivisions apart from everything else (#241): a name like Springfield has more
  * same-name townships than one search page holds, and they must not crowd the cities out.
@@ -230,7 +236,7 @@ export function resolvePlace(
 function searchSplittingTowns(
   catalog: GeographyCatalog,
   text: string,
-  opts: { stateFips?: string; sumlevels?: string[]; limit: number },
+  opts: SearchOpts,
 ): EntityRecord[] {
   const wantsTowns = !opts.sumlevels || opts.sumlevels.includes("060");
   const others = opts.sumlevels?.filter((s) => s !== "060");
