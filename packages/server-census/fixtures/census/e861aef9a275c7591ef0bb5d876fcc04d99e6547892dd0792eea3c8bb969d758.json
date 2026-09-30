@@ -1,0 +1,22 @@
+{
+  "url": "https://api.census.gov/data/2024/acs/acs1?get=NAME,B19013_001E,B19013_001M,B19013_001EA,B19013_001MA&ucgid=0100000US",
+  "status": 200,
+  "headers": {
+    "access-control-allow-headers": "Origin, X-Requested-With, Content-Type, Accept",
+    "access-control-allow-methods": "GET",
+    "access-control-allow-origin": "*",
+    "cache-control": "max-age=60, must-revalidate",
+    "connection": "keep-alive",
+    "content-security-policy": "default-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+    "content-type": "application/json;charset=utf-8",
+    "date": "Wed, 30 Sep 2026 22:18:47 GMT",
+    "keep-alive": "timeout=20",
+    "referrer-policy": "same-origin",
+    "set-cookie": "TS010383f0=01283c52a458b2813f500cf3cc90fab836ad57cdf471f382bf1ed2e879a195506824c146e90b97a73859f46dc8171452675d600319; Path=/; Domain=.api.census.gov; Secure; HttpOnly",
+    "strict-transport-security": "max-age=31536000",
+    "transfer-encoding": "chunked",
+    "x-content-type-options": "nosniff"
+  },
+  "body": "[[\"NAME\",\"B19013_001E\",\"B19013_001M\",\"B19013_001EA\",\"B19013_001MA\",\"ucgid\"],\n[\"United States\",\"81604\",\"128\",null,null,\"0100000US\"]]",
+  "recordedAt": "2026-09-30T22:18:47.832Z"
+}
