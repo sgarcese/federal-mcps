@@ -88,6 +88,9 @@ const STATE_DOMINANCE_RATIO = 10;
 
 /** Maps a kind hint (a sumlevel or a label like "county"/"metro"/"city") to sumlevels. */
 const KIND_HINTS: Readonly<Record<string, string[]>> = Object.freeze({
+  nation: ["010"],
+  country: ["010"],
+  us: ["010"],
   region: ["020"],
   division: ["030"],
   state: ["040"],
@@ -130,9 +133,20 @@ export function resolvePlace(
   // Bound user input before it reaches FTS5: cap length (a megabyte query would make the
   // trigram tokenizer do needless work) and require the trigram minimum of 3 characters.
   const bounded = query.slice(0, MAX_QUERY_LENGTH);
-  if (bounded.trim().length < 3) return { status: "ok", candidates: [] };
-
   const sumlevels = normalizeKind(options.kind);
+  // Below the trigram minimum only the nation's exact short aliases ("US") answer (#290).
+  if (bounded.trim().length < 3) {
+    const nation = nationMatches(
+      catalog,
+      normalizeName(bounded),
+      sumlevels,
+      normalizeState(options.state),
+    );
+    return {
+      status: "ok",
+      candidates: nation.map((e) => scoreCandidate(catalog, e, normalizeName(bounded)).candidate),
+    };
+  }
 
   // A bare place, county-subdivision or tract GEOID picks that entity (#241): the way out of a
   // same-name ambiguity when the caller has the id from an earlier answer.
@@ -160,7 +174,10 @@ export function resolvePlace(
   }
   if (sumlevels) searchOpts.sumlevels = sumlevels;
 
-  const rows = searchSplittingTowns(catalog, searchText, searchOpts);
+  const rows = withNation(
+    nationMatches(catalog, normQuery, sumlevels, stateFips),
+    searchSplittingTowns(catalog, searchText, searchOpts),
+  );
   const folded = metrosAsFallback(
     foldTownTwins(rows.map((e) => scoreCandidate(catalog, e, normQuery))),
     stateFips !== undefined && !sumlevels,
@@ -234,6 +251,38 @@ export function resolvePlace(
   }
 
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
+}
+
+/** The nation's summary level (#290). */
+const NATION_SUMLEVEL = "010";
+
+/**
+ * The nation when the query is exactly one of its names or aliases (#290): a lookup, not a trigram
+ * search, so a two-letter alias ("US") works and a page of places containing "nation" cannot
+ * crowd it out. None under a state filter (the nation is in no state) or a kind that excludes it.
+ */
+function nationMatches(
+  catalog: GeographyCatalog,
+  normQuery: string,
+  sumlevels: string[] | undefined,
+  state: string | undefined,
+): EntityRecord[] {
+  if (state || (sumlevels && !sumlevels.includes(NATION_SUMLEVEL))) return [];
+  return catalog
+    .entitiesAtLevel(NATION_SUMLEVEL)
+    .filter((e) =>
+      [e.name, ...catalog.aliasesOf(e.ucgid)].some((n) => normalizeName(n) === normQuery),
+    );
+}
+
+/** The nation's exact matches first, then the search rows without repeating them. */
+function withNation(
+  nation: readonly EntityRecord[],
+  rows: readonly EntityRecord[],
+): EntityRecord[] {
+  if (nation.length === 0) return [...rows];
+  const seen = new Set(nation.map((e) => e.ucgid));
+  return [...nation, ...rows.filter((e) => !seen.has(e.ucgid))];
 }
 
 /**

@@ -35,14 +35,18 @@ Read the structured flags on each result rather than prose:
 - vintage_mismatch: this area's code changed across years (e.g. Connecticut's 2022
   planning regions); joins across vintages may not line up.
 
-Which level each program publishes at (Release 1, BLS):
-- LAUS unemployment: state, county, metro, and incorporated cities >= 25,000.
-- CES State & Area payroll employment: state, metro.
-- QCEW employment & wages by industry: county, metro, state.
-- OEWS occupational wages: state, metro.
-- CPI: U.S. city average, regions/divisions, and ~23 named metros only — most places
-  have no local CPI.
-- JOLTS job openings: state only.
+The United States is a place too (kind "nation"; "US", "USA" and "U.S." resolve to it):
+the parent of every state, for a national benchmark beside a local figure.
+
+Which level each program publishes at (BLS):
+- LAUS unemployment: state, county, metro, and incorporated cities >= 25,000. LAUS has no
+  national figure; the nation's labor force comes from the Current Population Survey (CPS).
+- CES payroll employment: nation (CES national), state, metro (State & Area).
+- QCEW employment & wages by industry: nation, county, metro, state.
+- OEWS occupational wages: nation, state, metro.
+- CPI: U.S. city average (the nation), regions/divisions, and ~23 named metros only —
+  most places have no local CPI.
+- JOLTS job openings: nation and state only.
 
 A program's availability (\`hasCode\` on \`resolve_place\`'s \`availableAt\`) does not always need
 its own catalog code: QCEW's county and state areas, and CES/OEWS/JOLTS' state areas, are keyed

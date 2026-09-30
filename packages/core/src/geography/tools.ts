@@ -55,7 +55,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
         .string()
         .optional()
         .describe(
-          "Restrict to a kind: 'state', 'county', 'city', 'town', 'township' (county subdivision), 'metro', 'zcta', or a summary level.",
+          "Restrict to a kind: 'nation' (the United States), 'state', 'county', 'city', 'town', 'township' (county subdivision), 'metro', 'zcta', or a summary level.",
         ),
       state: z.string().optional().describe("Restrict to a state: 2-letter USPS code or FIPS."),
     });
