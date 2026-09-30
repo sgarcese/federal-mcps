@@ -53,6 +53,12 @@ describe("BLS ServerDefinition", () => {
     expect(text).not.toContain('listed as "planned" right now');
   });
 
+  it("tells the model the United States is a place with a national benchmark from CPS (#290)", () => {
+    const text = buildBlsDefinition({ catalog, httpClient: stubHttpClient() }).instructions;
+    expect(text).toMatch(/United States/);
+    expect(text).toMatch(/Current Population Survey/);
+  });
+
   it("keeps instructions to a model-sized paragraph or two", () => {
     const wordCount = buildBlsDefinition({ catalog, httpClient: stubHttpClient() })
       .instructions.trim()
