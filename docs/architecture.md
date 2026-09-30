@@ -17,8 +17,8 @@ the same core. The design should admit HUD, BEA, FEMA and others without rework.
 Each agency encodes places differently: BLS LAUS area codes, Census GEOIDs and summary
 levels, CDC county and place FIPS, OMB CBSA codes. One shared **geography catalog**
 resolves a place name to every agency's identifier and knows the containment hierarchy
-(city in county in metro in state; tract, ZCTA, place, county subdivision, CBSA, metro
-division, CSA). Every server resolves places through it, so results join across
+(city in county in metro in state in nation; tract, ZCTA, place, county subdivision, CBSA,
+metro division, CSA). Every server resolves places through it, so results join across
 agencies on a common GEOID. The catalog is designed in
 [`spikes/geography-catalog.md`](spikes/geography-catalog.md).
 
@@ -124,10 +124,22 @@ exact match a tenth of the state's size or less is listed after it but neither w
 the query ambiguous, so "Colorado" is the state and Colorado County, TX comes second; New York
 and Utah, where the city or county is larger than that, still ask which is meant.
 
+The United States is a catalog place too (#290): summary level 010, UCGID `0100000US` (Census's
+own), GEOID `US` (TIGER's nation GEOID), Data Commons `country/USA`, the parent of every state
+(the 50 states and DC — Puerto Rico is not in Census's 010) and every region. Its aliases ("US",
+"U.S.", "USA", "United States of America", "nation", …) are hand rows in the build; "national" and
+"America" are left out because they are real place names. The resolver takes kind `nation`
+(`country`, `us`) and, below the trigram minimum of three characters, answers only the nation's
+exact short aliases ("US"); an exact nation match is looked up directly rather than through the
+trigram page. A server reads the nation as it reads any place: with a national series of its own
+(BLS: CPS, CES national, JOLTS, OEWS, CPI U.S. city average, QCEW US000; Census: the same `ucgid`
+query), or an "unavailable" answer saying the program has no national series here (HUD User, BEA).
+
 Each entity also carries an ACS 5-year total population (`B01003_001E`) and the vintage
 it reflects (e.g. "2024" meaning the 2020–2024 5-year), populated by `geography-build`
 from the Census Data API at catalog-build time — no runtime call. `PlaceCandidate.population`
-exposes it (null for regions/divisions and any entity the build had no row for). Coverage
+exposes it (null for regions/divisions and any entity the build had no row for; the nation's comes
+from `for=us:*`). Coverage
 rules that depend on population (e.g. ACS's 1-year-vs-5-year product choice, ADR-014 §2)
 read this column instead of estimating population themselves. Because the Census Data API
 now requires a key on every data query, building the catalog (`npm run geography:build`)
@@ -177,7 +189,7 @@ each program is an *indicator* behind `get_indicator`, never a tool of its own.
 |---|---|---|
 | `bls_resolve_place` | available | core resolver with BLS area codes and coverage flags attached |
 | `bls_list_indicators` | available | the measures a program publishes, and whether it publishes at a place's level |
-| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` pickers validated per indicator (ADR-013); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place |
+| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` pickers validated per indicator (ADR-013); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place; the United States answers from each program's national series (#290), LAUS's from CPS, labelled CPS |
 | `bls_compare_places` | available | one indicator across ≤20 places, aligned on the latest shared period; a thin wrapper over `get_indicator` |
 | `bls_get_raw` | available | raw timeseries IDs from any program (LAUS, CES, OEWS, CPI, JOLTS, PPI), ≤50 per call; a missing `startYear` or `endYear` is filled and a span over BLS's 20-year limit is capped, each stated as a limitation (#292) |
 | `bls_describe_source` | available | coverage, cadence, caveats, citation format |
@@ -186,12 +198,12 @@ Program coverage behind these verbs (from `bls_describe_source`):
 
 | Program | Status | Local granularity | Measures |
 |---|---|---|---|
-| LAUS | available (M3) | state, MSA, county, city ≥25k | unemployment rate, unemployment, employment, labor force |
-| CES State & Area | available (M4, metros completed M7) | state and metro (CBSA); a multi-state metro is filed under its first state with a caveat | total nonfarm payroll employment |
-| OEWS | available (M4, M7) | state and metro | mean annual wage, all occupations or one of 22 SOC major groups (`occupation`) |
+| LAUS | available (M3) | state, MSA, county, city ≥25k; no national figure — the nation reads CPS (`LNU0…`/`LNS1…`, #290) | unemployment rate, unemployment, employment, labor force |
+| CES State & Area | available (M4, metros completed M7) | state and metro (CBSA); a multi-state metro is filed under its first state with a caveat; the nation reads CES national (`CEU0000000001`, #290) | total nonfarm payroll employment |
+| OEWS | available (M4, M7) | nation, state and metro | mean annual wage, all occupations or one of 22 SOC major groups (`occupation`) |
 | CPI | available (M4, M7) | ~23 metros, census divisions and regions, U.S. city average | CPI-U by expenditure group (`item`); no local CPI → division → region → U.S., each flagged |
-| JOLTS | available (M4) | state | openings, hires, quits, layoffs |
-| QCEW | available (M5, M7) | county, state and metro | covered employment, average weekly wage by NAICS sector (`industry`) and ownership; CSV client, not the timeseries API |
+| JOLTS | available (M4) | nation and state | openings, hires, quits, layoffs |
+| QCEW | available (M5, M7) | nation (US000), county, state and metro | covered employment, average weekly wage by NAICS sector (`industry`) and ownership; CSV client, not the timeseries API |
 | PPI | available (M7) | national only | final demand and commodity indexes (`item`), e.g. inputs to construction, lumber, steel, concrete |
 
 Internals: pure series-ID builders per program with a unit test each against a
