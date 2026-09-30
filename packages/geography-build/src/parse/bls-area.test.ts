@@ -114,9 +114,7 @@ describe("parseCesArea / parseOewsArea / parseCpiArea", () => {
   });
 
   it("CPI maps a bespoke area code through the hand table", () => {
-    const cu = ["area_code\tarea_name", "S48B\tDenver", "D200\tMidwest - Size Class D"].join(
-      "\n",
-    );
+    const cu = ["area_code\tarea_name", "S48B\tDenver", "D200\tMidwest - Size Class D"].join("\n");
     const rows = parseCpiArea(cu);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ ucgid: ucgidOf("310", "19740"), program: "CPI" });

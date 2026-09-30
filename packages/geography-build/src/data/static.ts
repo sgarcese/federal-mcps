@@ -222,7 +222,71 @@ export const PUBLISHES_AT: readonly PublishesAtRow[] = [
     constraintNote: "state only",
     keyedBy: "census",
   },
+  // The nation (#290). LAUS publishes no national figure: its national benchmark is the Current
+  // Population Survey (CPS). National CES is the CE series, not State & Area (SM). Each national
+  // series id is built from the nation itself, so the level is keyedBy "census" (#294) — except CPI,
+  // whose U.S. city average `0000` is a stored catalog code.
+  {
+    agency: "bls",
+    program: "CPS",
+    sumlevel: "010",
+    keyedBy: "census",
+    constraintNote:
+      "national labor force from the Current Population Survey; LAUS publishes no national figure",
+  },
+  {
+    agency: "bls",
+    program: "CES",
+    sumlevel: "010",
+    keyedBy: "census",
+    constraintNote: "national payroll employment (CES national, not State & Area)",
+  },
+  {
+    agency: "bls",
+    program: "JOLTS",
+    sumlevel: "010",
+    constraintNote: "national estimate",
+    keyedBy: "census",
+  },
+  {
+    agency: "bls",
+    program: "OEWS",
+    sumlevel: "010",
+    constraintNote: "national estimate",
+    keyedBy: "census",
+  },
+  { agency: "bls", program: "CPI", sumlevel: "010", constraintNote: "U.S. city average" },
+  {
+    agency: "bls",
+    program: "QCEW",
+    sumlevel: "010",
+    constraintNote: "U.S. total (area US000)",
+    keyedBy: "census",
+  },
 ];
+
+/**
+ * The nation (summary level 010, #290): Census writes it UCGID `0100000US`; the catalog's GEOID is
+ * `US`, TIGER's nation GEOID. The United States of Census's 010 is the 50 states and DC — Puerto
+ * Rico is not in it — so its children are the states the division table lists, plus the regions.
+ * Aliases are the names people use; "national" and "America" are left out because they are real
+ * place names (National City, CA; America township), which would make the query ambiguous.
+ */
+export const NATION = Object.freeze({
+  geoid: "US",
+  name: "United States",
+  aliases: [
+    "U.S.",
+    "US",
+    "USA",
+    "U.S.A.",
+    "United States of America",
+    "the United States",
+    "the U.S.",
+    "nation",
+    "the nation",
+  ] as readonly string[],
+});
 
 /**
  * County-equivalent boundary changes that break naive vintage joins (geography spike).

@@ -17,6 +17,7 @@ const SENTINELS = new Set([-666_666_666, -999_999_999, -888_888_888]);
 
 /** Which header column(s) build the GEOID for each summary level, in order. */
 const ID_COLUMNS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "010": ["us"], // the nation: one row, us = 1 → ucgidOf("010", …) = 0100000US (#290)
   "020": ["region"],
   "030": ["division"],
   "040": ["state"],

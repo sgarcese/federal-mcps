@@ -143,9 +143,9 @@ describe("assemble", () => {
     // "National" and "America" are real place names (National City, CA; America township).
     expect(aliases).not.toContain("national");
     expect(aliases).not.toContain("America");
-    expect(rows.aliases.filter((a) => a.ucgid === "0100000US").every((a) => a.source === "hand")).toBe(
-      true,
-    );
+    expect(
+      rows.aliases.filter((a) => a.ucgid === "0100000US").every((a) => a.source === "hand"),
+    ).toBe(true);
   });
 
   it("nests every present state and region in the nation, never Puerto Rico (#290)", () => {
