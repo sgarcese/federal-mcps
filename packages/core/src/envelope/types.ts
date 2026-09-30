@@ -4,6 +4,7 @@
  * These are the plain TypeScript shapes; `schema.ts` mirrors them as Zod
  * schemas for runtime validation and round-tripping over the wire.
  */
+import { dcidOf, ucgidOf } from "../geography/identifiers.js";
 
 /** The place a value is reported for, plus every cross-agency identifier (ADR-003 §6). */
 export interface PlaceRef {
@@ -106,30 +107,18 @@ export interface PlaceRefInput {
   dcid?: string;
 }
 
-const CBSA_SUMLEVEL = "310";
-const ZCTA_SUMLEVEL = "860";
-
-function deriveDcid(geoid: string, sumlevel: string): string {
-  if (sumlevel === CBSA_SUMLEVEL) {
-    return `geoId/C${geoid}`;
-  }
-  if (sumlevel === ZCTA_SUMLEVEL) {
-    return `zip/${geoid}`;
-  }
-  return `geoId/${geoid}`;
-}
-
 /**
  * Builds a `PlaceRef`, deriving `ucgid` and `dcid` from `geoid` and `sumlevel`
- * per ADR-003 §6. Denver County (geoid "08031", sumlevel "050") derives
- * ucgid "0500000US08031" and dcid "geoId/08031".
+ * per ADR-003 §6 through the one definition of each (`geography/identifiers.ts`). Denver
+ * County (geoid "08031", sumlevel "050") derives ucgid "0500000US08031" and dcid
+ * "geoId/08031"; the nation (#290) "0100000US" and "country/USA".
  */
 export function placeRef(input: PlaceRefInput): PlaceRef {
   const { geoid, sumlevel, label, name, parents, caveat, ucgid, dcid } = input;
   const result: PlaceRef = {
     geoid,
-    ucgid: ucgid ?? `${sumlevel}0000US${geoid}`,
-    dcid: dcid ?? deriveDcid(geoid, sumlevel),
+    ucgid: ucgid ?? ucgidOf(sumlevel, geoid),
+    dcid: dcid ?? dcidOf(sumlevel, geoid),
     name,
     kind: { sumlevel, label },
     parents: parents ?? [],

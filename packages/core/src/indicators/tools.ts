@@ -195,18 +195,35 @@ function resolveSeries(
 /** A UCGID-free reference to the nation, for national-scope answers (ADR-013 §7). */
 const UNITED_STATES = { geoid: "US", sumlevel: "010", label: "nation", name: "United States" };
 
-/** The name a caveat should use for a place a national-scope caller mentioned, without stopping on ambiguity. */
-function mentionedPlaceName(
+/** The nation's summary level (#290). */
+const NATION_SUMLEVEL = "010";
+
+/**
+ * The caveat for a place a national-scope caller mentioned, without stopping on ambiguity: none
+ * when the place is the nation itself (#290), else that the answer is not a figure for it.
+ */
+function mentionedPlaceCaveat(
   catalog: GeographyCatalog,
+  program: string,
   place: string,
   opts: { kind?: string | undefined; state?: string | undefined },
-): string {
+): string | undefined {
   const resolved = resolvePlace(catalog, place, {
     ...(opts.kind === undefined ? {} : { kind: opts.kind }),
     ...(opts.state === undefined ? {} : { state: opts.state }),
   });
   const top = resolved.status === "ambiguous" ? undefined : resolved.candidates[0];
-  return top?.name ?? place;
+  if (top?.kind.sumlevel === NATION_SUMLEVEL) return undefined;
+  return `${program} is published nationally only; this is not a ${top?.name ?? place} figure.`;
+}
+
+/**
+ * Why a place-scoped program has nothing for the nation (#290): it publishes no national series
+ * this server reads. Undefined for any other place.
+ */
+function nationUnavailableNote(program: string, place: PlaceCandidate): string | undefined {
+  if (place.kind.sumlevel !== NATION_SUMLEVEL) return undefined;
+  return `${program} publishes no national (United States) series that this server reads; ask for a state, county or metro area instead.`;
 }
 
 /** A period for people: "2024 Q1" for a quarter, "2024 June" for a month, the year for annual data. */
@@ -248,12 +265,13 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
   ) => {
     const own = def.sourceOf?.(seriesId, latest);
     const url = own?.url ?? sourceUrl;
+    const program = own?.program ?? def.program;
     return {
       agency,
-      program: def.program,
+      program,
       url,
       ids: [seriesId],
-      citation: cite({ agency, program: def.program, ids: [own?.label ?? seriesId], url }),
+      citation: cite({ agency, program, ids: [own?.label ?? seriesId], url }),
     };
   };
 
@@ -299,12 +317,10 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
     const limitations = [
-      ...(p.place === undefined
-        ? []
-        : [
-            `${def.program} is published nationally only; this is not a ${mentionedPlaceName(catalog, p.place, p)} figure.`,
-          ]),
-      ...[historyNote(def, p, latest)].filter((n): n is string => n !== undefined),
+      ...[
+        p.place === undefined ? undefined : mentionedPlaceCaveat(catalog, def.program, p.place, p),
+        historyNote(def, p, latest),
+      ].filter((n): n is string => n !== undefined),
       ...(series?.notes ?? []),
     ];
     return {
@@ -430,7 +446,9 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         }),
         limitations: [
           `${def.program} publishes no series for ${top.name} and no fallback was found.`,
-          ...(def.unavailableNote?.(top) ? [def.unavailableNote(top) as string] : []),
+          ...[def.unavailableNote?.(top), nationUnavailableNote(def.program, top)].filter(
+            (n): n is string => n !== undefined,
+          ),
         ],
       };
     }
@@ -578,11 +596,13 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         const dimensions = aligned?.dimensions ?? requested;
         const notes: string[] = aligned?.note ? [aligned.note] : [];
         for (const { resolution } of resolutions) {
-          const why =
-            resolution.status === "unavailable"
-              ? def.unavailableNote?.(resolution.place)
-              : undefined;
-          if (why) notes.push(why);
+          if (resolution.status !== "unavailable") continue;
+          for (const why of [
+            def.unavailableNote?.(resolution.place),
+            nationUnavailableNote(def.program, resolution.place),
+          ]) {
+            if (why) notes.push(why);
+          }
         }
         if (aligned) {
           for (const entry of resolutions) {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ToolDefinition, ToolHandlerResult } from "../server/definition.js";
 import type { GeographyCatalog } from "./catalog.js";
-import { ucgidOf } from "./identifiers.js";
+import { dcidOf, ucgidOf } from "./identifiers.js";
 import {
   getAvailability,
   getContainment,
@@ -186,7 +186,7 @@ function placeRefOf(c: PlaceCandidate) {
     parents: c.parents.map((pp) => ({
       geoid: pp.geoid,
       ucgid: ucgidOf(pp.kind.sumlevel, pp.geoid),
-      dcid: `geoId/${pp.geoid}`,
+      dcid: dcidOf(pp.kind.sumlevel, pp.geoid),
       name: pp.name,
       kind: pp.kind,
       parents: [],
