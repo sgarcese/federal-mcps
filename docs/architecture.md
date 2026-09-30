@@ -114,6 +114,11 @@ where BLS publishes one, and a recoded town (Connecticut's 2022 planning regions
 2020 GEOID as a `census`/`GEOID2020` code, so agencies that still publish under the old
 id — HUD New England FMR and Income Limits — can be reached for every year.
 
+A state — the `state` argument or a trailing `", CO"` — narrows every kind. A metro has no
+state of its own, so it matches when the state is in its title or one of its counties is
+(`"Chicago-Naperville-Elgin, IN"`). With no kind given, a metro found this way answers only
+when nothing else matches exactly, so `"Denver, CO"` still means the city or the county (#293).
+
 Each entity also carries an ACS 5-year total population (`B01003_001E`) and the vintage
 it reflects (e.g. "2024" meaning the 2020–2024 5-year), populated by `geography-build`
 from the Census Data API at catalog-build time — no runtime call. `PlaceCandidate.population`
