@@ -1,2 +1,2 @@
 /** Package version, reported in `initialize` and by `geo_describe_source`. */
-export const GEO_SERVER_VERSION = "0.7.1";
+export const GEO_SERVER_VERSION = "0.8.0";
