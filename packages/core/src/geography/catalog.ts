@@ -27,6 +27,8 @@ export interface EntityRecord {
  */
 export class GeographyCatalog {
   private readonly db: Database;
+  /** Cache for `publishesAtHasKeyedByColumn` (#294). */
+  private hasKeyedByColumn: boolean | undefined;
 
   constructor(pathOrDb: string | Database) {
     this.db =
@@ -164,17 +166,36 @@ export class GeographyCatalog {
     program: string;
     sumlevel: string;
     constraint_note: string | null;
+    keyed_by: "census" | "agency";
   }[] {
-    return this.db
-      .prepare(
-        "SELECT agency, program, sumlevel, constraint_note FROM publishes_at WHERE sumlevel = ?",
-      )
+    const hasKeyedBy = this.publishesAtHasKeyedByColumn();
+    const columns = hasKeyedBy
+      ? "agency, program, sumlevel, constraint_note, keyed_by"
+      : "agency, program, sumlevel, constraint_note";
+    const rows = this.db
+      .prepare(`SELECT ${columns} FROM publishes_at WHERE sumlevel = ?`)
       .all(sumlevel) as {
       agency: string;
       program: string;
       sumlevel: string;
       constraint_note: string | null;
+      keyed_by?: "census" | "agency";
     }[];
+    return rows.map((r) => ({ ...r, keyed_by: r.keyed_by ?? "agency" }));
+  }
+
+  /**
+   * Whether this catalog's `publishes_at` table carries the `keyed_by` column (#294). A
+   * catalog built before that column existed lacks it — the catalog file is a release
+   * artifact built separately from core, so an older one must still open and serve. Cached
+   * per handle: the schema does not change under a read-only connection.
+   */
+  private publishesAtHasKeyedByColumn(): boolean {
+    if (this.hasKeyedByColumn === undefined) {
+      const cols = this.db.prepare("PRAGMA table_info(publishes_at)").all() as { name: string }[];
+      this.hasKeyedByColumn = cols.some((c) => c.name === "keyed_by");
+    }
+    return this.hasKeyedByColumn;
   }
 
   /** Whether a ucgid appears on either side of a county_change (drives `vintage_mismatch`). */

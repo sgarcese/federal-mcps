@@ -41,8 +41,21 @@ export interface Availability {
   agency: string;
   program: string;
   sumlevel: string;
-  /** True when an agency code exists for this exact place; false means fall back (e.g. to county). */
+  /**
+   * True when this place is covered for the program at this level; false means fall back (e.g.
+   * to county). For a `keyedBy: "agency"` level this means an agency code exists for this exact
+   * place in the catalog; for a `keyedBy: "census"` level every resolved place at that level is
+   * covered (the program keys it by the Census GEOID/FIPS directly), so this is always true.
+   */
   hasCode: boolean;
+  /**
+   * Whether this level needs its own catalog `agency_code` row to be covered ("agency", the
+   * default) or is keyed by the Census GEOID/FIPS itself ("census") — e.g. QCEW's county and
+   * state areas, and CES/OEWS/JOLTS' state areas, are computed straight from the FIPS with no
+   * catalog lookup (#294). Metro-level codes (a CBSA's QCEW C-code, CES/OEWS area code) still
+   * come from the catalog and stay "agency".
+   */
+  keyedBy: "census" | "agency";
   constraintNote: string | null;
 }
 
