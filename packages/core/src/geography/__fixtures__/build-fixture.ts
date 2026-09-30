@@ -212,6 +212,11 @@ export function buildFixtureCatalog(): string {
         populationVintage: "2024",
       }),
     ),
+    // A multi-state metro, named as the production catalog names CBSAs (#293).
+    ent("16980", "310", "Chicago-Naperville-Elgin, IL-IN Metro Area", {
+      population: 9_260_000,
+      populationVintage: "2024",
+    }),
     ent("80202", "860", "80202", {}),
     ent("08031000101", "140", "Census Tract 101", { stateFips: "08" }),
     ent("08031000102", "140", "Census Tract 102", { stateFips: "08" }),
