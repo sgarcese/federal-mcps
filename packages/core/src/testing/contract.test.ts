@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { assertFamilyContract, checkFamilyContract } from "./contract.js";
 import * as broken from "./__fixtures__/broken.js";
 import { compliantDefinition } from "./__fixtures__/compliant.js";
+import { assertFamilyContract, checkFamilyContract } from "./contract.js";
 import { FAMILY_VERB_PARAMETERS } from "./rules/verbs.js";
 
 /** Rule ids a report fired, deduplicated, for compact assertions. */

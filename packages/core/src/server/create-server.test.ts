@@ -2,9 +2,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { EnvelopeSchema } from "../envelope/index.js";
+import { DEMO_INSTRUCTIONS, demoDefinition } from "./__fixtures__/demo-definition.js";
 import { createServer } from "./create-server.js";
 import { describeSourceToolName } from "./definition.js";
-import { DEMO_INSTRUCTIONS, demoDefinition } from "./__fixtures__/demo-definition.js";
 
 const NOW = new Date("2026-09-08T12:00:00.000Z");
 

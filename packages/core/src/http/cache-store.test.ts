@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MemoryCacheStore, cacheKey } from "./cache-store.js";
+import { cacheKey, MemoryCacheStore } from "./cache-store.js";
 
 describe("cacheKey", () => {
   it("is a sha256 hex digest", () => {

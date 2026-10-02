@@ -7,8 +7,8 @@
  * helpers are exported because the contract harness (#7) asserts against them.
  */
 export {
-  createServer,
   type CreateServerOptions,
+  createServer,
   FAMILY_TOOL_ANNOTATIONS,
 } from "./create-server.js";
 export * from "./definition.js";

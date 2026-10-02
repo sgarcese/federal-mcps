@@ -1,7 +1,6 @@
-import type { SeriesObservation } from "./observations.js";
-import type { HttpClient } from "../http/index.js";
 import type { GeographyCatalog, PlaceCandidate } from "../geography/index.js";
-import type { SeriesFetchOptions, SeriesResult } from "./observations.js";
+import type { HttpClient } from "../http/index.js";
+import type { SeriesFetchOptions, SeriesObservation, SeriesResult } from "./observations.js";
 
 /**
  * A fetch capability (ADR-011 §2): how an indicator turns its opaque series keys into

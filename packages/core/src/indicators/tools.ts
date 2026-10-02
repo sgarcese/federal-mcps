@@ -145,10 +145,10 @@ function collectFootnotes(observations: readonly SeriesObservation[]): Footnote[
  * fabricates: an ambiguous, unmatched or uncovered place is reported as such, not silently coerced.
  */
 type SeriesResolution =
-  | { status: "ok"; place: PlaceCandidate; code: string; caveat?: string }
+  | { status: "ok"; place: PlaceCandidate; code: string; caveat?: string; notice?: string }
   | { status: "ambiguous"; explanation: string; candidates: PlaceCandidate[] }
   | { status: "not_found" }
-  | { status: "unavailable"; place: PlaceCandidate };
+  | { status: "unavailable"; place: PlaceCandidate; notice?: string };
 
 function resolveSeries(
   catalog: GeographyCatalog,
@@ -179,10 +179,13 @@ function resolveSeries(
       caveat = fb.caveat;
     }
   }
-  if (!code) return { status: "unavailable", place: top };
+  // A state chosen by the 10× rule says so first (#309).
+  const notice = resolved.status === "ok" ? resolved.notice : undefined;
+  const said = notice === undefined ? {} : { notice };
+  if (!code) return { status: "unavailable", place: top, ...said };
   return caveat === undefined
-    ? { status: "ok", place: top, code }
-    : { status: "ok", place: top, code, caveat };
+    ? { status: "ok", place: top, code, ...said }
+    : { status: "ok", place: top, code, caveat, ...said };
 }
 
 /**
@@ -445,6 +448,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
           name: top.name,
         }),
         limitations: [
+          ...(resolved.notice ? [resolved.notice] : []),
           `${def.program} publishes no series for ${top.name} and no fallback was found.`,
           ...[def.unavailableNote?.(top), nationUnavailableNote(def.program, top)].filter(
             (n): n is string => n !== undefined,
@@ -473,7 +477,9 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
     const latest = observations[0];
     const footnotes = collectFootnotes(observations);
     const notes = [
-      ...[fallbackCaveat, historyNote(def, p, latest)].filter((n): n is string => n !== undefined),
+      ...[resolved.notice, fallbackCaveat, historyNote(def, p, latest)].filter(
+        (n): n is string => n !== undefined,
+      ),
       ...(series?.notes ?? []),
     ];
 
@@ -594,7 +600,13 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
           requested,
         );
         const dimensions = aligned?.dimensions ?? requested;
-        const notes: string[] = aligned?.note ? [aligned.note] : [];
+        // A row whose place is a state chosen by the 10× rule says so first (#309).
+        const notes: string[] = resolutions.flatMap(({ resolution }) =>
+          (resolution.status === "ok" || resolution.status === "unavailable") && resolution.notice
+            ? [resolution.notice]
+            : [],
+        );
+        if (aligned?.note) notes.push(aligned.note);
         for (const { resolution } of resolutions) {
           if (resolution.status !== "unavailable") continue;
           for (const why of [
@@ -805,6 +817,7 @@ export function indicatorTools(options: IndicatorToolsOptions): ToolDefinition[]
         return {
           data: { indicators },
           source: baseSource,
+          ...(resolved.notice ? { limitations: [resolved.notice] } : {}),
           place: placeRef({
             geoid: top.geoid,
             sumlevel: top.kind.sumlevel,

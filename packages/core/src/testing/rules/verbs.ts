@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type FamilyVerb, FAMILY_VERBS } from "../../index.js";
+import { FAMILY_VERBS, type FamilyVerb } from "../../index.js";
 import type { ContractRule, Violation } from "../types.js";
 
 /**

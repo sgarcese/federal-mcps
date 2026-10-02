@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { envelope, type EnvelopeInput, EnvelopeSchema } from "../../envelope/index.js";
+import { type EnvelopeInput, EnvelopeSchema, envelope } from "../../envelope/index.js";
 import type { ToolDefinition, ToolHandlerResult } from "../../server/definition.js";
 import type { ContractRule, RuleContext, Violation } from "../types.js";
 

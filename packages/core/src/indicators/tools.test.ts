@@ -1,9 +1,9 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildFixtureCatalog } from "../geography/__fixtures__/build-fixture.js";
 import { GeographyCatalog } from "../geography/catalog.js";
 import type { HttpClient } from "../http/index.js";
-import { buildFixtureCatalog } from "../geography/__fixtures__/build-fixture.js";
 import { DIMENSION_ARGUMENTS, type IndicatorDefinition, type IndicatorFetch } from "./registry.js";
 import { indicatorTools } from "./tools.js";
 

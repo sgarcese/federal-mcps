@@ -18,7 +18,8 @@ export type GeographyFlag =
   | "suppressed" // a value is suppressed (set by data tools, not resolution)
   | "cdp" // a census designated place: unincorporated, no local government, no LAUS series
   | "consolidated_city" // a consolidated city or its "balance" — not the county
-  | "ambiguous"; // returned as one of several kinds the query could mean
+  | "ambiguous" // returned as one of several kinds the query could mean
+  | "dominant_match"; // a state chosen over much smaller same-name places (10× rule, #309)
 
 /** A shallow parent (its own `parents` are omitted). */
 export interface PlaceParent {
@@ -92,7 +93,12 @@ export interface ResolveOptions {
  * `kind` hint (ADR-003 §7): city vs county vs metro. `explanation` names the difference.
  */
 export type ResolveResult =
-  | { status: "ok"; candidates: PlaceCandidate[] }
+  | {
+      status: "ok";
+      candidates: PlaceCandidate[];
+      /** Said first in every answer: e.g. a state chosen over smaller same-name places (#309). */
+      notice?: string;
+    }
   | { status: "ambiguous"; candidates: PlaceCandidate[]; explanation: string };
 
 /** A weighted containment or overlap edge (a place's parents, or a ZCTA's tracts). */
