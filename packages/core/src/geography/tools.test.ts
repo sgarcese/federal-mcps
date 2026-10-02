@@ -111,6 +111,18 @@ describe("geographyTools", () => {
     await client.close();
   });
 
+  it("states a dominant-match notice as a limitation (#309)", async () => {
+    const client = await connect(geoServer());
+    const res = await client.callTool({
+      name: "geo_resolve_place",
+      arguments: { query: "Colorado" },
+    });
+    const env = res.structuredContent as { data: { status: string }; limitations: string[] };
+    expect(env.data.status).toBe("ok");
+    expect(env.limitations[0]).toMatch(/^"Colorado" was read as the state of Colorado/);
+    await client.close();
+  });
+
   it("resolves 'US' to the nation, and names it as a state's parent with its own ids (#290)", async () => {
     const client = await connect(geoServer());
     const us = await client.callTool({ name: "geo_resolve_place", arguments: { query: "US" } });

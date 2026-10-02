@@ -194,10 +194,8 @@ export function resolvePlace(
   // A place dominated by a same-name state (#291) keeps its rank among the exact matches: it is
   // listed right after the state, only never the answer and never a reason to ask.
   const dominatedTowns = new Set(inCounty.filter((c) => isDominatedTown(c, inCounty)));
-  const dominated = new Set([
-    ...dominatedTowns,
-    ...inCounty.filter((c) => isDominatedByState(c, inCounty)),
-  ]);
+  const byState = inCounty.filter((c) => isDominatedByState(c, inCounty));
+  const dominated = new Set([...dominatedTowns, ...byState]);
   const tier = (c: Scored): number =>
     dominatedTowns.has(c) ? 3 : !c.isExact ? 2 : dominated.has(c) ? 1 : 0;
   const scored = inCounty.sort((a, b) => tier(a) - tier(b) || b.score - a.score);
@@ -250,7 +248,44 @@ export function resolvePlace(
     }
   }
 
+  // A state that won by the 10× rule says so, loudly (#309): the flag for code, the notice first
+  // among the answer's limitations for people.
+  const top = candidates[0];
+  if (
+    !options.kind &&
+    top?.isExact &&
+    top.candidate.kind.sumlevel === "040" &&
+    byState.length > 0
+  ) {
+    top.candidate.flags = [...top.candidate.flags, "dominant_match"];
+    return {
+      status: "ok",
+      candidates: candidates.map((c) => c.candidate),
+      notice: dominanceNotice(query, top.candidate, byState),
+    };
+  }
   return { status: "ok", candidates: candidates.map((c) => c.candidate) };
+}
+
+/** How a state that won by the 10× rule names what it passed over and how to ask for it (#309). */
+function dominanceNotice(
+  query: string,
+  state: PlaceCandidate,
+  passedOver: readonly Scored[],
+): string {
+  const named = [...passedOver]
+    .sort((a, b) => (b.candidate.population ?? 0) - (a.candidate.population ?? 0))
+    .map((c) => {
+      const usps = FIPS_TO_USPS[c.candidate.stateFips ?? ""];
+      return usps ? `${c.candidate.name}, ${usps}` : c.candidate.name;
+    });
+  const shown = named.slice(0, 3).join("; ");
+  const more = named.length > 3 ? `; and ${named.length - 3} more` : "";
+  return (
+    `"${query.trim()}" was read as the state of ${state.name}, which has at least ` +
+    `${STATE_DOMINANCE_RATIO} times the population of every other place with that name: ` +
+    `${shown}${more}. If you meant one of those, ask again with a kind ("county", "city") or a state.`
+  );
 }
 
 /** The nation's summary level (#290). */

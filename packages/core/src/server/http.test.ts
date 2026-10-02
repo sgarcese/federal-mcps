@@ -2,9 +2,9 @@ import { createServer as createHttpServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { EnvelopeSchema } from "../envelope/index.js";
+import { demoDefinition } from "./__fixtures__/demo-definition.js";
 import { createServer } from "./create-server.js";
 import { createHttpHandler } from "./http.js";
-import { demoDefinition } from "./__fixtures__/demo-definition.js";
 
 const NOW = new Date("2026-09-08T12:00:00.000Z");
 const MCP_ACCEPT = "application/json, text/event-stream";

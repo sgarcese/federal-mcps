@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { envelope } from "./envelope.js";
 import { EnvelopeSchema, envelopeSchema, FootnoteSchema, PlaceRefSchema } from "./schema.js";
 import { placeRef } from "./types.js";

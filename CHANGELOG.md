@@ -24,7 +24,9 @@ Changed
 - A state dominates a much smaller same-name place (#291): an exact match with a tenth of the
   state's population or less is listed after it but never wins or asks. "Colorado", "Texas",
   "Ohio", "Virginia" and "Washington" are the states; "New York" and "Utah" still ask (owner ruling:
-  keep the 10× rule).
+  keep the 10× rule). A state chosen this way says so loudly (#309, owner ruling): the
+  `dominant_match` flag, and a first limitation in every answer naming what it passed over
+  ("Washington" also names Washington city, DC) and how to ask for it.
 - `bls_get_raw` fills a missing `endYear` with the current year (and a missing `startYear` with the
   earliest BLS allows), caps a span over 20 years, and says so first in the text (#292, owner
   ruling: default loudly). An id that returns no series gets its own limitation.

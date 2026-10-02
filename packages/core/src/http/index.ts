@@ -6,7 +6,7 @@
 export type { BudgetConsumeResult, BudgetStore } from "./budget.js";
 export { MemoryBudgetStore } from "./budget.js";
 export type { CacheEntry, CacheStore } from "./cache-store.js";
-export { MemoryCacheStore, cacheKey } from "./cache-store.js";
+export { cacheKey, MemoryCacheStore } from "./cache-store.js";
 export type {
   FixtureOptions,
   HttpClient,
@@ -16,6 +16,7 @@ export type {
 } from "./client.js";
 export { createHttpClient } from "./client.js";
 export {
+  AgencyApiError,
   HttpClientError,
   HttpError,
   MissingFixtureError,
@@ -23,9 +24,8 @@ export {
   QuotaExceededError,
   RateLimitWaitError,
   TimeoutError,
-  AgencyApiError,
 } from "./errors.js";
 export type { FixtureMode, FixtureResponse } from "./fixtures.js";
 export { fixturePath, readFixture, resolveFixtureMode, writeFixture } from "./fixtures.js";
 export type { BackoffOptions } from "./retry.js";
-export { DEFAULT_BACKOFF, computeDelayMs, isRetryableStatus, parseRetryAfter } from "./retry.js";
+export { computeDelayMs, DEFAULT_BACKOFF, isRetryableStatus, parseRetryAfter } from "./retry.js";

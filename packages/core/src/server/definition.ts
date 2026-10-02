@@ -1,7 +1,7 @@
-import type { CompactRendering } from "./wrap.js";
 import type { z } from "zod";
 import type { CacheInfo } from "../cache.js";
 import type { Footnote, PlaceRef, Source } from "../envelope/index.js";
+import type { CompactRendering } from "./wrap.js";
 
 /**
  * The declarative server definition (wave 3 seam).

@@ -441,6 +441,24 @@ describe("a state dominates much smaller same-name places (#291)", () => {
     expect(resolvePlace(catalog, "Utah").status).toBe("ambiguous");
   });
 
+  it("flags the state as a dominant match, loudly naming what it passed over (#309)", () => {
+    const r = resolvePlace(catalog, "Colorado");
+    expect(r.status).toBe("ok");
+    expect(r.candidates[0]?.flags).toContain("dominant_match");
+    const notice = r.status === "ok" ? r.notice : undefined;
+    expect(notice).toMatch(/^"Colorado" was read as the state of Colorado/);
+    expect(notice).toMatch(/Colorado County, TX/);
+    expect(notice).toMatch(/kind/);
+  });
+
+  it("no dominance notice when nothing was passed over, or a kind chose (#309)", () => {
+    const denver = resolvePlace(catalog, "Denver", { kind: "county" });
+    expect(denver.status === "ok" ? denver.notice : undefined).toBeUndefined();
+    const state = resolvePlace(catalog, "Colorado", { kind: "state" });
+    expect(state.status === "ok" ? state.notice : undefined).toBeUndefined();
+    expect(state.candidates[0]?.flags).not.toContain("dominant_match");
+  });
+
   it("a kind still picks the dominated place", () => {
     expect(resolvePlace(catalog, "Colorado", { kind: "county" }).candidates[0]?.geoid).toBe(
       "48089",

@@ -79,6 +79,7 @@ export function geographyTools(options: GeographyToolsOptions): ToolDefinition[]
           source: SOURCE,
           ...(top ? { place: placeRefOf(top) } : {}),
           ...(result.status === "ambiguous" ? { limitations: [result.explanation] } : {}),
+          ...(result.status === "ok" && result.notice ? { limitations: [result.notice] } : {}),
         };
       },
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_BACKOFF, computeDelayMs, isRetryableStatus, parseRetryAfter } from "./retry.js";
+import { computeDelayMs, DEFAULT_BACKOFF, isRetryableStatus, parseRetryAfter } from "./retry.js";
 
 describe("isRetryableStatus", () => {
   it("retries 502, 503, 504 and 429", () => {

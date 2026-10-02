@@ -1,7 +1,7 @@
 import type { ContractRule } from "../types.js";
 import { examplesRule } from "./examples.js";
-import { rawRenderingRule } from "./raw.js";
 import { toolDescriptionRule, toolNameRule, toolTitleRule } from "./naming.js";
+import { rawRenderingRule } from "./raw.js";
 import { describeSourceRule, resolvePlaceRule } from "./source.js";
 import { verbParametersRule } from "./verbs.js";
 
@@ -21,7 +21,6 @@ export const CONTRACT_RULES: readonly ContractRule[] = [
 ];
 
 export { examplesRule } from "./examples.js";
-export { rawRenderingRule } from "./raw.js";
 export {
   MAX_DESCRIPTION_LENGTH,
   TOOL_NAME_PATTERN,
@@ -29,5 +28,6 @@ export {
   toolNameRule,
   toolTitleRule,
 } from "./naming.js";
+export { rawRenderingRule } from "./raw.js";
 export { describeSourceRule, resolvePlaceRule } from "./source.js";
 export { FAMILY_VERB_PARAMETERS, familyVerbOf, objectKeys, verbParametersRule } from "./verbs.js";

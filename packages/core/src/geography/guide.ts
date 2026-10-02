@@ -34,6 +34,10 @@ Read the structured flags on each result rather than prose:
 - consolidated_city: a consolidated city or its "balance" is not the county.
 - vintage_mismatch: this area's code changed across years (e.g. Connecticut's 2022
   planning regions); joins across vintages may not line up.
+- dominant_match: a bare name was read as the state because the state has at least ten
+  times the people of every other place with that name ("Washington" is the state, not
+  D.C.'s city). The answer's first limitation names the others; say which you used, and
+  ask again with a kind or state if the user meant one of them.
 
 The United States is a place too (kind "nation"; "US", "USA" and "U.S." resolve to it):
 the parent of every state, for a national benchmark beside a local figure.
