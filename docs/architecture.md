@@ -150,9 +150,11 @@ requires `CENSUS_API_KEY` in the environment; the build fails loudly, before dow
 anything, when it is unset (sign up free at https://api.census.gov/data/key_signup.html).
 
 **HTTP discipline.** One client: retry with jittered backoff on 5xx/429, timeout,
-per-source daily budget counter (DynamoDB in Lambda, memory locally), two-tier cache
-(fresh TTL by release cadence, stale fallback when the agency is down), batching hooks
-so BLS packs 50 series per call and Census packs variables per call.
+per-source daily budget counter (in memory, per Lambda container — not shared across
+containers), two-tier cache (a fresh TTL each caller sets by release cadence — QCEW, Census
+and HUD 30 days, BEA 7 days; BLS timeseries calls set none, so their cached response is only
+a stale fallback when the agency is down), batching hooks so BLS packs 50 series per call and
+Census packs variables per call.
 
 **Provenance envelope.** Every tool returns `data`, `place` (the resolved geography, so
 the caller can confirm), `source` (agency, dataset, series/variable IDs, URL),
@@ -194,7 +196,7 @@ each program is an *indicator* behind `get_indicator`, never a tool of its own.
 | `bls_list_indicators` | available | the measures a program publishes, and whether it publishes at a place's level |
 | `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` pickers validated per indicator (ADR-013); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place; the United States answers from each program's national series (#290), LAUS's from CPS, labelled CPS |
 | `bls_compare_places` | available | one indicator across ≤20 places, aligned on the latest shared period; a thin wrapper over `get_indicator` |
-| `bls_get_raw` | available | raw timeseries IDs from any program (LAUS, CES, OEWS, CPI, JOLTS, PPI), ≤50 per call; a missing `startYear` or `endYear` is filled and a span over BLS's 20-year limit is capped, each stated as a limitation (#292) |
+| `bls_get_raw` | available | raw timeseries IDs from any program (LAUS, CES, OEWS, CPI, JOLTS, PPI), any number per call, sent to BLS in batches of 50; a missing `startYear` or `endYear` is filled and a span over BLS's 20-year limit is capped, each stated as a limitation (#292) |
 | `bls_describe_source` | available | coverage, cadence, caveats, citation format |
 
 Program coverage behind these verbs (from `bls_describe_source`):
@@ -308,9 +310,10 @@ pre-existing `rc-tfstate` bucket, then verifies the live deploy by calling `init
 then `tools/list` on the deployed endpoint, failing unless `bls_describe_source` is
 present, and prints `deployed <sha> to <url>`. CI (`ci.yml`) validates the Terraform
 (`fmt`, `validate`, `test`, `tflint`) on every push and pull request but never applies.
-Nothing needs bootstrapping: `rc-deploy` can create the `rc-bls-mcp-dev` Lambda, its
-role, the HTTP API, the certificate and the DNS records, and read and write this
-project's state. Push-to-deploy remains a documented upgrade path (an administrator
+`rc-deploy` creates each server's Lambda, HTTP API, certificate and DNS records, and reads
+and writes this project's state; it cannot create IAM roles (ADR-007), so an administrator
+creates each server's execution role once with `scripts/admin-create-exec-role.sh`
+(`docs/runbooks/bootstrap-instance.md`). Push-to-deploy remains a documented upgrade path (an administrator
 creates the OIDC provider and a deploy role once).
 
 ## Repository settings
