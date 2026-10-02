@@ -122,7 +122,10 @@ when nothing else matches exactly, so `"Denver, CO"` still means the city or the
 The same 10× population rule settles a state against a smaller same-name place (#291): an
 exact match a tenth of the state's size or less is listed after it but neither wins nor makes
 the query ambiguous, so "Colorado" is the state and Colorado County, TX comes second; New York
-and Utah, where the city or county is larger than that, still ask which is meant.
+and Utah, where the city or county is larger than that, still ask which is meant. A state
+chosen this way carries the `dominant_match` flag, and every answer's first limitation names the
+places it passed over and how to ask for one (#309): "Washington" is the state, and says that
+it also names Washington city, DC.
 
 The United States is a catalog place too (#290): summary level 010, UCGID `0100000US` (Census's
 own), GEOID `US` (TIGER's nation GEOID), Data Commons `country/USA`, the parent of every state
