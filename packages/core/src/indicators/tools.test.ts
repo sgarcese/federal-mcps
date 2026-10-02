@@ -360,3 +360,47 @@ describe("unavailableNote (#241): a program says why a place has no series", () 
     expect((res?.limitations ?? []).join(" ")).toContain("Demo publishes Colorado by town");
   });
 });
+
+describe("a state chosen by the 10× rule is flagged loudly (#309)", () => {
+  const stateThing: IndicatorDefinition = {
+    ...countyThing,
+    name: "state_thing",
+    agencyCodeOf: (place) => (place.kind.sumlevel === "040" ? `S:${place.geoid}` : undefined),
+    dimensions: [],
+  };
+  const stateTools = indicatorTools({
+    agency: "demo",
+    definitions: [stateThing],
+    catalog: () => catalog,
+    httpClient: () => noClient,
+    now: () => new Date("2025-02-01T00:00:00Z"),
+    defaultFetch: echoFetch,
+    sourceUrl: "https://example.invalid/api",
+    descriptions: { getIndicator: "get", comparePlaces: "compare", listIndicators: "list" },
+    examples: {
+      getIndicator: [{ title: "x", input: { place: "Colorado" } }],
+      comparePlaces: [{ title: "y", input: { places: ["Colorado", "Missouri"] } }],
+      listIndicators: [{ title: "z", input: {} }],
+    },
+  });
+  // biome-ignore lint/suspicious/noExplicitAny: handler args are untyped in tests.
+  type AnyArgs = any;
+  const run = (n: string, args: Record<string, unknown>) =>
+    stateTools.find((t) => t.name === n)?.handler(args as AnyArgs, {} as AnyArgs);
+
+  it("get_indicator puts the notice first among the limitations", async () => {
+    const res = await run("demo_get_indicator", { place: "Colorado" });
+    expect(res?.source.ids).toEqual(["S:08/x"]);
+    expect(res?.limitations?.[0]).toMatch(/^"Colorado" was read as the state of Colorado/);
+  });
+
+  it("compare_places carries the notice for the row it applies to", async () => {
+    const res = await run("demo_compare_places", { places: ["Colorado", "Missouri"] });
+    expect((res?.limitations ?? []).join(" ")).toMatch(/"Colorado" was read as the state/);
+  });
+
+  it("no notice when the kind is given", async () => {
+    const res = await run("demo_get_indicator", { place: "Colorado", kind: "state" });
+    expect((res?.limitations ?? []).join(" ")).not.toMatch(/was read as/);
+  });
+});
