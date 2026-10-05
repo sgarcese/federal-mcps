@@ -426,6 +426,89 @@ describe("queryAuth (M8.2): a key appended at fetch time only", () => {
   });
 });
 
+describe("cacheBody (#325): a POST credential kept out of the cache/fixture identity", () => {
+  it("hashes the cache key from cacheBody, not the real wire body, when given", async () => {
+    const seen: string[] = [];
+    const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+      seen.push(String(init?.body ?? ""));
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as typeof fetch;
+    const client = createHttpClient({
+      source: "demo",
+      budget: new MemoryBudgetStore(10),
+      cache: new MemoryCacheStore(),
+      fetch: fetchImpl,
+      fixtures: { mode: "off" },
+    });
+
+    const first = await client.postJson<{ ok: boolean }>(
+      "https://example.invalid/data",
+      { seriesid: ["A"], registrationkey: "KEY-ONE" },
+      { freshTtlSeconds: 60, cacheBody: JSON.stringify({ seriesid: ["A"] }) },
+    );
+    expect(first.cache.hit).toBe(false);
+    expect(seen).toEqual(['{"seriesid":["A"],"registrationkey":"KEY-ONE"}']);
+
+    // A second call with a different real body (different key) but the same `cacheBody` is a
+    // cache hit: the key never touched the identity, and the real body is never sent again.
+    const second = await client.postJson<{ ok: boolean }>(
+      "https://example.invalid/data",
+      { seriesid: ["A"], registrationkey: "KEY-TWO" },
+      { freshTtlSeconds: 60, cacheBody: JSON.stringify({ seriesid: ["A"] }) },
+    );
+    expect(second.cache.hit).toBe(true);
+    expect(seen).toHaveLength(1);
+  });
+
+  it("uses cacheBody for the recorded fixture's identity too", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "federal-mcps-fixtures-"));
+    try {
+      const fetchImpl = (async () =>
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })) as typeof fetch;
+      const record = createHttpClient({
+        source: "demo",
+        budget: new MemoryBudgetStore(10),
+        cache: new MemoryCacheStore(),
+        fetch: fetchImpl,
+        fixtures: { mode: "record", dir },
+      });
+      await record.postJson(
+        "https://example.invalid/data",
+        { seriesid: ["A"], registrationkey: "KEY-ONE" },
+        { cacheBody: JSON.stringify({ seriesid: ["A"] }) },
+      );
+
+      // Replay with a *different* key in the real body but the same cacheBody: it must find
+      // the fixture recorded above, never touching the network.
+      const replayFetch = vi.fn(() => {
+        throw new Error("replay must not hit the network");
+      });
+      const replay = createHttpClient({
+        source: "demo",
+        budget: new MemoryBudgetStore(10),
+        cache: new MemoryCacheStore(),
+        fetch: replayFetch as unknown as typeof fetch,
+        fixtures: { mode: "replay", dir },
+      });
+      const result = await replay.postJson(
+        "https://example.invalid/data",
+        { seriesid: ["A"], registrationkey: "KEY-TWO" },
+        { cacheBody: JSON.stringify({ seriesid: ["A"] }) },
+      );
+      expect(result.value).toEqual({ ok: true });
+      expect(replayFetch).not.toHaveBeenCalled();
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("sanitize and bodyError hooks (#256, ADR-019 §3–4)", () => {
   // A BEA-shaped reply: the key echoed back, and errors answered with HTTP 200.
   const KEY = "11111111-2222-3333-4444-555555555555";

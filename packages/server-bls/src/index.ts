@@ -16,6 +16,7 @@ import {
 } from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildBlsDefinition } from "./definition.js";
+import { blsDailyThresholdBodyError } from "./series-fetch.js";
 
 export { buildBlsDefinition } from "./definition.js";
 export { describeSource } from "./describe-source.js";
@@ -40,9 +41,15 @@ export {
   type IndicatorRegistry,
 } from "@federal-mcps/core";
 export {
-  fetchSeriesObservations,
-  fetchSeriesRaw,
+  BLS_DAILY_THRESHOLD_CODE,
   BLS_SERIES_ENDPOINT,
+  BLS_TIMESERIES_CACHE_TTL_SECONDS,
+  BLS_TIMESERIES_STALE_TTL_SECONDS,
+  blsDailyThresholdBodyError,
+  fetchSeriesObservations,
+  fetchSeriesObservationsWithCache,
+  fetchSeriesRaw,
+  fetchSeriesRawWithCache,
   type SeriesFetchOptions,
   type SeriesObservation,
   type SeriesResult,
@@ -66,6 +73,9 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     source: "bls",
     budget: new MemoryBudgetStore(BLS_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
+    // Catches a daily-threshold refusal (HTTP 200, `REQUEST_NOT_PROCESSED`) before it is parsed
+    // and cached, converting it to `QuotaExceededError` (#325, ADR-020 §8).
+    bodyError: blsDailyThresholdBodyError,
   });
   // QCEW's own source key ("bls-qcew") so its fetches never decrement the BLS API's budget;
   // passed as a dependency rather than set on module state (#324 review).

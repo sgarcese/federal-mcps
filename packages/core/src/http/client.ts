@@ -82,6 +82,14 @@ export interface RequestOptions {
    * fixture, or any error's `url`, so a key never lands on disk or in a log (ADR-014 §9).
    */
   readonly queryAuth?: Record<string, string>;
+  /**
+   * The body used to compute the cache key and fixture identity, in place of the real POST
+   * `body`, when the wire body carries data that must not affect either — the POST-body
+   * analogue of `queryAuth` (e.g. BLS's `registrationkey`, which rides in the JSON body
+   * itself rather than a query param, #325). Defaults to the real body when omitted, so
+   * every existing caller is unaffected.
+   */
+  readonly cacheBody?: string;
 }
 
 export interface HttpResult<T> {
@@ -338,9 +346,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     timeoutMs: number,
     body: string | undefined,
     queryAuth?: Record<string, string>,
+    fixtureBody: string | undefined = body,
   ): Promise<RawResponse> {
     if (fixtureMode === "replay") {
-      const fixture = await readFixture(fixtureDir, source, url, body);
+      const fixture = await readFixture(fixtureDir, source, url, fixtureBody);
       if (fixture.status >= 400) {
         throw new HttpError({ source, status: fixture.status, url, attempts: 1 });
       }
@@ -361,7 +370,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     noteRateLimitHeaders(response.headers);
 
     if (fixtureMode === "record") {
-      await writeFixture(fixtureDir, source, url, response, now, body);
+      await writeFixture(fixtureDir, source, url, response, now, fixtureBody);
     }
 
     return response;
@@ -379,7 +388,8 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     const freshTtlSeconds = options?.freshTtlSeconds;
     const staleTtlSeconds = options?.staleTtlSeconds;
     const queryAuth = options?.queryAuth;
-    const key = cacheKey(method, url, headers, body);
+    const identityBody = options?.cacheBody ?? body;
+    const key = cacheKey(method, url, headers, identityBody);
 
     let existing: CacheEntry | undefined;
     if (freshTtlSeconds !== undefined) {
@@ -399,7 +409,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
 
       try {
-        const response = await performRequest(url, headers, timeoutMs, body, queryAuth);
+        const response = await performRequest(
+          url,
+          headers,
+          timeoutMs,
+          body,
+          queryAuth,
+          identityBody,
+        );
         const value = parse(response.body);
         await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
         return { value, cache: CACHE_MISS, status: response.status };
@@ -416,7 +433,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
     }
 
-    const response = await performRequest(url, headers, timeoutMs, body, queryAuth);
+    const response = await performRequest(url, headers, timeoutMs, body, queryAuth, identityBody);
     const value = parse(response.body);
     if (freshTtlSeconds !== undefined) {
       await cache.set(key, { value, status: response.status, storedAt: now().getTime() });

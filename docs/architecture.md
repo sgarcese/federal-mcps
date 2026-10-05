@@ -152,9 +152,12 @@ anything, when it is unset (sign up free at https://api.census.gov/data/key_sign
 **HTTP discipline.** One client: retry with jittered backoff on 5xx/429, timeout,
 per-source daily budget counter (in memory, per Lambda container — not shared across
 containers), two-tier cache (a fresh TTL each caller sets by release cadence — QCEW, Census
-and HUD 30 days, BEA 7 days; BLS timeseries calls set none, so their cached response is only
-a stale fallback when the agency is down), batching hooks so BLS packs 50 series per call and
-Census packs variables per call.
+and HUD 30 days, BEA 7 days, BLS timeseries 24h; a week-long stale fallback behind it for when
+the agency is down), batching hooks so BLS packs 50 series per call and Census packs variables
+per call. A BLS timeseries POST's own registration key never affects the cache or fixture
+identity (`cacheBody`, #325); a BLS daily-threshold refusal — HTTP 200 with
+`REQUEST_NOT_PROCESSED` — is never cached and surfaces as the shared `QuotaExceededError`
+(ADR-020 §8), same as the budget counter's own refusal.
 
 **Provenance envelope.** Every tool returns `data`, `place` (the resolved geography, so
 the caller can confirm), `source` (agency, dataset, series/variable IDs, URL),
