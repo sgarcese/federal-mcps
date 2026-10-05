@@ -99,8 +99,10 @@ resource "aws_cloudwatch_metric_alarm" "bls_budget_critical" {
 }
 
 # 3. A refusal spike, summed across every server and limit scope (ADR-020 §5's spike
-# suggestion: "over 50 in an hour"). SEARCH sums every {server,limitScope} time series
-# published under the Refusals metric, so one alarm covers the whole family.
+# suggestion: "over 50 in an hour"). CloudWatch alarms reject SEARCH() ("SEARCH is not
+# supported in alarms" — only dashboards may use it), so this uses a Metrics Insights query
+# instead, which alarms DO support and which covers every {server,limitScope} series (up to
+# 15 here) in one query without needing a metric_query per series.
 resource "aws_cloudwatch_metric_alarm" "refusal_spike" {
   alarm_name          = "${local.name_prefix}-refusal-spike"
   alarm_description   = "More than ${var.refusal_spike_threshold} tool calls were refused (any server, any scope) in the last hour."
@@ -114,7 +116,8 @@ resource "aws_cloudwatch_metric_alarm" "refusal_spike" {
   metric_query {
     id          = "refusals_total"
     return_data = true
-    expression  = "SEARCH('{FederalMCPs,server,limitScope} MetricName=\"Refusals\"', 'Sum', 3600)"
+    period      = 3600
+    expression  = "SELECT SUM(Refusals) FROM SCHEMA(FederalMCPs, limitScope, server)"
     label       = "Refusals (all servers, all scopes)"
   }
 }
@@ -156,9 +159,18 @@ resource "aws_cloudwatch_metric_alarm" "limiter_degraded" {
   ok_actions          = local.alarm_action
 }
 
-# 6. Lambda Throttles > 0, summed across every family function (ADR-020 §5: "the edge is
-# being hit, so someone is hammering or the ceiling is too low"). Free AWS/Lambda metrics,
-# not EMF, so this covers the CDC portal too.
+# 6-7. Lambda Throttles/Errors > 0, summed across every family function (ADR-020 §5: "the
+# edge is being hit, so someone is hammering or the ceiling is too low"). Free AWS/Lambda
+# metrics, not EMF, so this covers the CDC portal too. CloudWatch alarms reject SEARCH(), so
+# the sum is built from explicit metric math instead: one metric_query per function
+# (return_data = false) plus one sum expression (return_data = true) — a single alarm
+# allows up to 10 metrics, and `lambda_function_names`'s validation caps the list at 9 so
+# the function-count-plus-one-sum total can never exceed that.
+locals {
+  lambda_metric_ids     = [for i in range(length(var.lambda_function_names)) : "m${i}"]
+  lambda_sum_expression = join("+", local.lambda_metric_ids)
+}
+
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   count = length(var.lambda_function_names) > 0 ? 1 : 0
 
@@ -171,15 +183,29 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   alarm_actions       = local.alarm_action
   ok_actions          = local.alarm_action
 
+  dynamic "metric_query" {
+    for_each = { for i, name in var.lambda_function_names : "m${i}" => name }
+    content {
+      id          = metric_query.key
+      return_data = false
+      metric {
+        namespace   = "AWS/Lambda"
+        metric_name = "Throttles"
+        dimensions  = { FunctionName = metric_query.value }
+        period      = 300
+        stat        = "Sum"
+      }
+    }
+  }
+
   metric_query {
-    id          = "throttles_total"
+    id          = "total"
     return_data = true
-    expression  = "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Throttles\" ${join(" OR ", [for n in var.lambda_function_names : "FunctionName=\"${n}\""])}', 'Sum', 300)"
+    expression  = local.lambda_sum_expression
     label       = "Throttles (every family Lambda)"
   }
 }
 
-# 7. Lambda Errors > 0, summed the same way.
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   count = length(var.lambda_function_names) > 0 ? 1 : 0
 
@@ -192,10 +218,25 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_actions       = local.alarm_action
   ok_actions          = local.alarm_action
 
+  dynamic "metric_query" {
+    for_each = { for i, name in var.lambda_function_names : "m${i}" => name }
+    content {
+      id          = metric_query.key
+      return_data = false
+      metric {
+        namespace   = "AWS/Lambda"
+        metric_name = "Errors"
+        dimensions  = { FunctionName = metric_query.value }
+        period      = 300
+        stat        = "Sum"
+      }
+    }
+  }
+
   metric_query {
-    id          = "errors_total"
+    id          = "total"
     return_data = true
-    expression  = "SEARCH('{AWS/Lambda,FunctionName} MetricName=\"Errors\" ${join(" OR ", [for n in var.lambda_function_names : "FunctionName=\"${n}\""])}', 'Sum', 300)"
+    expression  = local.lambda_sum_expression
     label       = "Errors (every family Lambda)"
   }
 }

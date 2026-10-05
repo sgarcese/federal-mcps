@@ -247,7 +247,9 @@ portal (core's EMF metrics line does not reach it; the free `AWS/Lambda` metrics
 
 **The budget** (`rc-federal-mcps-<env>-monthly-cost`, default $50, overridable with
 `budget_amount_usd`) needs the `project` cost-allocation tag active in Billing, which
-`admin-grant-protection.sh` step 4 already activates.
+`admin-grant-protection.sh` step 4 already activates. AWS can take up to 24 hours after a
+tag is activated before costs carrying it show up in Budgets and Cost Explorer, so a
+budget created right after bootstrapping an instance may read $0 until then.
 
 ## Deploy
 

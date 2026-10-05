@@ -220,14 +220,14 @@ run "lambda_throttles_and_errors_alarms_use_metric_math_not_search" {
   assert {
     condition = alltrue([
       for q in aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query :
-      !strcontains(coalesce(q.expression, ""), "SEARCH(")
+      !strcontains((q.expression == null ? "" : q.expression), "SEARCH(")
     ])
     error_message = "no metric_query in the throttles alarm may use SEARCH()"
   }
   assert {
     condition = alltrue([
       for q in aws_cloudwatch_metric_alarm.lambda_errors[0].metric_query :
-      !strcontains(coalesce(q.expression, ""), "SEARCH(")
+      !strcontains((q.expression == null ? "" : q.expression), "SEARCH(")
     ])
     error_message = "no metric_query in the errors alarm may use SEARCH()"
   }
@@ -255,7 +255,7 @@ run "no_alarm_expression_uses_search" {
         aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query,
         aws_cloudwatch_metric_alarm.lambda_errors[0].metric_query,
         ] : [
-        for q in alarm_queries : !strcontains(coalesce(q.expression, ""), "SEARCH(")
+        for q in alarm_queries : !strcontains((q.expression == null ? "" : q.expression), "SEARCH(")
       ]
     ]))
     error_message = "no aws_cloudwatch_metric_alarm metric_query may use SEARCH() — AWS rejects it at apply time"

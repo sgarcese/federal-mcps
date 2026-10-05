@@ -33,9 +33,14 @@ variable "services" {
 }
 
 variable "lambda_function_names" {
-  description = "Every family Lambda's function name (including the CDC portal), for the AWS/Lambda Throttles and Errors alarms, which core's EMF line does not cover."
+  description = "Every family Lambda's function name (including the CDC portal), for the AWS/Lambda Throttles and Errors alarms, which core's EMF line does not cover. Each name becomes its own metric_query (CloudWatch alarms reject SEARCH(), so the sum is built from explicit metric math, not a search expression); a single alarm allows at most 10 metrics total, one of which is the sum itself."
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = length(var.lambda_function_names) <= 9
+    error_message = "lambda_function_names must have at most 9 entries: one metric_query per function plus one sum expression must fit CloudWatch's 10-metric-per-alarm limit."
+  }
 }
 
 variable "bls_budget_warning_pct" {
