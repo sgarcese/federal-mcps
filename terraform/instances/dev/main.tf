@@ -126,6 +126,24 @@ variable "bea_lambda_zip_path" {
   default     = "../../../packages/server-bea/dist/lambda.zip"
 }
 
+# #319, ADR-020 §1, §9: the caller-identity HMAC secret and the operator-bypass token.
+# Both optional (empty runs without a limiter / without a bypass, as today); supplied as
+# TF_VAR_caller_hmac_secret / TF_VAR_operator_bypass_token from .env by scripts/deploy.sh,
+# following the BEA_API_KEY pattern. Never a non-empty default, never in git.
+variable "caller_hmac_secret" {
+  description = "HMAC secret for daily-rotating caller keys, set on each Node Lambda as FEDERAL_MCPS_CALLER_SECRET."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "operator_bypass_token" {
+  description = "Expected value of the operator-bypass header, set on each Node Lambda as FEDERAL_MCPS_OPERATOR_TOKEN. Never documented publicly."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 module "bls_server" {
   source = "../../modules/bls-server"
 
@@ -137,6 +155,22 @@ module "bls_server" {
   alias_domain_names = try(local.instance.domain.aliases.bls, [])
   bls_api_key        = var.bls_api_key
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6, §7: the fleet record's limits.bls overrides the module's own
+  # ADR-020 defaults; a field absent from the fleet record flows through as null, which
+  # the module's `nullable = false` variables resolve back to their default.
+  throttling_rate_limit      = try(local.instance.limits.bls.stageRateLimit, null)
+  throttling_burst_limit     = try(local.instance.limits.bls.stageBurstLimit, null)
+  reserved_concurrency       = try(local.instance.limits.bls.reservedConcurrency, null)
+  service_daily_limit        = try(local.instance.limits.bls.serviceDaily, null)
+  network_upstream_daily     = try(local.instance.limits.bls.network.upstreamDaily, null)
+  network_tool_calls_daily   = try(local.instance.limits.bls.network.toolCallsDaily, null)
+  pool_upstream_daily        = try(local.instance.limits.bls.pool.upstreamDaily, null)
+  pool_tool_calls_daily      = try(local.instance.limits.bls.pool.toolCallsDaily, null)
+  upstream_per_minute        = try(local.instance.limits.bls.upstreamPerMinute, null)
+  upstream_errors_per_minute = try(local.instance.limits.bls.upstreamErrorsPerMinute, null)
+  caller_hmac_secret         = var.caller_hmac_secret
+  operator_bypass_token      = var.operator_bypass_token
 }
 
 # The hosted geography server (#58, ADR-008). A separate module instance from
@@ -152,6 +186,15 @@ module "geo_server" {
   # ADR-016 §2: the short hostname(s), additive to domain_name; absent in older records.
   alias_domain_names = try(local.instance.domain.aliases.geo, [])
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6, §7 — see bls_server's comment.
+  throttling_rate_limit    = try(local.instance.limits.geo.stageRateLimit, null)
+  throttling_burst_limit   = try(local.instance.limits.geo.stageBurstLimit, null)
+  reserved_concurrency     = try(local.instance.limits.geo.reservedConcurrency, null)
+  network_tool_calls_daily = try(local.instance.limits.geo.network.toolCallsDaily, null)
+  pool_tool_calls_daily    = try(local.instance.limits.geo.pool.toolCallsDaily, null)
+  caller_hmac_secret       = var.caller_hmac_secret
+  operator_bypass_token    = var.operator_bypass_token
 }
 
 # The Census server (M8, ADR-014): its own Lambda, API and domain, sharing the fleet record;
@@ -167,6 +210,20 @@ module "census_server" {
   alias_domain_names = try(local.instance.domain.aliases.census, [])
   census_api_key     = var.census_api_key
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6, §7 — see bls_server's comment.
+  throttling_rate_limit      = try(local.instance.limits.census.stageRateLimit, null)
+  throttling_burst_limit     = try(local.instance.limits.census.stageBurstLimit, null)
+  reserved_concurrency       = try(local.instance.limits.census.reservedConcurrency, null)
+  service_daily_limit        = try(local.instance.limits.census.serviceDaily, null)
+  network_upstream_daily     = try(local.instance.limits.census.network.upstreamDaily, null)
+  network_tool_calls_daily   = try(local.instance.limits.census.network.toolCallsDaily, null)
+  pool_upstream_daily        = try(local.instance.limits.census.pool.upstreamDaily, null)
+  pool_tool_calls_daily      = try(local.instance.limits.census.pool.toolCallsDaily, null)
+  upstream_per_minute        = try(local.instance.limits.census.upstreamPerMinute, null)
+  upstream_errors_per_minute = try(local.instance.limits.census.upstreamErrorsPerMinute, null)
+  caller_hmac_secret         = var.caller_hmac_secret
+  operator_bypass_token      = var.operator_bypass_token
 }
 
 # The HUD User server (M11 shell, ADR-018): its own Lambda, API and domain, sharing the
@@ -183,6 +240,20 @@ module "hud_server" {
   alias_domain_names = try(local.instance.domain.aliases.hud, [])
   hud_user_token     = var.hud_user_token
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6, §7 — see bls_server's comment.
+  throttling_rate_limit      = try(local.instance.limits.hud.stageRateLimit, null)
+  throttling_burst_limit     = try(local.instance.limits.hud.stageBurstLimit, null)
+  reserved_concurrency       = try(local.instance.limits.hud.reservedConcurrency, null)
+  service_daily_limit        = try(local.instance.limits.hud.serviceDaily, null)
+  network_upstream_daily     = try(local.instance.limits.hud.network.upstreamDaily, null)
+  network_tool_calls_daily   = try(local.instance.limits.hud.network.toolCallsDaily, null)
+  pool_upstream_daily        = try(local.instance.limits.hud.pool.upstreamDaily, null)
+  pool_tool_calls_daily      = try(local.instance.limits.hud.pool.toolCallsDaily, null)
+  upstream_per_minute        = try(local.instance.limits.hud.upstreamPerMinute, null)
+  upstream_errors_per_minute = try(local.instance.limits.hud.upstreamErrorsPerMinute, null)
+  caller_hmac_secret         = var.caller_hmac_secret
+  operator_bypass_token      = var.operator_bypass_token
 }
 
 # The BEA Regional server (M14, ADR-019): its own Lambda, API and domain, sharing the fleet
@@ -198,6 +269,20 @@ module "bea_server" {
   alias_domain_names = try(local.instance.domain.aliases.bea, [])
   bea_api_key        = var.bea_api_key
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6, §7 — see bls_server's comment.
+  throttling_rate_limit      = try(local.instance.limits.bea.stageRateLimit, null)
+  throttling_burst_limit     = try(local.instance.limits.bea.stageBurstLimit, null)
+  reserved_concurrency       = try(local.instance.limits.bea.reservedConcurrency, null)
+  service_daily_limit        = try(local.instance.limits.bea.serviceDaily, null)
+  network_upstream_daily     = try(local.instance.limits.bea.network.upstreamDaily, null)
+  network_tool_calls_daily   = try(local.instance.limits.bea.network.toolCallsDaily, null)
+  pool_upstream_daily        = try(local.instance.limits.bea.pool.upstreamDaily, null)
+  pool_tool_calls_daily      = try(local.instance.limits.bea.pool.toolCallsDaily, null)
+  upstream_per_minute        = try(local.instance.limits.bea.upstreamPerMinute, null)
+  upstream_errors_per_minute = try(local.instance.limits.bea.upstreamErrorsPerMinute, null)
+  caller_hmac_secret         = var.caller_hmac_secret
+  operator_bypass_token      = var.operator_bypass_token
 }
 
 # The CDC portal (M10.3, ADR-016 §5): an OpenContext Socrata Lambda on data.cdc.gov, the
@@ -217,4 +302,10 @@ module "cdc_portal" {
   alias_domain_names = try(local.instance.domain.aliases.cdc, [])
   hosted_zone_id     = local.instance.domain.hostedZoneId
   environment_tag    = local.instance.environmentTag
+
+  # #319, ADR-020 §2, §6: edge layer only — the portal gets no FEDERAL_MCPS_LIMITS or
+  # caller/operator secrets (core's in-app limiter does not reach OpenContext).
+  throttling_rate_limit  = try(local.instance.limits.cdc.stageRateLimit, null)
+  throttling_burst_limit = try(local.instance.limits.cdc.stageBurstLimit, null)
+  reserved_concurrency   = try(local.instance.limits.cdc.reservedConcurrency, null)
 }

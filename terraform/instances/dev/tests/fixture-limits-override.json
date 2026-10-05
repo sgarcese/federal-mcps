@@ -1,0 +1,38 @@
+{
+  "instances": [
+    {
+      "name": "dev",
+      "description": "fixture: overrides limits.* to prove the fleet record actually drives the modules (#319)",
+      "account": "999999999999",
+      "region": "us-east-1",
+      "environmentTag": "dev",
+      "domain": {
+        "blsDomainName": "bls-mcp.fixture.test",
+        "geoDomainName": "geo-mcp.fixture.test",
+        "hostedZoneId": "ZFIXTURETEST",
+        "hostedZoneName": "fixture.test",
+        "censusDomainName": "census-mcp.fixture.test",
+        "cdcDomainName": "cdc.fixture.test",
+        "hudDomainName": "hud-user.fixture.test",
+        "beaDomainName": "bea.fixture.test"
+      },
+      "terraform": {
+        "stateBucket": "rc-tfstate-999999999999",
+        "stateKey": "rc/federal-mcps/dev/terraform.tfstate"
+      },
+      "naming": {
+        "blsService": "rc-bls-mcp",
+        "geoService": "rc-geo-mcp",
+        "censusService": "rc-census-mcp",
+        "cdcService": "rc-cdc-mcp",
+        "hudService": "rc-huduser-mcp",
+        "beaService": "rc-bea-mcp"
+      },
+      "limits": {
+        "bls": { "stageRateLimit": 25, "reservedConcurrency": 7, "serviceDaily": 400 },
+        "hud": { "reservedConcurrency": 4, "upstreamPerMinute": 30 },
+        "cdc": { "reservedConcurrency": 3 }
+      }
+    }
+  ]
+}

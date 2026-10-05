@@ -53,3 +53,58 @@ variable "alias_domain_names" {
   type        = list(string)
   default     = []
 }
+
+# --- Public-use protection (#319, ADR-020 §2, §6, §7) -----------------------
+# geo makes no upstream calls (the bundled catalog only), so it has no serviceDaily
+# budget, no upstreamDaily shares and no per-minute quota — just the tool-call ceilings.
+
+variable "throttling_rate_limit" {
+  description = "API Gateway $default stage steady-state requests/second (ADR-020 §6); from instances.json → limits.geo.stageRateLimit."
+  type        = number
+  default     = 10
+  nullable    = false
+}
+
+variable "throttling_burst_limit" {
+  description = "API Gateway $default stage burst capacity (ADR-020 §6); from instances.json → limits.geo.stageBurstLimit."
+  type        = number
+  default     = 20
+  nullable    = false
+}
+
+variable "reserved_concurrency" {
+  description = "Lambda reserved concurrency, a cost/noisy-neighbour ceiling (ADR-020 §6); from instances.json → limits.geo.reservedConcurrency."
+  type        = number
+  default     = 5
+  nullable    = false
+}
+
+variable "network_tool_calls_daily" {
+  description = "Per-network daily tool-call ceiling (ADR-020 §6, question 5); from instances.json → limits.geo.network.toolCallsDaily."
+  type        = number
+  default     = 1000
+  nullable    = false
+}
+
+variable "pool_tool_calls_daily" {
+  description = "The claude.ai pool's daily tool-call ceiling (ADR-020 §6, question 5); from instances.json → limits.geo.pool.toolCallsDaily."
+  type        = number
+  default     = 10000
+  nullable    = false
+}
+
+variable "caller_hmac_secret" {
+  description = "HMAC secret for daily-rotating caller keys (ADR-020 §1), set on the Lambda as FEDERAL_MCPS_CALLER_SECRET. Optional: empty runs without per-identity limits (ADR-006 §3 pattern; supplied as TF_VAR_caller_hmac_secret from .env)."
+  type        = string
+  default     = ""
+  sensitive   = true
+  nullable    = false
+}
+
+variable "operator_bypass_token" {
+  description = "Expected value of the operator-bypass header (ADR-020 §9), set on the Lambda as FEDERAL_MCPS_OPERATOR_TOKEN. Never documented publicly; optional (supplied as TF_VAR_operator_bypass_token from .env)."
+  type        = string
+  default     = ""
+  sensitive   = true
+  nullable    = false
+}

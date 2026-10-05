@@ -19,6 +19,27 @@ locals {
   function_name         = "${var.service_name}-${var.environment_tag}"
   lambda_log_group_name = "/aws/lambda/${local.function_name}"
   api_log_group_name    = "/aws/apigateway/${local.function_name}"
+
+  # The in-app limits configuration (#319, ADR-020 §2, §6, §7): one FEDERAL_MCPS_LIMITS JSON
+  # blob per server, matching packages/core/src/limits/config.ts's LimitsConfigSchema. HUD
+  # has no serviceDaily budget, only a per-minute quota (ADR-018 §1, §7).
+  limits = merge(
+    var.service_daily_limit != null ? { serviceDaily = { hud = var.service_daily_limit } } : {},
+    {
+      network = merge(
+        { toolCallsDaily = var.network_tool_calls_daily },
+        var.network_upstream_daily != null ? { upstreamDaily = var.network_upstream_daily } : {},
+      )
+      pool = merge(
+        { toolCallsDaily = var.pool_tool_calls_daily },
+        var.pool_upstream_daily != null ? { upstreamDaily = var.pool_upstream_daily } : {},
+      )
+    },
+    var.upstream_per_minute != null ? { upstreamPerMinute = { hud = var.upstream_per_minute } } : {},
+    var.upstream_errors_per_minute != null ? { upstreamErrorsPerMinute = { hud = var.upstream_errors_per_minute } } : {},
+    { reservedConcurrency = var.reserved_concurrency },
+  )
+  limits_json = jsonencode(local.limits)
 }
 
 # --- Lambda ------------------------------------------------------------
@@ -56,6 +77,8 @@ resource "aws_lambda_function" "hud" {
   memory_size = var.memory_size
   timeout     = var.timeout
 
+  reserved_concurrent_executions = var.reserved_concurrency
+
   environment {
     variables = {
       MCP_TRANSPORT  = "http"
@@ -63,6 +86,10 @@ resource "aws_lambda_function" "hud" {
       # The HUD server resolves places off the bundled geography catalog (ADR-008 §7),
       # baked into this Lambda's zip like server-census's. Not a secret.
       GEO_CATALOG_PATH = var.catalog_path
+      # Public-use protection (#319, ADR-020 §2, §6, §7).
+      FEDERAL_MCPS_LIMITS         = local.limits_json
+      FEDERAL_MCPS_CALLER_SECRET  = var.caller_hmac_secret
+      FEDERAL_MCPS_OPERATOR_TOKEN = var.operator_bypass_token
     }
   }
 
@@ -111,6 +138,12 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.hud.id
   name        = "$default"
   auto_deploy = true
+
+  # Edge throttling (#319, ADR-020 §2, §6).
+  default_route_settings {
+    throttling_rate_limit  = var.throttling_rate_limit
+    throttling_burst_limit = var.throttling_burst_limit
+  }
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn

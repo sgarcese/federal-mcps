@@ -7,7 +7,8 @@
     "domain.aliases.<service> lists extra hostnames served by the same API (ADR-016 \u00a72); the short <service>.responsive.city names live here while the *-mcp names stay the primary domain.",
     "cdcDomainName / cdcService: the OpenContext portal Lambda for data.cdc.gov (ADR-016 \u00a75), serving the CDC PLACES source guide.",
     "hudDomainName / hudService: the HUD User server (M11, ADR-018); its primary hostname is already the short hud-user.responsive.city name.",
-    "beaDomainName / beaService: the BEA Regional server (M14, ADR-019), at the short bea.responsive.city name."
+    "beaDomainName / beaService: the BEA Regional server (M14, ADR-019), at the short bea.responsive.city name.",
+    "limits.<service>: public-use protection (#319, ADR-020 §2, §6, §7) — stage throttling, Lambda reserved concurrency and the in-app FEDERAL_MCPS_LIMITS budget. Optional; every field shown here is also each terraform module's own default (ADR-020's question-5 table), so this block can be omitted entirely — it is spelled out so a self-hoster sees the shape and can override a field by editing their own instances.json."
   ],
   "instances": [
     {
@@ -42,6 +43,53 @@
         "cdcService": "rc-cdc-mcp",
         "hudService": "rc-huduser-mcp",
         "beaService": "rc-bea-mcp"
+      },
+      "limits": {
+        "bls": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 5,
+          "serviceDaily": 490,
+          "network": { "upstreamDaily": 100, "toolCallsDaily": 500 },
+          "pool": { "upstreamDaily": 250, "toolCallsDaily": 5000 }
+        },
+        "census": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 5,
+          "serviceDaily": 5000,
+          "network": { "upstreamDaily": 1000, "toolCallsDaily": 500 },
+          "pool": { "upstreamDaily": 3000, "toolCallsDaily": 5000 }
+        },
+        "hud": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 2,
+          "network": { "upstreamDaily": 1000, "toolCallsDaily": 500 },
+          "pool": { "upstreamDaily": 3000, "toolCallsDaily": 5000 },
+          "upstreamPerMinute": 60
+        },
+        "bea": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 2,
+          "network": { "upstreamDaily": 1000, "toolCallsDaily": 500 },
+          "pool": { "upstreamDaily": 3000, "toolCallsDaily": 5000 },
+          "upstreamPerMinute": 90,
+          "upstreamErrorsPerMinute": 30
+        },
+        "geo": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 5,
+          "network": { "toolCallsDaily": 1000 },
+          "pool": { "toolCallsDaily": 10000 }
+        },
+        "cdc": {
+          "stageRateLimit": 10,
+          "stageBurstLimit": 20,
+          "reservedConcurrency": 5
+        }
       }
     }
   ]

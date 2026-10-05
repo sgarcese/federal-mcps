@@ -91,3 +91,29 @@ variable "timeout" {
   type        = number
   default     = 29
 }
+
+# --- Public-use protection (#319, ADR-020 §2, §6) ---------------------------
+# The CDC portal gets the edge layer only: core's in-app limiter does not reach
+# OpenContext, so no FEDERAL_MCPS_LIMITS and no caller/operator secrets ride on this
+# Lambda (ADR-020, "No WAF in M17... The CDC portal gets the edge layer only").
+
+variable "throttling_rate_limit" {
+  description = "API Gateway $default stage steady-state requests/second (ADR-020 §6); from instances.json → limits.cdc.stageRateLimit."
+  type        = number
+  default     = 10
+  nullable    = false
+}
+
+variable "throttling_burst_limit" {
+  description = "API Gateway $default stage burst capacity (ADR-020 §6); from instances.json → limits.cdc.stageBurstLimit."
+  type        = number
+  default     = 20
+  nullable    = false
+}
+
+variable "reserved_concurrency" {
+  description = "Lambda reserved concurrency, a cost/noisy-neighbour ceiling (ADR-020 §6); from instances.json → limits.cdc.reservedConcurrency."
+  type        = number
+  default     = 5
+  nullable    = false
+}

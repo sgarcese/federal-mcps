@@ -21,6 +21,16 @@ locals {
   function_name         = "${var.service_name}-${var.environment_tag}"
   lambda_log_group_name = "/aws/lambda/${local.function_name}"
   api_log_group_name    = "/aws/apigateway/${local.function_name}"
+
+  # The in-app limits configuration (#319, ADR-020 §2, §6, §7): one FEDERAL_MCPS_LIMITS JSON
+  # blob, matching packages/core/src/limits/config.ts's LimitsConfigSchema. geo makes no
+  # upstream calls, so only the tool-call ceilings and reserved concurrency apply.
+  limits = {
+    network             = { toolCallsDaily = var.network_tool_calls_daily }
+    pool                = { toolCallsDaily = var.pool_tool_calls_daily }
+    reservedConcurrency = var.reserved_concurrency
+  }
+  limits_json = jsonencode(local.limits)
 }
 
 # --- Lambda ------------------------------------------------------------
@@ -58,10 +68,16 @@ resource "aws_lambda_function" "geo" {
   memory_size = var.memory_size
   timeout     = var.timeout
 
+  reserved_concurrent_executions = var.reserved_concurrency
+
   environment {
     variables = {
       MCP_TRANSPORT    = "http"
       GEO_CATALOG_PATH = var.catalog_path
+      # Public-use protection (#319, ADR-020 §2, §6, §7).
+      FEDERAL_MCPS_LIMITS         = local.limits_json
+      FEDERAL_MCPS_CALLER_SECRET  = var.caller_hmac_secret
+      FEDERAL_MCPS_OPERATOR_TOKEN = var.operator_bypass_token
     }
   }
 
@@ -110,6 +126,12 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.geo.id
   name        = "$default"
   auto_deploy = true
+
+  # Edge throttling (#319, ADR-020 §2, §6).
+  default_route_settings {
+    throttling_rate_limit  = var.throttling_rate_limit
+    throttling_burst_limit = var.throttling_burst_limit
+  }
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn

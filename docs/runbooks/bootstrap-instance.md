@@ -18,6 +18,9 @@ bucket already exists, and `rc-deploy` can create everything a server needs
   and generate a token under your account's API access settings.
 - `./.env` with `BEA_API_KEY=<your key>`. Register free at <https://apps.bea.gov/API/signup/>
   and activate the key from BEA's email (it can take several minutes to start working).
+- Optional: `./.env` with `FEDERAL_MCPS_CALLER_SECRET=<random>` and/or
+  `FEDERAL_MCPS_OPERATOR_TOKEN=<random>` (#319, ADR-020 §1, §9); see "Public-use protection"
+  below. Neither is required — leaving both unset deploys without a per-identity limiter.
 - The account already has the GitHub Actions OIDC provider only if push-to-deploy is
   later adopted (ADR-007 upgrade path); it is **not** needed for local deploys.
 
@@ -146,6 +149,20 @@ name is already the short one). Add that block to your
 `instances.json` before deploying — a record without it deploys no aliases and the `*-mcp`
 primaries alone. Aliases are additive: the primary domain is never recreated, and `deploy.sh`
 verifies every alias URL after the apply.
+
+## Public-use protection (#319, ADR-020)
+
+Edge throttling, Lambda reserved concurrency and the in-app `FEDERAL_MCPS_LIMITS` budget are
+configured by an optional `limits` block per server in the fleet record (see
+`instances.example.json`, which spells out ADR-020's defaults table so you can see the shape).
+Every field is also each terraform module's own default, so the block can be omitted entirely;
+edit `instances.json` and change a field only to override that server's throttling rate/burst,
+reserved concurrency, daily budgets or per-minute quotas. A change takes effect on the next
+`scripts/deploy.sh` run (ADR-007's deliberate-act deploy). The optional
+`FEDERAL_MCPS_CALLER_SECRET`/`FEDERAL_MCPS_OPERATOR_TOKEN` secrets (ADR-020 §1, §9) come from
+`.env`'s `FEDERAL_MCPS_CALLER_SECRET`/`FEDERAL_MCPS_OPERATOR_TOKEN` the same way `BEA_API_KEY`
+does; leaving them unset runs every server without a per-identity limiter, as before M17. The
+CDC portal gets the edge layer (throttling, reserved concurrency) only — no in-app limits.
 
 ## Deploy
 

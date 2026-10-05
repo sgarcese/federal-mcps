@@ -27,7 +27,11 @@ const REQUIRED_STRINGS = ["name", "description", "account", "region", "environme
  *   domain: { blsDomainName: string; geoDomainName: string; censusDomainName: string; cdcDomainName: string; hudDomainName: string; beaDomainName: string; hostedZoneId: string; hostedZoneName: string;
  *     aliases?: { bls?: string[]; geo?: string[]; census?: string[]; cdc?: string[]; hud?: string[]; bea?: string[] } };
  *   terraform: { stateBucket: string; stateKey: string };
- *   naming: { blsService: string; geoService: string; censusService: string; cdcService: string; hudService: string; beaService: string } }} InstanceRecord
+ *   naming: { blsService: string; geoService: string; censusService: string; cdcService: string; hudService: string; beaService: string };
+ *   limits?: Record<string, { stageRateLimit?: number; stageBurstLimit?: number; reservedConcurrency?: number;
+ *     serviceDaily?: number; network?: { upstreamDaily?: number; toolCallsDaily?: number };
+ *     pool?: { upstreamDaily?: number; toolCallsDaily?: number }; upstreamPerMinute?: number;
+ *     upstreamErrorsPerMinute?: number }> }} InstanceRecord
  */
 
 /**
@@ -82,6 +86,60 @@ function assertRecord(value, index) {
       }
     }
   }
+  // #319, ADR-020 §7: an optional `limits` block per server, flowing through
+  // terraform/instances/<name>/locals.tf into each module's throttling, reserved
+  // concurrency and FEDERAL_MCPS_LIMITS variables. Module defaults already carry
+  // ADR-020's table, so this block is only needed to override it.
+  const limits = record.limits;
+  if (limits !== undefined) {
+    if (typeof limits !== "object" || limits === null) {
+      throw new Error(`instances.json: entry ${index} limits must be an object`);
+    }
+    const LIMITS_SERVICES = ["bls", "census", "hud", "bea", "geo", "cdc"];
+    const LIMITS_NUMBER_FIELDS = [
+      "stageRateLimit",
+      "stageBurstLimit",
+      "reservedConcurrency",
+      "serviceDaily",
+      "upstreamPerMinute",
+      "upstreamErrorsPerMinute",
+    ];
+    const LIMITS_SHARE_FIELDS = ["upstreamDaily", "toolCallsDaily"];
+    for (const [service, entry] of Object.entries(limits)) {
+      if (!LIMITS_SERVICES.includes(service)) {
+        throw new Error(`instances.json: entry ${index} limits has unknown service "${service}"`);
+      }
+      if (typeof entry !== "object" || entry === null) {
+        throw new Error(`instances.json: entry ${index} limits.${service} must be an object`);
+      }
+      const entryRecord = /** @type {Record<string, unknown>} */ (entry);
+      for (const field of LIMITS_NUMBER_FIELDS) {
+        if (entryRecord[field] !== undefined && typeof entryRecord[field] !== "number") {
+          throw new Error(
+            `instances.json: entry ${index} limits.${service}.${field} must be a number`,
+          );
+        }
+      }
+      for (const shareField of ["network", "pool"]) {
+        const share = entryRecord[shareField];
+        if (share === undefined) continue;
+        if (typeof share !== "object" || share === null) {
+          throw new Error(
+            `instances.json: entry ${index} limits.${service}.${shareField} must be an object`,
+          );
+        }
+        const shareRecord = /** @type {Record<string, unknown>} */ (share);
+        for (const field of LIMITS_SHARE_FIELDS) {
+          if (shareRecord[field] !== undefined && typeof shareRecord[field] !== "number") {
+            throw new Error(
+              `instances.json: entry ${index} limits.${service}.${shareField}.${field} must be a number`,
+            );
+          }
+        }
+      }
+    }
+  }
+
   const terraform = record.terraform;
   if (typeof terraform !== "object" || terraform === null) {
     throw new Error(`instances.json: entry ${index} is missing object field "terraform"`);
