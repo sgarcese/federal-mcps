@@ -309,3 +309,22 @@ module "cdc_portal" {
   throttling_burst_limit = try(local.instance.limits.cdc.stageBurstLimit, null)
   reserved_concurrency   = try(local.instance.limits.cdc.reservedConcurrency, null)
 }
+
+# Monitoring (#326, ADR-020 §5): the dashboard, ~ten alarms, the alerts topic and the
+# optional budget, wired from the fleet record's optional `alerts.email` (scripts/instance.mjs)
+# and every server module's `function_name` output (for the AWS/Lambda alarms, which reach
+# the CDC portal too — EMF does not).
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  environment_tag = local.instance.environmentTag
+  alert_email     = try(local.instance.alerts.email, null)
+  lambda_function_names = [
+    module.bls_server.function_name,
+    module.census_server.function_name,
+    module.hud_server.function_name,
+    module.bea_server.function_name,
+    module.geo_server.function_name,
+    module.cdc_portal.function_name,
+  ]
+}

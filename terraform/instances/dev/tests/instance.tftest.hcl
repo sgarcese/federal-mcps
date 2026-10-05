@@ -272,3 +272,44 @@ run "cdc_portal_is_an_opencontext_socrata_lambda_on_the_short_hostname" {
     error_message = "the portal must point at data.cdc.gov"
   }
 }
+
+# Monitoring (#326, ADR-020 §5): the module is wired with every server's function name
+# (including the CDC portal, which gets no FEDERAL_MCPS_LIMITS but does get AWS/Lambda
+# alarms) and the fleet record's optional alerts.email.
+
+run "monitoring_is_wired_with_every_family_function_name" {
+  command = plan
+
+  assert {
+    condition     = output.monitoring_dashboard_name == "rc-federal-mcps-${local.instance.environmentTag}"
+    error_message = "the dashboard must be named rc-federal-mcps-<env>"
+  }
+
+  assert {
+    condition = contains(
+      [
+        module.bls_server.function_name,
+        module.census_server.function_name,
+        module.hud_server.function_name,
+        module.bea_server.function_name,
+        module.geo_server.function_name,
+        module.cdc_portal.function_name,
+      ],
+      module.cdc_portal.function_name,
+    )
+    error_message = "the CDC portal's function name must be among those the monitoring module watches (AWS/Lambda metrics reach it; the EMF line does not)"
+  }
+}
+
+run "the_fleet_records_alerts_email_drives_the_subscription" {
+  command = plan
+
+  # instances.example.json's dev record carries a placeholder alerts.email (scripts/instance.mjs,
+  # ADR-020 §5), so plan's fallback reads it: the subscription must exist and use it. A real
+  # deployer's own instances.json may omit the whole alerts block, which is the no-subscription
+  # case covered directly in terraform/modules/monitoring's own tests.
+  assert {
+    condition     = output.monitoring_has_email_subscription == true
+    error_message = "the example fleet record's alerts.email must drive exactly one SNS subscription"
+  }
+}
