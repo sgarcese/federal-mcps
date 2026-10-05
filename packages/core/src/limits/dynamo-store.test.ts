@@ -45,7 +45,10 @@ function fake(answer: (input: UpdateItemCommandInput) => unknown): {
 describe("DynamoCounterStore", () => {
   it("sends one conditional ADD with the TTL and returns the new count", async () => {
     const f = fake(() => ({ Attributes: { count: { N: "3" } } }));
-    const store = new DynamoCounterStore({ tableName: "rc-federal-mcps-dev-limits", client: f.client });
+    const store = new DynamoCounterStore({
+      tableName: "rc-federal-mcps-dev-limits",
+      client: f.client,
+    });
     expect(await store.increment("svc#bls#2026-10-05", 1, EXPIRES, 490)).toEqual({
       value: 3,
       applied: true,
@@ -56,7 +59,10 @@ describe("DynamoCounterStore", () => {
     expect(input?.Key).toEqual({ pk: { S: "svc#bls#2026-10-05" } });
     expect(input?.UpdateExpression).toBe("ADD #count :by SET #expiresAt = :expiresAt");
     expect(input?.ConditionExpression).toBe("attribute_not_exists(#count) OR #count <= :room");
-    expect(input?.ExpressionAttributeNames).toEqual({ "#count": "count", "#expiresAt": "expiresAt" });
+    expect(input?.ExpressionAttributeNames).toEqual({
+      "#count": "count",
+      "#expiresAt": "expiresAt",
+    });
     expect(input?.ExpressionAttributeValues).toEqual({
       ":by": { N: "1" },
       ":expiresAt": { N: String(EXPIRES.getTime() / 1000) },

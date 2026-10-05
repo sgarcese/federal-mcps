@@ -199,7 +199,9 @@ describe("createLimiter: beforeUpstream", () => {
     const a = createLimiter({ config: CONFIG, store });
     const b = createLimiter({ config: CONFIG, store });
     const results = await Promise.allSettled(
-      Array.from({ length: 12 }, (_, i) => (i % 2 === 0 ? a : b).beforeUpstream("bls", undefined, AT)),
+      Array.from({ length: 12 }, (_, i) =>
+        (i % 2 === 0 ? a : b).beforeUpstream("bls", undefined, AT),
+      ),
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(5);
     expect(await store.get("svc#bls#2026-10-05")).toBe(5);
