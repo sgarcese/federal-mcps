@@ -9,6 +9,7 @@ import {
   type CreateServerOptions,
   createHttpClient,
   createServer,
+  limiterFromEnv,
   MemoryBudgetStore,
   MemoryCacheStore,
   openBundledCatalog,
@@ -47,10 +48,14 @@ const CENSUS_DAILY_BUDGET = 5_000;
 
 /** Builds the configured Census `McpServer` over the bundled catalog + Census API client. */
 export function createCensusServer(options?: CreateServerOptions): McpServer {
+  // One limiter per container (#322, ADR-020 §2, §7): the shell counts tool calls, and every
+  // client charges its upstream fetches, against the same counters.
+  const limiter = options?.limiter ?? limiterFromEnv();
   const httpClient = createHttpClient({
     source: "census",
     budget: new MemoryBudgetStore(CENSUS_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
+    limiter,
   });
   const definition = buildCensusDefinition({
     catalog: openBundledCatalog(),
@@ -58,5 +63,5 @@ export function createCensusServer(options?: CreateServerOptions): McpServer {
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     apiKey: () => process.env["CENSUS_API_KEY"],
   });
-  return createServer(definition, options);
+  return createServer(definition, { ...options, limiter });
 }

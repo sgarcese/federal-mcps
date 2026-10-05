@@ -4,7 +4,12 @@
  * guide, proving the core generalises. Runs over stdio (the `federal-mcps-geo` bin) or
  * Streamable HTTP (`src/http.ts`, and the Lambda in `src/lambda.ts`).
  */
-import { createServer, type CreateServerOptions, openBundledCatalog } from "@federal-mcps/core";
+import {
+  type CreateServerOptions,
+  createServer,
+  limiterFromEnv,
+  openBundledCatalog,
+} from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildGeoDefinition } from "./definition.js";
 
@@ -15,5 +20,8 @@ export { GEO_SERVER_VERSION } from "./version.js";
 
 /** Builds the configured geography `McpServer` over the bundled catalog. */
 export function createGeoServer(options?: CreateServerOptions): McpServer {
-  return createServer(buildGeoDefinition(openBundledCatalog()), options);
+  // One limiter per container (#322, ADR-020 §2, §7); geo has no upstream, so it counts tool
+  // calls only.
+  const limiter = options?.limiter ?? limiterFromEnv();
+  return createServer(buildGeoDefinition(openBundledCatalog()), { ...options, limiter });
 }

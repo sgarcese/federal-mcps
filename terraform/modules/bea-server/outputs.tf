@@ -25,3 +25,8 @@ output "lambda_limits_json" {
   description = "The rendered FEDERAL_MCPS_LIMITS (#319, ADR-020; for tests)."
   value       = local.limits_json
 }
+
+output "limits_table_name" {
+  description = "The DynamoDB table set as FEDERAL_MCPS_LIMITS_TABLE (#322, ADR-020 §2)."
+  value       = local.limits_table_name
+}

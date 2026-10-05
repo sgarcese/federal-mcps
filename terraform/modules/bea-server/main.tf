@@ -40,6 +40,10 @@ locals {
     { reservedConcurrency = var.reserved_concurrency },
   )
   limits_json = jsonencode(local.limits)
+
+  # The persistent limiter's family-wide counter table (#322, ADR-020 §2, §10), created by
+  # scripts/admin-grant-protection.sh; named from the environment like every rc-* resource.
+  limits_table_name = "rc-federal-mcps-${var.environment_tag}-limits"
 }
 
 # --- Lambda ------------------------------------------------------------
@@ -90,6 +94,7 @@ resource "aws_lambda_function" "bea" {
       FEDERAL_MCPS_LIMITS         = local.limits_json
       FEDERAL_MCPS_CALLER_SECRET  = var.caller_hmac_secret
       FEDERAL_MCPS_OPERATOR_TOKEN = var.operator_bypass_token
+      FEDERAL_MCPS_LIMITS_TABLE   = local.limits_table_name
     }
   }
 

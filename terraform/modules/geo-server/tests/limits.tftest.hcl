@@ -116,3 +116,31 @@ run "fleet_record_override" {
     error_message = "the operator bypass token must ride as FEDERAL_MCPS_OPERATOR_TOKEN"
   }
 }
+
+# The persistent limiter's table (#322, ADR-020 §2, §10): the admin script creates
+# rc-federal-mcps-<env>-limits; the Lambda finds it through FEDERAL_MCPS_LIMITS_TABLE.
+run "limits_table_name_from_environment" {
+  command = plan
+
+  assert {
+    condition     = aws_lambda_function.geo.environment[0].variables["FEDERAL_MCPS_LIMITS_TABLE"] == "rc-federal-mcps-dev-limits"
+    error_message = "FEDERAL_MCPS_LIMITS_TABLE must be rc-federal-mcps-<env>-limits"
+  }
+  assert {
+    condition     = output.limits_table_name == "rc-federal-mcps-dev-limits"
+    error_message = "the module must output the limits table name it set"
+  }
+}
+
+run "limits_table_name_follows_the_environment_tag" {
+  command = plan
+
+  variables {
+    environment_tag = "prod"
+  }
+
+  assert {
+    condition     = aws_lambda_function.geo.environment[0].variables["FEDERAL_MCPS_LIMITS_TABLE"] == "rc-federal-mcps-prod-limits"
+    error_message = "the table name must follow environment_tag"
+  }
+}
