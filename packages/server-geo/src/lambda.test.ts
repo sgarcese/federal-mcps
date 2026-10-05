@@ -1,8 +1,27 @@
 import { rmSync } from "node:fs";
+import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "node:http";
 import { dirname } from "node:path";
+import { SOURCE_IP_HEADER } from "@federal-mcps/core";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+
+// Records the headers the loopback server receives, so the tests below can show what the adapter
+// forwards (#321). The wrapper delegates to the real handler; nothing else changes.
+const loopback = vi.hoisted(() => ({ headers: [] as IncomingHttpHeaders[] }));
+vi.mock("@federal-mcps/core", async (importOriginal) => {
+  const core = await importOriginal<typeof import("@federal-mcps/core")>();
+  return {
+    ...core,
+    createHttpHandler: (...args: Parameters<typeof core.createHttpHandler>) => {
+      const inner = core.createHttpHandler(...args);
+      return (req: IncomingMessage, res: ServerResponse) => {
+        loopback.headers.push(req.headers);
+        return inner(req, res);
+      };
+    },
+  };
+});
 
 const MCP_ACCEPT = "application/json, text/event-stream";
 
@@ -109,5 +128,20 @@ describe("geo lambda handler", () => {
     );
     expect(result.statusCode).toBe(405);
     expect(result.headers?.allow).toBe("POST");
+  });
+});
+
+describe("lambda adapter: caller identity headers (#321)", () => {
+  it("forwards requestContext's source address, replacing a client-sent copy", async () => {
+    const spoofed = rpcEvent("initialize", INITIALIZE_PARAMS);
+    spoofed.headers = {
+      ...spoofed.headers,
+      "X-Federal-MCPS-Source-IP": "160.79.104.1",
+      "x-forwarded-for": "160.79.104.2",
+    };
+    spoofed.requestContext.http.sourceIp = "198.51.100.7";
+    const result = await handler(spoofed);
+    expect(result.statusCode).toBe(200);
+    expect(loopback.headers.at(-1)?.[SOURCE_IP_HEADER]).toBe("198.51.100.7");
   });
 });
