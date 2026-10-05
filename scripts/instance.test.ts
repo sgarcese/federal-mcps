@@ -149,7 +149,9 @@ describe("instance record loader", () => {
           ],
         }),
       );
-      expect(() => loadInstances(path)).toThrow(/limits\.bls\.reservedConcurrency must be a number/);
+      expect(() => loadInstances(path)).toThrow(
+        /limits\.bls\.reservedConcurrency must be a number/,
+      );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

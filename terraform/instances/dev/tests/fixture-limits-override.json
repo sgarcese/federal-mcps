@@ -3,21 +3,21 @@
     {
       "name": "dev",
       "description": "fixture: overrides limits.* to prove the fleet record actually drives the modules (#319)",
-      "account": "123456789012",
+      "account": "999999999999",
       "region": "us-east-1",
       "environmentTag": "dev",
       "domain": {
-        "blsDomainName": "bls-mcp.responsive.city",
-        "geoDomainName": "geo-mcp.responsive.city",
-        "hostedZoneId": "Z02890412WHZ405FIOT0Y",
-        "hostedZoneName": "responsive.city",
-        "censusDomainName": "census-mcp.responsive.city",
-        "cdcDomainName": "cdc.responsive.city",
-        "hudDomainName": "hud-user.responsive.city",
-        "beaDomainName": "bea.responsive.city"
+        "blsDomainName": "bls-mcp.fixture.test",
+        "geoDomainName": "geo-mcp.fixture.test",
+        "hostedZoneId": "ZFIXTURETEST",
+        "hostedZoneName": "fixture.test",
+        "censusDomainName": "census-mcp.fixture.test",
+        "cdcDomainName": "cdc.fixture.test",
+        "hudDomainName": "hud-user.fixture.test",
+        "beaDomainName": "bea.fixture.test"
       },
       "terraform": {
-        "stateBucket": "rc-tfstate-123456789012",
+        "stateBucket": "rc-tfstate-999999999999",
         "stateKey": "rc/federal-mcps/dev/terraform.tfstate"
       },
       "naming": {

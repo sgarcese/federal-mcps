@@ -124,7 +124,9 @@ function assertRecord(value, index) {
         const share = entryRecord[shareField];
         if (share === undefined) continue;
         if (typeof share !== "object" || share === null) {
-          throw new Error(`instances.json: entry ${index} limits.${service}.${shareField} must be an object`);
+          throw new Error(
+            `instances.json: entry ${index} limits.${service}.${shareField} must be an object`,
+          );
         }
         const shareRecord = /** @type {Record<string, unknown>} */ (share);
         for (const field of LIMITS_SHARE_FIELDS) {
