@@ -23,10 +23,7 @@ beforeEach(() => {
   // exits nonzero, so any accidental real call fails the test loudly instead of hanging on
   // real credentials or silently succeeding.
   const fakeAws = join(binDir, "aws");
-  writeFileSync(
-    fakeAws,
-    `#!/usr/bin/env bash\necho "FAKE_AWS_WAS_CALLED: $*" >&2\nexit 1\n`,
-  );
+  writeFileSync(fakeAws, `#!/usr/bin/env bash\necho "FAKE_AWS_WAS_CALLED: $*" >&2\nexit 1\n`);
   chmodSync(fakeAws, 0o755);
 });
 
