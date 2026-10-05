@@ -8,7 +8,7 @@ import { buildCitation } from "../envelope/index.js";
 import { ATTESTATION_HEADER } from "./attestation.js";
 import type { Caller, Identify, RequestHeaders } from "./caller.js";
 import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER } from "./caller.js";
-import { createServer, type CreateServerOptions } from "./create-server.js";
+import { type CreateServerOptions, createServer } from "./create-server.js";
 import type { ServerDefinition, ToolDefinition } from "./definition.js";
 import { createHttpHandler } from "./http.js";
 import { CALLER_SECRET_ENV, OPERATOR_TOKEN_ENV } from "./identify.js";

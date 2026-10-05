@@ -45,6 +45,9 @@ export const CLAUDE_AI_POOL_CIDR = "160.79.104.0/21";
  */
 export const CALLER_KEY_HEX_LENGTH = 32;
 
+/** Longest address parsed: an IPv6 address with an embedded IPv4 tail is 45, plus room for a zone. */
+export const MAX_ADDRESS_LENGTH = 64;
+
 /** Longest metric label kept (User-Agent); labels are never enforcement keys. */
 export const LABEL_MAX_LENGTH = 128;
 
@@ -113,7 +116,11 @@ export function identifyFromEnv(
  * - anything unparseable, trimmed and lower-cased (it is only ever hashed).
  */
 export function networkOf(address: string): string {
-  const cleaned = address.trim().toLowerCase().replace(/%.*$/, "");
+  // Bounded and regex-free (CodeQL js/polynomial-redos): an address is at most 45 characters plus
+  // a zone id, so anything longer is cut before it is parsed; the zone id (`%eth0`) is dropped.
+  const bounded = address.trim().toLowerCase().slice(0, MAX_ADDRESS_LENGTH);
+  const zone = bounded.indexOf("%");
+  const cleaned = zone === -1 ? bounded : bounded.slice(0, zone);
   if (isIPv4(cleaned)) return cleaned;
   if (!isIPv6(cleaned)) return cleaned;
   const hextets = expandIPv6(cleaned);
@@ -152,10 +159,11 @@ function ipv4ToInt(address: string): number {
 function expandIPv6(address: string): number[] | undefined {
   let text = address;
   // An embedded dotted IPv4 tail (`::ffff:1.2.3.4`) becomes two hex groups.
-  const dotted = /(\d+\.\d+\.\d+\.\d+)$/.exec(text);
-  if (dotted?.[1] !== undefined) {
-    const value = ipv4ToInt(dotted[1]);
-    text = `${text.slice(0, dotted.index)}${(value >>> 16).toString(16)}:${(value & 0xffff).toString(16)}`;
+  const lastColon = text.lastIndexOf(":");
+  const tailV4 = text.slice(lastColon + 1);
+  if (isIPv4(tailV4)) {
+    const value = ipv4ToInt(tailV4);
+    text = `${text.slice(0, lastColon + 1)}${(value >>> 16).toString(16)}:${(value & 0xffff).toString(16)}`;
   }
   const [head = "", tail, ...rest] = text.split("::");
   if (rest.length > 0) return undefined;
