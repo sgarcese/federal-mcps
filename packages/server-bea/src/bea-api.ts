@@ -21,6 +21,13 @@ export const BEA_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 /** Under BEA's 100 requests a minute (ADR-019 §4). */
 export const BEA_PER_MINUTE = 90;
 
+/**
+ * Under BEA's 30 errors a minute (ADR-019 §4, #324, ADR-020 §2): BEA may block a key that trips
+ * this budget, so the core client's error limiter (`errorsPerMinute`) refuses further calls
+ * itself once reached, without ever reaching BEA again that minute.
+ */
+export const BEA_ERRORS_PER_MINUTE = 30;
+
 /** BEA error codes that mean "try again later"; every other code is a bad request, never retried. */
 const RETRYABLE_ERROR_CODES = new Set(["7"]);
 
