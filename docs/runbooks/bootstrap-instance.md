@@ -207,6 +207,48 @@ Two secrets, both optional, both read from `.env` the same way `BLS_API_KEY` is 
   budget. Never commit either value or print it; both become Lambda environment variables the
   same way `BLS_API_KEY` does, never baked into the repo.
 
+## Monitoring (#326, ADR-020 §5)
+
+`terraform/modules/monitoring`, wired into every instance root, creates one dashboard,
+about ten alarms, an SNS topic and (only when configured) a monthly cost budget — no
+administrator step beyond what `scripts/admin-grant-protection.sh` already granted in the
+step above (CloudWatch alarms/dashboards, SNS and Budgets rights scoped to `rc-*` names).
+
+Set the alert address with an optional `alerts.email` field in `instances.json` (see the
+placeholder in `instances.example.json`):
+
+```json
+"alerts": { "email": "you@example.org" }
+```
+
+With no `alerts` block, the dashboard and every alarm still get created, but there is no
+SNS subscription and no Budgets notification — the address is per-deployer and never
+committed. **After the first deploy with an email set, confirm the SNS subscription**: AWS
+emails the configured address a "Subscription Confirmation" link, and alarms never reach an
+unconfirmed subscription. The topic is `rc-federal-mcps-<env>-alerts`.
+
+**The dashboard** is `rc-federal-mcps-<env>`, in the CloudWatch console under
+**Dashboards** in the deploy region — or directly at:
+
+```
+https://<region>.console.aws.amazon.com/cloudwatch/home?region=<region>#dashboards/dashboard/rc-federal-mcps-<env>
+```
+
+It shows tool calls per server, refusals by scope, the BLS upstream budget against its
+daily quota, errors per server, latency per server and Lambda throttles across every
+family function.
+
+**The alarms** (`rc-federal-mcps-<env>-*`) cover: the BLS service budget at ≥80% and
+≥100% of today's quota; a family-wide refusal spike (over 50 refusals in an hour, any
+server, any scope); one errors-per-server alarm for each of bls/census/hud/bea/geo;
+`limiter_degraded` > 0 (the persistent limiter's DynamoDB store failing open, ADR-020 §3);
+and Lambda `Throttles`/`Errors` summed across every family function, including the CDC
+portal (core's EMF metrics line does not reach it; the free `AWS/Lambda` metrics do).
+
+**The budget** (`rc-federal-mcps-<env>-monthly-cost`, default $50, overridable with
+`budget_amount_usd`) needs the `project` cost-allocation tag active in Billing, which
+`admin-grant-protection.sh` step 4 already activates.
+
 ## Deploy
 
 ```sh

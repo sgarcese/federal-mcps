@@ -183,6 +183,27 @@ and `readOnlyHint: true`, attaches the envelope, wires both transports, adds
 `describe_source` and prompts. The contract suite asserts naming, titles, annotations and
 envelope shape.
 
+**Monitoring** (#326, ADR-020 §5). The shell writes one CloudWatch Embedded Metric Format
+(EMF) JSON line to stdout around every tool call (`server/metrics.ts`), gated on
+`AWS_LAMBDA_FUNCTION_NAME` so stdio's JSON-RPC stdout stream is never touched. It carries
+`server`, `tool`, `outcome` (`ok`/`error`/`refused`/`stale`), `latencyMs`, `upstreamCalls`
+(a per-call counter the HTTP client increments on each real fetch — never a cache hit or a
+replayed fixture — via the same `CallContext` the caller and the limitations notes already
+use), `cacheHit` where known, `limitScope` on refusals, `callerKind` and a truncated
+`userAgent` log property — never an argument, a result, a caller key or an address. Metrics
+publish under namespace `FederalMCPs`: `ToolCalls` (dimensions `server` and
+`server`+`tool`), `Refusals` (`server`+`limitScope`), `Errors` (`server`), `UpstreamCalls`
+(`server`) and `LatencyMs` (`server`). The HTTP client separately emits
+`ServiceBudgetUsedPct` (dimension `source`) whenever the limiter's `beforeUpstream` returns
+a usage snapshot. `limiter_degraded` (ADR-020 §3) is made countable the same way — EMF on
+its existing `console.warn` line — rather than a Terraform Logs metric filter, because EMF
+needs no new IAM (the execution roles already hold `logs:PutLogEvents`) while a metric
+filter would need `logs:PutMetricFilter`, which `admin-grant-protection.sh` does not grant.
+`terraform/modules/monitoring` turns these into one dashboard, about ten alarms, an SNS
+topic and an optional monthly cost budget (see the bootstrap runbook's "Monitoring"
+section); every resource is named `rc-*`, matching exactly what that script's step 3
+grants `rc-deploy`.
+
 ### Family verbs
 
 | Verb | Purpose | Input |
