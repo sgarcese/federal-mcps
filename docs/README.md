@@ -36,6 +36,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
   dedicated server (`bea_*`, `bea.responsive.city`): personal income, GDP and real GDP by industry,
   regional price parities; a core body sanitizer (the echoed key) and 200-body errors; sentinels never
   numbers; Virginia/Maui combination codes; Connecticut from 2024.
+- [adr/ADR-020-public-use-protection.md](adr/ADR-020-public-use-protection.md) — public-use
+  protection without authentication (M17, the v1.0 gate): source-IP shares with a claude.ai pool,
+  a DynamoDB BLS service budget, edge throttling, a `limit` block on refusals, a 24-hour BLS cache,
+  monitoring.
 - [adr/ADR-017-raw-tool-rendering-and-bls-completions.md](adr/ADR-017-raw-tool-rendering-and-bls-completions.md)
   — raw tools render a compact table within a 24,000-character budget (indicator tools keep
   4,000), enforced by a `raw-rendering` contract rule; the M12 BLS completion order and QCEW
