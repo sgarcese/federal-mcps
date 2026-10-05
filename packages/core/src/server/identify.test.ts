@@ -9,6 +9,7 @@ import {
   identifyFromEnv,
   isClaudeAiPool,
   LABEL_MAX_LENGTH,
+  MAX_ADDRESS_LENGTH,
   networkOf,
   OPERATOR_TOKEN_ENV,
 } from "./identify.js";
@@ -221,5 +222,24 @@ describe("identifyFromEnv", () => {
     );
     expect(fromEnv).toEqual(direct);
     expect(fromEnv?.bypass).toBe(true);
+  });
+});
+
+describe("networkOf on hostile input (CodeQL js/polynomial-redos)", () => {
+  it("handles long runs of '%' and digits in linear time, without regular expressions", () => {
+    const started = performance.now();
+    networkOf(`%${"%".repeat(100_000)}`);
+    networkOf(`::ffff:${"9".repeat(100_000)}`);
+    networkOf(`1.2.3.${"9".repeat(100_000)}`);
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+
+  it("caps an over-long address before parsing it (an address is never longer than 45 + a zone)", () => {
+    expect(networkOf("x".repeat(10_000)).length).toBeLessThanOrEqual(MAX_ADDRESS_LENGTH);
+  });
+
+  it("still strips a zone id and reads a dotted IPv4 tail", () => {
+    expect(networkOf("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+    expect(networkOf("::ffff:160.79.104.10")).toBe("160.79.104.10");
   });
 });
