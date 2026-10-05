@@ -257,6 +257,18 @@ describe("bls_get_raw", () => {
       /not BLS timeseries ids/,
     );
   });
+
+  it("caps ids at 200 (4 BLS queries, #324) with a clear message", async () => {
+    const tooMany = Array.from({ length: 201 }, (_, i) => `LAUCN08031000000000${i % 10}`);
+    await expect(call(rawTool(), { ids: tooMany })).rejects.toThrow(/at most 200 ids/);
+  });
+
+  it("accepts exactly 200 ids", async () => {
+    const twoHundred = Array.from({ length: 200 }, () => "LAUCN080310000000003");
+    const res = await call(rawTool(), { ids: twoHundred });
+    const data = res.data as { ids: string[] };
+    expect(data.ids).toHaveLength(200);
+  });
 });
 
 describe("bls_get_raw: missing startYear/endYear defaults loudly, span is capped (#292)", () => {
