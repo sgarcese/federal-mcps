@@ -7,6 +7,8 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
+import { currentCall, runInCall } from "../limits/context.js";
+import type { Limiter } from "../limits/limiter.js";
 import { ATTESTATION_HEADER, isAttested } from "./attestation.js";
 import { type Caller, type Identify, SOURCE_IP_HEADER } from "./caller.js";
 import {
@@ -63,6 +65,8 @@ export interface CreateServerOptions {
    * address, so stdio and local runs never read the secret or warn about its absence.
    */
   readonly identify?: Identify;
+  /** Counts and refuses tool calls per caller (ADR-020 §2, #322). Default: no limiter. */
+  readonly limiter?: Limiter;
 }
 
 type Extra = RequestHandlerExtra<ServerRequest, ServerNotification>;
@@ -183,10 +187,18 @@ function registerDefinitionTool(
     async (args: unknown, extra: Extra): Promise<CallToolResult> => {
       try {
         const caller = callerFor(extra);
-        const result = await tool.handler(args, {
-          now,
-          ...(extra.signal === undefined ? {} : { signal: extra.signal }),
-          ...(caller === undefined ? {} : { caller }),
+        // Each call runs in its own context (ADR-020 seam): the HTTP client reads the caller from
+        // it, and notes left there (e.g. a budget warning) follow the handler's own limitations.
+        const result = await runInCall(caller === undefined ? {} : { caller }, async () => {
+          const handled = await tool.handler(args, {
+            now,
+            ...(extra.signal === undefined ? {} : { signal: extra.signal }),
+            ...(caller === undefined ? {} : { caller }),
+          });
+          const notes = currentCall()?.notes ?? [];
+          return notes.length === 0
+            ? handled
+            : { ...handled, limitations: [...(handled.limitations ?? []), ...notes] };
         });
         return asCallToolResult(
           wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),
