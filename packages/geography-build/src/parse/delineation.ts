@@ -21,14 +21,50 @@ function decode(text: string): string {
 
 /** `xl/sharedStrings.xml` → the string table; a rich-text entry's runs are joined. */
 export function parseSharedStrings(xml: string): string[] {
-  const out: string[] = [];
-  for (const si of xml.matchAll(/<si>([\s\S]*?)<\/si>/g)) {
-    const runs = [...(si[1] ?? "").matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)].map(
-      (t) => t[1] ?? "",
-    );
-    out.push(decode(runs.join("")));
+  return [...elements(xml, "si")].map((si) =>
+    decode([...elements(si.inner, "t")].map((t) => t.inner).join("")),
+  );
+}
+
+/**
+ * Each `<tag …>…</tag>` (or self-closing `<tag …/>`) in order, found by linear `indexOf` scanning
+ * rather than lazy-match regular expressions, which run in polynomial time on unterminated
+ * markup (CodeQL js/polynomial-redos, #332). Same-name nesting does not occur in these parts.
+ */
+function* elements(xml: string, tag: string): Generator<{ attrs: string; inner: string }> {
+  const open = `<${tag}`;
+  const close = `</${tag}>`;
+  let from = 0;
+  for (;;) {
+    const start = xml.indexOf(open, from);
+    if (start === -1) return;
+    const next = xml.charAt(start + open.length);
+    if (next !== ">" && next !== "/" && next.trim() !== "") {
+      from = start + open.length; // a longer tag name (`<tab` for `<t`)
+      continue;
+    }
+    const gt = xml.indexOf(">", start);
+    if (gt === -1) return;
+    if (xml.charAt(gt - 1) === "/") {
+      yield { attrs: xml.slice(start + open.length, gt - 1), inner: "" };
+      from = gt + 1;
+      continue;
+    }
+    const end = xml.indexOf(close, gt);
+    if (end === -1) return;
+    yield { attrs: xml.slice(start + open.length, gt), inner: xml.slice(gt + 1, end) };
+    from = end + close.length;
   }
-  return out;
+}
+
+/** One attribute's value from an element's attribute text, or undefined. */
+function attribute(attrs: string, name: string): string | undefined {
+  const key = ` ${name}="`;
+  const at = ` ${attrs}`.indexOf(key);
+  if (at === -1) return undefined;
+  const begin = at + key.length - 1;
+  const stop = attrs.indexOf('"', begin);
+  return stop === -1 ? undefined : attrs.slice(begin, stop);
 }
 
 function columnIndex(letters: string): number {
@@ -40,19 +76,24 @@ function columnIndex(letters: string): number {
 /** `xl/worksheets/sheetN.xml` → rows of cell text, by column letter; empty cells are "". */
 export function parseSheetRows(xml: string, shared: readonly string[]): string[][] {
   const rows: string[][] = [];
-  for (const row of xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+  for (const row of elements(xml, "row")) {
     const cells: string[] = [];
-    for (const c of (row[1] ?? "").matchAll(
-      /<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,
-    )) {
-      const col = columnIndex(c[1] ?? "A");
-      const attrs = c[2] ?? "";
-      const inner = c[3] ?? "";
+    for (const c of elements(row.inner, "c")) {
+      const ref = attribute(c.attrs, "r") ?? "A";
+      let letters = "";
+      for (const ch of ref) {
+        if (ch < "A" || ch > "Z") break;
+        letters += ch;
+      }
+      const col = columnIndex(letters || "A");
+      const type = attribute(c.attrs, "t");
+      const first = (tag: string) => elements(c.inner, tag).next().value?.inner;
       let text = "";
-      if (/\bt="s"/.test(attrs)) text = shared[Number(/<v>(\d+)<\/v>/.exec(inner)?.[1])] ?? "";
-      else if (/\bt="inlineStr"/.test(attrs))
-        text = decode(/<t[^>]*>([\s\S]*?)<\/t>/.exec(inner)?.[1] ?? "");
-      else text = decode(/<v>([\s\S]*?)<\/v>/.exec(inner)?.[1] ?? "");
+      if (type === "s") {
+        const v = first("v") ?? "";
+        text = /^\d+$/.test(v) ? (shared[Number(v)] ?? "") : "";
+      } else if (type === "inlineStr") text = decode(first("t") ?? "");
+      else text = decode(first("v") ?? "");
       while (cells.length < col) cells.push("");
       cells[col] = text;
     }

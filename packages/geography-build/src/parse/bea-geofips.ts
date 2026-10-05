@@ -31,11 +31,17 @@ export function parseBeaCombinations(
   const out: AgencyCodeRow[] = [];
   for (const { Key: code, Desc: desc } of values) {
     if (!desc.includes("+")) continue;
-    const m = /^(.+),\s*([A-Z]{2})\*?$/.exec(desc.trim());
-    if (!m?.[1]) throw new Error(`BEA combination "${desc}" (${code}): unexpected name shape`);
+    // "<names>, ST" with an optional trailing "*", parsed without a backtracking regex (#332).
+    const trimmed = desc.trim();
+    const unstarred = trimmed.endsWith("*") ? trimmed.slice(0, -1) : trimmed;
+    const comma = unstarred.lastIndexOf(",");
+    const names = comma > 0 ? unstarred.slice(0, comma) : "";
+    if (!names || !/^[A-Z]{2}$/.test(unstarred.slice(comma + 1).trim())) {
+      throw new Error(`BEA combination "${desc}" (${code}): unexpected name shape`);
+    }
     const state = code.slice(0, 2);
-    const parts = m[1]
-      .split(/\s*\+\s*|,\s*/)
+    const parts = names
+      .split(/[+,]/)
       .map((p) => p.trim())
       .filter(Boolean);
     const label = desc.replace(/\*$/, "");
