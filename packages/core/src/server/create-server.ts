@@ -7,6 +7,7 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
+import { LIMITS_ENV, type LimitsConfig, parseLimitsConfig } from "../limits/config.js";
 import { currentCall, runInCall } from "../limits/context.js";
 import type { Limiter } from "../limits/limiter.js";
 import { ATTESTATION_HEADER, isAttested } from "./attestation.js";
@@ -17,7 +18,7 @@ import {
   type SourceDescription,
   type ToolDefinition,
 } from "./definition.js";
-import { toToolError } from "./errors.js";
+import { type ToolErrorContext, toToolError } from "./errors.js";
 import { identifyFromEnv } from "./identify.js";
 import { wrapResult } from "./wrap.js";
 
@@ -67,6 +68,67 @@ export interface CreateServerOptions {
   readonly identify?: Identify;
   /** Counts and refuses tool calls per caller (ADR-020 §2, #322). Default: no limiter. */
   readonly limiter?: Limiter;
+  /**
+   * The configured limits `describe_source` reports (ADR-020 §4, #323). Default: parsed from
+   * `FEDERAL_MCPS_LIMITS` when the server is created; absent means no `limits` block.
+   */
+  readonly limits?: LimitsConfig;
+}
+
+/** The `limits` block `describe_source` answers with (ADR-020 §4). */
+export interface SourceLimits {
+  readonly network?: { readonly upstreamDaily?: number; readonly toolCallsDaily?: number };
+  readonly pool?: { readonly upstreamDaily?: number; readonly toolCallsDaily?: number };
+  /** Per upstream budget key: the daily budget, and today's use when a limiter counts it. */
+  readonly service?: Readonly<
+    Record<string, { daily: number; used?: number; remaining?: number; resetsAt?: string }>
+  >;
+}
+
+/** Builds `describe_source`'s `limits` block from the configuration and the limiter's counts. */
+async function sourceLimits(
+  config: LimitsConfig,
+  limiter: Limiter | undefined,
+  at: Date,
+): Promise<SourceLimits> {
+  const service: Record<
+    string,
+    { daily: number; used?: number; remaining?: number; resetsAt?: string }
+  > = {};
+  for (const [source, daily] of Object.entries(config.serviceDaily ?? {})) {
+    const usage = await limiter?.usage(source, at);
+    service[source] =
+      usage === undefined
+        ? { daily }
+        : {
+            daily,
+            used: usage.used,
+            remaining: Math.max(0, usage.limit - usage.used),
+            resetsAt: usage.resetsAt,
+          };
+  }
+  return {
+    ...(config.network === undefined ? {} : { network: config.network }),
+    ...(config.pool === undefined ? {} : { pool: config.pool }),
+    ...(Object.keys(service).length === 0 ? {} : { service }),
+  };
+}
+
+/** What a refusal needs from the definition: its homepage and every tool name (errors.ts). */
+function errorContext(definition: ServerDefinition, toolName: string, at: Date): ToolErrorContext {
+  let homepage: string | undefined;
+  try {
+    homepage = definition.describeSource().homepage;
+  } catch {
+    homepage = undefined;
+  }
+  return {
+    agency: definition.agency,
+    toolName,
+    tools: definition.tools.map((tool) => tool.name),
+    now: at,
+    ...(homepage === undefined ? {} : { homepage }),
+  };
 }
 
 type Extra = RequestHandlerExtra<ServerRequest, ServerNotification>;
@@ -145,7 +207,9 @@ export function createServer(
     registerDefinitionTool(server, definition, tool, now, callerFor);
   }
 
-  registerDescribeSource(server, definition, now);
+  // Read once, at cold start: a malformed value throws here, loudly (config.ts).
+  const limits = options?.limits ?? parseLimitsConfig(process.env[LIMITS_ENV]);
+  registerDescribeSource(server, definition, now, limits, options?.limiter);
 
   for (const resource of definition.resources ?? []) {
     server.registerResource(
@@ -204,9 +268,7 @@ function registerDefinitionTool(
           wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),
         );
       } catch (error) {
-        return asCallToolResult(
-          toToolError(error, { agency: definition.agency, toolName: tool.name }),
-        );
+        return asCallToolResult(toToolError(error, errorContext(definition, tool.name, now())));
       }
     },
   );
@@ -216,6 +278,8 @@ function registerDescribeSource(
   server: McpServer,
   definition: ServerDefinition,
   now: () => Date,
+  limits: LimitsConfig | undefined,
+  limiter: Limiter | undefined,
 ): void {
   const name = describeSourceToolName(definition.agency);
   server.registerTool(
@@ -235,14 +299,19 @@ function registerDescribeSource(
       try {
         const retrievedAt = now();
         const description = definition.describeSource();
+        // With a limits configuration, the answer also says what the limits are (ADR-020 §4).
+        const data =
+          limits === undefined
+            ? description
+            : { ...description, limits: await sourceLimits(limits, limiter, retrievedAt) };
         return asCallToolResult(
           wrapResult(
-            { data: description, source: describeSourceProvenance(description, retrievedAt) },
+            { data, source: describeSourceProvenance(description, retrievedAt) },
             retrievedAt,
           ),
         );
       } catch (error) {
-        return asCallToolResult(toToolError(error, { agency: definition.agency, toolName: name }));
+        return asCallToolResult(toToolError(error, errorContext(definition, name, now())));
       }
     },
   );

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EnvelopeSchema } from "../envelope/index.js";
 import { QuotaExceededError } from "../http/index.js";
-import { type LimitInfo, LimitExceededError } from "../limits/limiter.js";
+import { LimitExceededError, type LimitInfo } from "../limits/limiter.js";
 import { toToolError } from "./errors.js";
 
 /**
@@ -131,7 +131,12 @@ describe("toToolError: refusals", () => {
       `bls: the whole service's daily budget of BLS queries is spent; resets at ${RESET}.${STILL_WORK}`,
     );
     const env = EnvelopeSchema.parse(result.structuredContent);
-    expect(env.limit).toEqual({ scope: "service", kind: "upstream", source: "bls", resetsAt: RESET });
+    expect(env.limit).toEqual({
+      scope: "service",
+      kind: "upstream",
+      source: "bls",
+      resetsAt: RESET,
+    });
   });
 
   it("gives other errors no structuredContent", () => {
