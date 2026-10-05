@@ -277,6 +277,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     let attempt = 0;
     for (;;) {
       attempt++;
+      // Checked before every attempt, retries included (#324 review): once a call has spent
+      // this minute's error budget mid-retry, it stops immediately rather than burning through
+      // the rest of its attempts against an agency that may already be counting them.
+      checkErrorLimit();
       let raw: RawResponse;
       try {
         raw = await doFetchOnce(target, headers, timeoutMs, body, url);
@@ -299,8 +303,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         const clean = options.sanitize ? { ...raw, body: options.sanitize(raw.body) } : raw;
         const agencyError = options.bodyError?.(clean.body);
         if (!agencyError) return clean;
+        // Every bodyError result counts, retryable or not (#324 review): the agency's own
+        // error budget is spent by the attempt it answered, not just by the one that gives up.
+        noteError();
         if (!agencyError.retryable || attempt >= DEFAULT_BACKOFF.maxAttempts) {
-          noteError();
           throw new AgencyApiError({
             source,
             code: agencyError.code,
@@ -313,8 +319,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         continue;
       }
 
+      // A retried 4xx (429) counts on every attempt that drew it, not only the last (#324
+      // review); 5xx is not counted (no BEA documentation says it spends the error budget).
+      if (raw.status >= 400 && raw.status < 500) noteError();
       if (attempt >= DEFAULT_BACKOFF.maxAttempts) {
-        if (raw.status >= 400 && raw.status < 500) noteError();
         throw new HttpError({ source, status: raw.status, url, attempts: attempt });
       }
 
@@ -339,6 +347,8 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       return fixture;
     }
 
+    // Checked again, per attempt, inside `fetchWithRetry` (#324 review); checking here too
+    // means a blocked call never even consumes a unit of the daily budget.
     checkErrorLimit();
     await acquireRateLimitToken();
 
