@@ -20,3 +20,8 @@ output "alias_urls" {
   description = "Every alias hostname (ADR-016 §2), at /mcp; empty when no aliases are configured."
   value       = [for a in var.alias_domain_names : "https://${a}/mcp"]
 }
+
+output "lambda_limits_json" {
+  description = "The rendered FEDERAL_MCPS_LIMITS (#319, ADR-020; for tests)."
+  value       = local.limits_json
+}
