@@ -14,6 +14,19 @@ BLS_URL=http://localhost:3000/mcp node docs/evals/run.mjs   # against a local se
 npm run eval                       # same, from the repo root
 ```
 
+### The operator bypass (ADR-020 §9)
+
+The hosted endpoints apply per-network and claude.ai-pool daily shares (M17) even to the
+owner's own address running this eval. Set `FEDERAL_MCPS_OPERATOR_TOKEN` in the environment
+before running the eval (never commit it; it lives in `.env` like `BLS_API_KEY`) and the
+runner sends it as the `x-federal-mcps-operator` header on every request, exempting the run
+from those shares — but never from a server's whole-service daily upstream budget. The runner
+prints only whether the bypass is on, never the token's value.
+
+```bash
+set -a && . ./.env && set +a && node docs/evals/run.mjs
+```
+
 It calls each question's tool against the live server and grades the provenance envelope against a
 rubric, printing per-question PASS/FAIL and an overall pass-rate. It exits non-zero if the rate is
 below the bar (`BAR`, default 0.9). This is a **reported gate, not a CI merge gate** — it hits the

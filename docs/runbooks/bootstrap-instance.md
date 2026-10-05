@@ -164,6 +164,49 @@ reserved concurrency, daily budgets or per-minute quotas. A change takes effect 
 does; leaving them unset runs every server without a per-identity limiter, as before M17. The
 CDC portal gets the edge layer (throttling, reserved concurrency) only — no in-app limits.
 
+## Changing limits (M17.9, ADR-020 §7, §9)
+
+Every limit the family enforces — stage rate/burst, Lambda reserved concurrency, the service's
+daily upstream budget, and the per-network and claude.ai-pool daily shares — comes from the
+optional `limits` block per server in the fleet record (`instances.json`, ADR-004;
+`instances.example.json` spells out the full shape and ADR-020's question-5 defaults). To
+change one:
+
+1. Edit the field under `limits.<service>` in your `instances.json` (not the example file,
+   which stays a placeholder for self-hosters). For instance, to raise BLS's per-network daily
+   upstream share from 100 to 150:
+
+   ```json
+   "limits": {
+     "bls": {
+       "network": { "upstreamDaily": 150, "toolCallsDaily": 500 }
+     }
+   }
+   ```
+
+   Only the fields you set override the module's default (the same ADR-020 defaults shown in
+   `instances.example.json`) — you never have to restate the whole block.
+2. Redeploy: `AWS_PROFILE=rc-deploy scripts/deploy.sh dev` (ADR-007's deliberate local act).
+   Terraform updates the `FEDERAL_MCPS_LIMITS` environment variable, the API Gateway stage
+   throttle and the Lambda's reserved concurrency in place; no administrator step is needed for
+   a limits-only change (the table and grants from "One-time: public-use protection" above are
+   not touched).
+3. Verify with `describe_source`: call `<service>_describe_source` on the deployed endpoint and
+   check its `limits` block shows the new value (see "Verify the deploy actually works" below
+   for the curl pattern).
+
+Two secrets, both optional, both read from `.env` the same way `BLS_API_KEY` is (ADR-006 §3):
+
+- `FEDERAL_MCPS_CALLER_SECRET` — the HMAC secret `identify()` uses to key per-network daily-
+  rotating counters (ADR-020 §1). Leaving it unset turns off per-identity limits entirely (the
+  service's daily upstream budget, where configured, still applies); setting it for the first
+  time starts fresh counters, since no address can be linked to a prior day's key.
+- `FEDERAL_MCPS_OPERATOR_TOKEN` — the operator-bypass header value (ADR-020 §9), so the
+  project's own pre-release eval run is never refused by the per-network or claude.ai-pool
+  shares it would otherwise share with real users. It never exempts the service's daily upstream
+  budget. Never commit either value or print it; both become Lambda environment variables the
+  same way `BLS_API_KEY` does, never baked into the repo.
+
 ## Deploy
 
 ```sh

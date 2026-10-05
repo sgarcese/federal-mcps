@@ -334,6 +334,27 @@ creates each server's execution role once with `scripts/admin-create-exec-role.s
 (`docs/runbooks/bootstrap-instance.md`). Push-to-deploy remains a documented upgrade path (an administrator
 creates the OIDC provider and a deploy role once).
 
+## Limits
+
+The endpoints are public and unauthenticated, so core also enforces fair-use limits without
+accounts (M17, ADR-020). `identify()` turns an *attested* source address (the Lambda adapter's
+header, checked against an in-process nonce so a client cannot claim one) into a `Caller`: a
+hashed, daily-rotating key for one network, or the fixed key for the shared claude.ai egress
+pool (`160.79.104.0/21`), since every claude.ai user arrives from that one range. A persistent
+limiter (DynamoDB counters, shared across every container) charges each tool call against the
+caller's daily tool-call share and each upstream fetch against both the caller's daily upstream
+share and the server's whole-service upstream budget (e.g. BLS's 490-a-day). If the store
+itself fails, per-identity shares fail open and the service budget falls back to an in-memory,
+per-container count, so a DynamoDB outage degrades protection rather than taking the servers
+down. A refusal is never a silent or empty answer: it is an `isError` tool result with one
+plain sentence naming what was limited, whose share it was, the number and the reset time, plus
+an envelope-shaped `structuredContent` (`data: null`) carrying a `limit` block
+(`scope`/`kind`/`source`/`limit`/`used`/`resetsAt`) so a host that reads structure gets the same
+facts; `describe_source` exposes the configured limits and today's remaining service budget to
+any caller. A sensitive operator-bypass header exempts the project's own release eval from the
+per-identity shares (never the service budget), and self-hosted or stdio runs with no
+`FEDERAL_MCPS_LIMITS` configured get no limiter at all, as before M17.
+
 ## Repository settings
 
 Recorded here so they can be re-applied to a fork or a new instance repo. Branch

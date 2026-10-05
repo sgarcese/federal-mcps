@@ -26,7 +26,8 @@
     "clean": "rimraf packages/*/dist",
     "infra:check": "bash scripts/infra-check.sh",
     "geography:build": "npm run geography:build -w packages/geography-build",
-    "eval": "node docs/evals/run.mjs"
+    "eval": "node docs/evals/run.mjs",
+    "smoke:limits": "node scripts/live-limits-smoke.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
