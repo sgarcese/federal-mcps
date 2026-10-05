@@ -9,16 +9,21 @@ import {
   type CreateServerOptions,
   createHttpClient,
   createServer,
+  LIMITS_ENV,
+  type LimitsConfig,
   MemoryBudgetStore,
   MemoryCacheStore,
   openBundledCatalog,
+  parseLimitsConfig,
+  splitUpstreamPerMinute,
 } from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { BEA_PER_MINUTE, beaBodyError, sanitizeBeaBody } from "./bea-api.js";
+import { BEA_ERRORS_PER_MINUTE, BEA_PER_MINUTE, beaBodyError, sanitizeBeaBody } from "./bea-api.js";
 import { buildBeaDefinition } from "./definition.js";
 
 export {
   BEA_CACHE_TTL_SECONDS,
+  BEA_ERRORS_PER_MINUTE,
   BEA_PER_MINUTE,
   type BeaDataRow,
   type BeaQuery,
@@ -42,13 +47,28 @@ export { BEA_SERVER_VERSION } from "./version.js";
  */
 const BEA_DAILY_BUDGET = 50_000;
 
+/**
+ * BEA's published per-minute quota and error budget, split across the containers
+ * `FEDERAL_MCPS_LIMITS` reserves concurrency for (#324, ADR-020 §2, §7): e.g. 90 ÷ 2 = 45 and
+ * 30 ÷ 2 = 15. Stay at today's constants when `limits` is unset, or set but silent on BEA or on
+ * `reservedConcurrency` — exported so the split itself is unit-testable without env vars.
+ */
+export function resolveBeaPerMinute(limits: LimitsConfig | undefined): number {
+  return splitUpstreamPerMinute(limits, "upstreamPerMinute", "bea", BEA_PER_MINUTE);
+}
+export function resolveBeaErrorsPerMinute(limits: LimitsConfig | undefined): number {
+  return splitUpstreamPerMinute(limits, "upstreamErrorsPerMinute", "bea", BEA_ERRORS_PER_MINUTE);
+}
+
 /** The core client for the BEA Data API: the limiter, and BEA's sanitize and 200-error hooks. */
 export function createBeaHttpClient(): ReturnType<typeof createHttpClient> {
+  const limits = parseLimitsConfig(process.env[LIMITS_ENV]);
   return createHttpClient({
     source: "bea",
     budget: new MemoryBudgetStore(BEA_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
-    perMinute: BEA_PER_MINUTE,
+    perMinute: resolveBeaPerMinute(limits),
+    errorsPerMinute: resolveBeaErrorsPerMinute(limits),
     sanitize: sanitizeBeaBody,
     bodyError: beaBodyError,
   });

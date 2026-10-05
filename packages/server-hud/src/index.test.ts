@@ -8,6 +8,7 @@ import {
   createHudServer,
   describeSource,
   HUD_USER_PER_MINUTE,
+  resolveHudPerMinute,
   setCatalogForTest,
 } from "./index.js";
 
@@ -35,5 +36,17 @@ describe("@federal-mcps/server-hud entry point", () => {
 
   it("names the HUD User API's per-minute rate limit (#231's future core limiter)", () => {
     expect(HUD_USER_PER_MINUTE).toBe(60);
+  });
+});
+
+describe("resolveHudPerMinute (#324, ADR-020 §2)", () => {
+  it("stays at HUD_USER_PER_MINUTE when no limits config is given", () => {
+    expect(resolveHudPerMinute(undefined)).toBe(HUD_USER_PER_MINUTE);
+  });
+
+  it("splits HUD's 60/min across 2 reserved containers to 30", () => {
+    expect(resolveHudPerMinute({ upstreamPerMinute: { hud: 60 }, reservedConcurrency: 2 })).toBe(
+      30,
+    );
   });
 });

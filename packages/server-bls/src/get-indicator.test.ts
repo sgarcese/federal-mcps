@@ -164,6 +164,10 @@ describe("bls_get_indicator", () => {
   });
 });
 
+// QCEW's own HTTP client / budget key (#324) is now injected via `BlsDefinitionDeps.qcewHttpClient`
+// in `definition.ts` rather than configured here on `blsIndicatorTools` directly; see
+// `definition.test.ts`'s "QCEW's own HTTP client via dependency injection" suite.
+
 function toolNamed(name: string, client = scriptedBlsClient()) {
   const t = blsIndicatorTools({ catalog: () => catalog, httpClient: () => client, now: NOW }).find(
     (x) => x.name === name,
@@ -256,6 +260,18 @@ describe("bls_get_raw", () => {
     await expect(call(rawTool(), { ids: ["not-a-series"] })).rejects.toThrow(
       /not BLS timeseries ids/,
     );
+  });
+
+  it("caps ids at 200 (4 BLS queries, #324) with a clear message", async () => {
+    const tooMany = Array.from({ length: 201 }, (_, i) => `LAUCN08031000000000${i % 10}`);
+    await expect(call(rawTool(), { ids: tooMany })).rejects.toThrow(/at most 200 ids/);
+  });
+
+  it("accepts exactly 200 ids", async () => {
+    const twoHundred = Array.from({ length: 200 }, () => "LAUCN080310000000003");
+    const res = await call(rawTool(), { ids: twoHundred });
+    const data = res.data as { ids: string[] };
+    expect(data.ids).toHaveLength(200);
   });
 });
 

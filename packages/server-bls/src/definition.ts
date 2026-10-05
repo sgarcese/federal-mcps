@@ -2,11 +2,32 @@ import {
   type GeographyCatalog,
   geographyTools,
   type HttpClient,
+  type IndicatorDefinition,
   type ServerDefinition,
 } from "@federal-mcps/core";
 import { describeSource } from "./describe-source.js";
 import { blsIndicatorTools } from "./get-indicator.js";
+import { blsIndicatorDefinitions } from "./indicators.js";
 import { BLS_SERVER_VERSION } from "./version.js";
+
+/**
+ * Returns `defs` unchanged, except every definition in `program` has its `fetch` wrapped to call
+ * the original with `client` substituted for whichever client the generic indicator machinery
+ * would otherwise pass it (#324 review, ADR-020 §2). Pure: no module-level state, so two
+ * definitions built with different clients in the same process never cross-contaminate — the
+ * hazard a module-level setter (the first pass's design) allowed.
+ */
+function withProgramClient(
+  defs: readonly IndicatorDefinition[],
+  program: string,
+  client: HttpClient,
+): IndicatorDefinition[] {
+  return defs.map((def) => {
+    if (def.program !== program || !def.fetch) return def;
+    const originalFetch = def.fetch;
+    return { ...def, fetch: (_client, keys, options) => originalFetch(client, keys, options) };
+  });
+}
 
 /**
  * Instructions passed to the SDK so hosts surface them to the model
@@ -92,10 +113,19 @@ export interface BlsDefinitionDeps {
   apiKey?: () => string | undefined;
   /** Injectable clock (retrieval date, default period). */
   now?: () => Date;
+  /**
+   * QCEW's dedicated HTTP client (#324, ADR-020 §2): when set, QCEW's indicators fetch through
+   * this client instead of `httpClient`, so its open-data CSV slices draw on their own budget
+   * key rather than the BLS API's. Unset: QCEW uses `httpClient` too (unchanged behaviour).
+   */
+  qcewHttpClient?: HttpClient;
 }
 
 export function buildBlsDefinition(deps: BlsDefinitionDeps): ServerDefinition {
   const catalog = () => deps.catalog;
+  const definitions = deps.qcewHttpClient
+    ? withProgramClient(blsIndicatorDefinitions, "QCEW", deps.qcewHttpClient)
+    : undefined;
   return {
     name: "federal-mcps-bls",
     version: BLS_SERVER_VERSION,
@@ -106,6 +136,7 @@ export function buildBlsDefinition(deps: BlsDefinitionDeps): ServerDefinition {
       ...blsIndicatorTools({
         catalog,
         httpClient: () => deps.httpClient,
+        ...(definitions ? { definitions } : {}),
         ...(deps.apiKey ? { apiKey: deps.apiKey } : {}),
         ...(deps.now ? { now: deps.now } : {}),
       }),

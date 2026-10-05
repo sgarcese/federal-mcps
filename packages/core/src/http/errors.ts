@@ -106,6 +106,26 @@ export class RateLimitWaitError extends HttpClientError {
 }
 
 /**
+ * The per-client upstream error budget (`HttpClientOptions.errorsPerMinute`, #324, ADR-020 §2)
+ * had no room left for another failure this minute. BEA allows 30 errors/minute and may block
+ * the key past that, so the client refuses the call itself, without ever reaching BEA.
+ */
+export class UpstreamErrorLimitError extends HttpClientError {
+  readonly errorsPerMinute: number;
+  readonly resetsAt: string;
+
+  constructor(params: { source: string; errorsPerMinute: number; resetsAt: string }) {
+    super(
+      `${params.source}: upstream error limit of ${params.errorsPerMinute}/min reached; ` +
+        `refusing further calls until ${params.resetsAt}`,
+      params.source,
+    );
+    this.errorsPerMinute = params.errorsPerMinute;
+    this.resetsAt = params.resetsAt;
+  }
+}
+
+/**
  * An agency reported an error inside a successful HTTP response (#256, ADR-019 §4): BEA answers a
  * bad parameter with HTTP 200 and `APIErrorCode` in the body. Carries the agency's own code and
  * text; never the request's credentials (the body is sanitized before it is read).

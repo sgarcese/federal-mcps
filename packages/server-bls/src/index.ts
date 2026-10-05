@@ -54,6 +54,12 @@ export {
  */
 const BLS_DAILY_BUDGET = 500;
 
+/**
+ * QCEW's CSV slices are open data with no registered-key daily cap, so they get their own
+ * generous budget rather than drawing on the BLS timeseries API's 500/day (#324, ADR-020 §2).
+ */
+const QCEW_DAILY_BUDGET = 50_000;
+
 /** Builds the configured BLS `McpServer` over the bundled catalog + BLS API client, ready to run. */
 export function createBlsServer(options?: CreateServerOptions): McpServer {
   const httpClient = createHttpClient({
@@ -61,9 +67,17 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     budget: new MemoryBudgetStore(BLS_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
   });
+  // QCEW's own source key ("bls-qcew") so its fetches never decrement the BLS API's budget;
+  // passed as a dependency rather than set on module state (#324 review).
+  const qcewHttpClient = createHttpClient({
+    source: "bls-qcew",
+    budget: new MemoryBudgetStore(QCEW_DAILY_BUDGET),
+    cache: new MemoryCacheStore(),
+  });
   const definition = buildBlsDefinition({
     catalog: openBundledCatalog(),
     httpClient,
+    qcewHttpClient,
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     apiKey: () => process.env["BLS_API_KEY"],
   });
