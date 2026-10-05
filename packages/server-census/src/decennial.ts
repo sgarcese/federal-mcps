@@ -14,6 +14,8 @@ export const DECENNIAL_PROGRAM = "DEC";
 const DECENNIAL_VINTAGE = "2020";
 const DECENNIAL_VARIABLE = "P1_001N";
 const DECENNIAL_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, capped at 90 days. */
+const DECENNIAL_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 
 export function buildDecennialQueryUrl(ucgid: string): string {
   return `${CENSUS_API_ENDPOINT}/${DECENNIAL_VINTAGE}/dec/pl?get=NAME,${DECENNIAL_VARIABLE}&ucgid=${ucgid}`;
@@ -30,6 +32,7 @@ export const decennialFetch: IndicatorFetch = async (
 ): Promise<SeriesResult[]> => {
   const request = {
     freshTtlSeconds: DECENNIAL_CACHE_TTL_SECONDS,
+    staleTtlSeconds: DECENNIAL_STALE_TTL_SECONDS,
     ...(options.apiKey ? { queryAuth: { key: options.apiKey } } : {}),
   };
   const results: SeriesResult[] = [];

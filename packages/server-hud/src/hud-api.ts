@@ -24,6 +24,8 @@ import { HUD_USER_API_ENDPOINT } from "./describe-source.js";
 
 /** HUD's fiscal-year data is fixed once published: cache a response for 30 days. */
 export const HUD_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, capped at 90 days. */
+export const HUD_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 
 const COUNTY = "050";
 const STATE = "040";
@@ -179,6 +181,7 @@ export async function hudGetJson<T>(
     const { value } = await client.getJson<T>(url, {
       headers: { Authorization: `Bearer ${bearer}` },
       freshTtlSeconds: HUD_CACHE_TTL_SECONDS,
+      staleTtlSeconds: HUD_STALE_TTL_SECONDS,
     });
     return value;
   } catch (error) {

@@ -17,6 +17,8 @@ import { BEA_API_ENDPOINT } from "./describe-source.js";
 
 /** BEA publishes on a schedule and states each release's vintage in band: cache for 7 days (ADR-019 §8). */
 export const BEA_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, 28 days. */
+export const BEA_STALE_TTL_SECONDS = 60 * 60 * 24 * 28;
 
 /** Under BEA's 100 requests a minute (ADR-019 §4). */
 export const BEA_PER_MINUTE = 90;
@@ -147,6 +149,7 @@ export async function beaGetData(
   const { value } = await client.getJson<BeaEnvelope>(beaDataUrl(query), {
     queryAuth: { UserID: apiKey },
     freshTtlSeconds: BEA_CACHE_TTL_SECONDS,
+    staleTtlSeconds: BEA_STALE_TTL_SECONDS,
   });
   return value.BEAAPI?.Results ?? {};
 }
