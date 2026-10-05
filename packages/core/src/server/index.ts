@@ -6,6 +6,8 @@
  * stateless Streamable HTTP (`createHttpHandler`). The wrapping and error
  * helpers are exported because the contract harness (#7) asserts against them.
  */
+
+export * from "./caller.js";
 export {
   type CreateServerOptions,
   createServer,
