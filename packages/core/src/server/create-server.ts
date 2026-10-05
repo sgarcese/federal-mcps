@@ -7,6 +7,7 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
+import { STALE_SERVED_NOTE_PREFIX } from "../http/client.js";
 import { LIMITS_ENV, type LimitsConfig, parseLimitsConfig } from "../limits/config.js";
 import { currentCall, runInCall } from "../limits/context.js";
 import type { Limiter } from "../limits/limiter.js";
@@ -18,8 +19,9 @@ import {
   type SourceDescription,
   type ToolDefinition,
 } from "./definition.js";
-import { type ToolErrorContext, toToolError } from "./errors.js";
+import { refusalLimit, type ToolErrorContext, toToolError } from "./errors.js";
 import { identifyFromEnv } from "./identify.js";
+import { logToolCallMetric } from "./metrics.js";
 import { wrapResult } from "./wrap.js";
 
 /**
@@ -255,8 +257,13 @@ function registerDefinitionTool(
       annotations: { ...FAMILY_TOOL_ANNOTATIONS },
     },
     async (args: unknown, extra: Extra): Promise<CallToolResult> => {
+      // Wall-clock timing for the metrics line (#326, ADR-020 §5): a real clock, never the
+      // injectable `now` (which tests often fix, which would make every call read 0ms).
+      const startedAtMs = Date.now();
+      let caller: Caller | undefined;
+      let upstreamCalls = 0;
       try {
-        const caller = callerFor(extra);
+        caller = callerFor(extra);
         // Each call runs in its own context (ADR-020 seam): the HTTP client reads the caller from
         // it, and notes left there (e.g. a budget warning) follow the handler's own limitations.
         const result = await runInCall(caller === undefined ? {} : { caller }, async () => {
@@ -268,14 +275,41 @@ function registerDefinitionTool(
             ...(caller === undefined ? {} : { caller }),
           });
           const notes = currentCall()?.notes ?? [];
+          upstreamCalls = currentCall()?.upstreamCalls.count ?? 0;
           return notes.length === 0
             ? handled
             : { ...handled, limitations: [...(handled.limitations ?? []), ...notes] };
+        });
+        // A refusal served from stale cache (the HTTP client's `STALE_SERVED_NOTE_PREFIX` note)
+        // is a successful call, but "stale" rather than a plain "ok" for the metrics line.
+        const stale = (result.limitations ?? []).some((note: string) =>
+          note.startsWith(STALE_SERVED_NOTE_PREFIX),
+        );
+        logToolCallMetric({
+          server: definition.agency,
+          tool: tool.name,
+          outcome: stale ? "stale" : "ok",
+          latencyMs: Date.now() - startedAtMs,
+          upstreamCalls,
+          ...(stale ? { cacheHit: true } : {}),
+          callerKind: caller?.kind ?? "none",
+          ...(caller?.labels.userAgent === undefined ? {} : { userAgent: caller.labels.userAgent }),
         });
         return asCallToolResult(
           wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),
         );
       } catch (error) {
+        const limit = refusalLimit(error);
+        logToolCallMetric({
+          server: definition.agency,
+          tool: tool.name,
+          outcome: limit === undefined ? "error" : "refused",
+          latencyMs: Date.now() - startedAtMs,
+          upstreamCalls,
+          callerKind: caller?.kind ?? "none",
+          ...(limit === undefined ? {} : { limitScope: limit.scope }),
+          ...(caller?.labels.userAgent === undefined ? {} : { userAgent: caller.labels.userAgent }),
+        });
         return asCallToolResult(toToolError(error, errorContext(definition, tool.name, now())));
       }
     },

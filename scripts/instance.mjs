@@ -31,7 +31,8 @@ const REQUIRED_STRINGS = ["name", "description", "account", "region", "environme
  *   limits?: Record<string, { stageRateLimit?: number; stageBurstLimit?: number; reservedConcurrency?: number;
  *     serviceDaily?: number; network?: { upstreamDaily?: number; toolCallsDaily?: number };
  *     pool?: { upstreamDaily?: number; toolCallsDaily?: number }; upstreamPerMinute?: number;
- *     upstreamErrorsPerMinute?: number }> }} InstanceRecord
+ *     upstreamErrorsPerMinute?: number }>;
+ *   alerts?: { email?: string } }} InstanceRecord
  */
 
 /**
@@ -136,6 +137,30 @@ function assertRecord(value, index) {
             );
           }
         }
+      }
+    }
+  }
+
+  // #326, ADR-020 §5: an optional `alerts` block, read by terraform/modules/monitoring's
+  // wiring in terraform/instances/<name>/main.tf. The alert email is never committed (it is
+  // per-deployer, like the account): with no email, no SNS subscription and no Budgets
+  // notification are created. A placeholder lives in instances.example.json for shape only.
+  const alerts = record.alerts;
+  if (alerts !== undefined) {
+    if (typeof alerts !== "object" || alerts === null) {
+      throw new Error(`instances.json: entry ${index} alerts must be an object`);
+    }
+    const alertsRecord = /** @type {Record<string, unknown>} */ (alerts);
+    if (alertsRecord.email !== undefined) {
+      if (typeof alertsRecord.email !== "string") {
+        throw new Error(`instances.json: entry ${index} alerts.email must be a string`);
+      }
+      // A plain, deliberately unfussy shape check (not RFC 5322) — just enough to catch a
+      // typo or a placeholder left in place, not a general email validator.
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alertsRecord.email)) {
+        throw new Error(
+          `instances.json: entry ${index} alerts.email must look like an email address`,
+        );
       }
     }
   }

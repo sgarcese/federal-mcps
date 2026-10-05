@@ -84,3 +84,17 @@ output "cdc_custom_domain_url" {
 output "cdc_alias_urls" {
   value = module.cdc_portal.alias_urls
 }
+
+output "monitoring_dashboard_name" {
+  description = "Must equal rc-federal-mcps-<env> (#326, ADR-020 §5)."
+  value       = module.monitoring.dashboard_name
+}
+
+output "monitoring_alerts_topic_arn" {
+  value = module.monitoring.alerts_topic_arn
+}
+
+output "monitoring_has_email_subscription" {
+  description = "True only when instances.json carries alerts.email (scripts/instance.mjs)."
+  value       = module.monitoring.has_email_subscription
+}

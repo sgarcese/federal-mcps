@@ -1,6 +1,7 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
-import { currentCall } from "../limits/context.js";
+import { currentCall, incrementUpstreamCalls } from "../limits/context.js";
 import { LimitExceededError, type Limiter, type UsageSnapshot } from "../limits/limiter.js";
+import { logServiceBudgetMetric } from "../server/metrics.js";
 import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
 import {
@@ -123,6 +124,13 @@ const DEFAULT_FIXTURE_DIR = "fixtures";
 const DEFAULT_MAX_WAIT_MS = 60_000;
 /** A service budget this full warns in the answer (#322, ADR-020 §4). */
 const NEAR_LIMIT_PCT = 80;
+
+/**
+ * The fixed prefix of the note added when a refusal was served from stale cache (#323, #326):
+ * exported so the metrics log line (server/metrics.ts) can tell a successful "stale" outcome
+ * apart from a plain "ok" one without re-deriving the sentence.
+ */
+export const STALE_SERVED_NOTE_PREFIX = "Served from cache (retrieved ";
 
 export function createHttpClient(options: HttpClientOptions): HttpClient {
   const { source, budget, cache } = options;
@@ -388,6 +396,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     if (options.limiter !== undefined) {
       const usage = await options.limiter.beforeUpstream(source, currentCall()?.caller, now());
       noteNearLimit(usage);
+      // The `ServiceBudgetUsedPct` metric (#326, ADR-020 §5): one sample per real upstream
+      // fetch whose service budget the limiter reports (undefined when `source` has none).
+      if (usage !== undefined && usage.limit > 0) {
+        logServiceBudgetMetric({
+          source: usage.source,
+          usedPct: Math.floor((usage.used / usage.limit) * 100),
+        });
+      }
     }
 
     const budgetResult = await budget.consume(source, 1);
@@ -401,6 +417,9 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       });
     }
 
+    // One real upstream fetch (#326, ADR-020 §5): never a cache hit, never a replayed fixture
+    // (the "replay" branch above returns before this point).
+    incrementUpstreamCalls();
     const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth);
     noteRateLimitHeaders(response.headers);
 
@@ -425,7 +444,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
           : undefined;
     if (refusal === undefined) return;
     currentCall()?.notes.push(
-      `Served from cache (retrieved ${new Date(storedAt).toISOString()}): today's ` +
+      `${STALE_SERVED_NOTE_PREFIX}${new Date(storedAt).toISOString()}): today's ` +
         `${refusal.scope} share for ${refusal.source} is spent; resets ${refusal.resetsAt}.`,
     );
   }
