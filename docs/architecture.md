@@ -151,17 +151,32 @@ anything, when it is unset (sign up free at https://api.census.gov/data/key_sign
 
 **HTTP discipline.** One client: retry with jittered backoff on 5xx/429, timeout,
 per-source daily budget counter (in memory, per Lambda container — not shared across
-containers), two-tier cache (a fresh TTL each caller sets by release cadence — QCEW, Census
-and HUD 30 days, BEA 7 days, BLS timeseries 24h; a week-long stale fallback behind it for when
-the agency is down), batching hooks so BLS packs 50 series per call and Census packs variables
-per call. A BLS timeseries POST's own registration key never affects the cache or fixture
-identity (`cacheBody`, #325); a BLS daily-threshold refusal — HTTP 200 with
-`REQUEST_NOT_PROCESSED` — is never cached and surfaces as the shared `QuotaExceededError`
-(ADR-020 §8), same as the budget counter's own refusal.
+containers), two-tier cache (a fresh TTL each caller sets by release cadence, and a longer
+stale window behind it, served when a refresh fails or is refused: QCEW, Census (ACS,
+decennial, `census_get_raw`) and HUD 30 days fresh and 90 stale; BEA 7 days fresh and 28
+stale; BLS timeseries 24h fresh and 7 days stale. The rule is four times fresh, capped at 90
+days; a request with no stale window gets none beyond its fresh TTL), batching hooks so BLS
+packs 50 series per call and Census packs variables per call. A BLS timeseries POST's own
+registration key never affects the cache or fixture identity (`cacheBody`, #325); a BLS
+daily-threshold refusal — HTTP 200 with `REQUEST_NOT_PROCESSED` — is never cached and surfaces
+as the shared `QuotaExceededError` (ADR-020 §8), same as the budget counter's own refusal.
+**Stale first** (ADR-020 §4, #323): when a share or the service budget refuses an upstream
+query (`LimitExceededError` or `QuotaExceededError`) and the cache holds the request within
+its stale window, the client answers from cache instead of raising the refusal, and the
+answer carries the limitation "Served from cache (retrieved …): today's <scope> share for
+<source> is spent; resets …".
 
 **Provenance envelope.** Every tool returns `data`, `place` (the resolved geography, so
 the caller can confirm), `source` (agency, dataset, series/variable IDs, URL),
-`retrievedAt`, `vintage`, `footnotes`, `limitations`, `cache`.
+`retrievedAt`, `vintage`, `footnotes`, `limitations`, `cache`. A refusal (ADR-020 §4) is an
+`isError` result whose text is one plain sentence (what was limited, whose share, the number,
+the reset time and, for upstream queries, the tools that still work) and whose envelope has
+`data: null`, the sentence as its limitation, and a `limit` block: `scope` (network, pool or
+service), `kind` (upstream or toolCalls), `source`, `limit`, `used` and `resetsAt`. `limit`
+and `used` are absent only when an agency refused on its own count without stating it (BLS's
+daily threshold). The contract rule `refusal-shape` enforces it. With a limits configuration,
+`describe_source` adds a `limits` block: the network and pool shares, and each service budget
+with today's use and remaining queries.
 
 **Server shell.** `createServer(definition)` registers tools with a human-readable `title`
 and `readOnlyHint: true`, attaches the envelope, wires both transports, adds
