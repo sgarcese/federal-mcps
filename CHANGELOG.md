@@ -3,10 +3,10 @@
 All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
 milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
 
-## 0.8.0 — M16 Resolver and BLS fixes, M13 HUD guide (2026-09-30)
+## 0.8.0 — M16 Resolver and BLS fixes, M13 HUD guide (2026-10-05)
 
-Live eval after deploy: pending. The deploy must rebuild the geography catalog (`npm run
-geography:build`), because the United States and census-keyed availability live in it.
+Live eval after deploy: 88/88 (the catalog rebuilt with the United States and census-keyed
+availability).
 
 Added
 - The United States is a place (#290): summary level 010, GEOID `US`, UCGID `0100000US`, DCID
