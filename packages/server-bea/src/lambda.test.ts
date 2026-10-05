@@ -1,7 +1,7 @@
 import { rmSync } from "node:fs";
 import type { IncomingHttpHeaders, IncomingMessage, ServerResponse } from "node:http";
 import { dirname } from "node:path";
-import { SOURCE_IP_HEADER } from "@federal-mcps/core";
+import { ATTESTATION_HEADER, SOURCE_IP_HEADER } from "@federal-mcps/core";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
@@ -132,16 +132,19 @@ describe("bea lambda handler", () => {
 });
 
 describe("lambda adapter: caller identity headers (#321)", () => {
-  it("forwards requestContext's source address, replacing a client-sent copy", async () => {
+  it("forwards requestContext's source address, replacing client-sent source and attestation copies", async () => {
     const spoofed = rpcEvent("initialize", INITIALIZE_PARAMS);
     spoofed.headers = {
       ...spoofed.headers,
       "X-Federal-MCPS-Source-IP": "160.79.104.1",
       "x-forwarded-for": "160.79.104.2",
+      "X-Federal-MCPS-Attestation": "forged",
     };
     spoofed.requestContext.http.sourceIp = "198.51.100.7";
     const result = await handler(spoofed);
     expect(result.statusCode).toBe(200);
     expect(loopback.headers.at(-1)?.[SOURCE_IP_HEADER]).toBe("198.51.100.7");
+    const attestation = loopback.headers.at(-1)?.[ATTESTATION_HEADER];
+    expect(attestation).toMatch(/^[0-9a-f]{64}$/);
   });
 });

@@ -5,16 +5,19 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { buildCitation } from "../envelope/index.js";
+import { ATTESTATION_HEADER } from "./attestation.js";
 import type { Caller, Identify, RequestHeaders } from "./caller.js";
 import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER } from "./caller.js";
 import { createServer, type CreateServerOptions } from "./create-server.js";
 import type { ServerDefinition, ToolDefinition } from "./definition.js";
 import { createHttpHandler } from "./http.js";
 import { CALLER_SECRET_ENV, OPERATOR_TOKEN_ENV } from "./identify.js";
+import { lambdaRequestHeaders } from "./lambda-headers.js";
 
 /**
  * The shell builds `ToolContext.caller` from the HTTP request's headers (#321, ADR-020 §1):
- * a tool handler sees the caller over Streamable HTTP and sees none over stdio.
+ * a tool handler sees the caller over Streamable HTTP when our Lambda adapter attested the
+ * source address, and sees none over stdio or when a client sent the header itself.
  */
 
 const NOW = new Date("2026-10-05T12:00:00.000Z");
@@ -100,8 +103,18 @@ async function overInMemory(options: CreateServerOptions): Promise<Caller | null
   return (result.structuredContent as { data: { caller: Caller | null } }).data.caller;
 }
 
-describe("createServer: caller identity", () => {
-  it("hands the handler the caller identify() builds from the HTTP request headers", async () => {
+/** Headers as the Lambda adapter replays them: the source address plus this process's attestation. */
+function viaAdapter(sourceIp: string, extra: Record<string, string> = {}): Record<string, string> {
+  return lambdaRequestHeaders({ headers: extra, requestContext: { http: { sourceIp } } });
+}
+
+function stubSecrets(): void {
+  vi.stubEnv(CALLER_SECRET_ENV, "test-secret-not-real");
+  vi.stubEnv(OPERATOR_TOKEN_ENV, "operator-token-not-real");
+}
+
+describe("createServer: caller identity through the adapter", () => {
+  it("hands the handler the caller identify() builds from the adapter's headers", async () => {
     const seen: Array<{ headers: RequestHeaders; now: Date }> = [];
     const identify: Identify = (headers, now) => {
       seen.push({ headers, now });
@@ -109,13 +122,15 @@ describe("createServer: caller identity", () => {
     };
     const caller = await overHttp(
       { now: () => NOW, identify },
-      { [SOURCE_IP_HEADER]: "198.51.100.7", "User-Agent": "claude-code/2.0" },
+      viaAdapter("198.51.100.7", { "User-Agent": "claude-code/2.0" }),
     );
     expect(caller).toEqual(FAKE_CALLER);
     const call = seen.at(-1);
     expect(call?.now).toEqual(NOW);
     expect(call?.headers[SOURCE_IP_HEADER]).toBe("198.51.100.7");
     expect(call?.headers["user-agent"]).toBe("claude-code/2.0");
+    // The attestation stops at the shell: identify() never sees the nonce.
+    expect(call?.headers[ATTESTATION_HEADER]).toBeUndefined();
   });
 
   it("has no caller over a header-less transport (stdio) and never calls identify", async () => {
@@ -125,28 +140,32 @@ describe("createServer: caller identity", () => {
   });
 
   it("has no caller when identify returns undefined", async () => {
-    expect(await overHttp({ now: () => NOW, identify: () => undefined }, {})).toBeNull();
+    expect(
+      await overHttp({ now: () => NOW, identify: () => undefined }, viaAdapter("198.51.100.7")),
+    ).toBeNull();
   });
 
   it("defaults to identify() from the environment: a network caller with a secret", async () => {
-    vi.stubEnv(CALLER_SECRET_ENV, "test-secret-not-real");
-    vi.stubEnv(OPERATOR_TOKEN_ENV, "operator-token-not-real");
+    stubSecrets();
     const caller = await overHttp(
       { now: () => NOW },
-      {
-        [SOURCE_IP_HEADER]: "198.51.100.7",
-        [OPERATOR_BYPASS_HEADER]: "operator-token-not-real",
-      },
+      viaAdapter("198.51.100.7", { [OPERATOR_BYPASS_HEADER]: "operator-token-not-real" }),
     );
     expect(caller).toMatchObject({ kind: "network", bypass: true });
     expect(JSON.stringify(caller)).not.toContain("198.51.100.7");
+  });
+
+  it("defaults to the pool for a claude.ai address the adapter attested", async () => {
+    stubSecrets();
+    const caller = await overHttp({ now: () => NOW }, viaAdapter("160.79.104.10"));
+    expect(caller).toMatchObject({ kind: "pool", key: "claude-ai" });
   });
 
   it("defaults to no caller, with one warning, when the secret is unset", async () => {
     vi.stubEnv(CALLER_SECRET_ENV, "");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      expect(await overHttp({ now: () => NOW }, { [SOURCE_IP_HEADER]: "198.51.100.7" })).toBeNull();
+      expect(await overHttp({ now: () => NOW }, viaAdapter("198.51.100.7"))).toBeNull();
       expect(warn).toHaveBeenCalledTimes(1);
     } finally {
       warn.mockRestore();
@@ -161,6 +180,54 @@ describe("createServer: caller identity", () => {
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
+    }
+  });
+});
+
+describe("createServer: a public handler with no adapter in front", () => {
+  it("ignores a client-sent source header: no caller, identify never called", async () => {
+    const identify = vi.fn<Identify>(() => FAKE_CALLER);
+    expect(
+      await overHttp({ now: () => NOW, identify }, { [SOURCE_IP_HEADER]: "198.51.100.7" }),
+    ).toBeNull();
+    expect(identify).not.toHaveBeenCalled();
+  });
+
+  it("ignores it under the default identify too, with a secret set and no warning", async () => {
+    stubSecrets();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(await overHttp({ now: () => NOW }, { [SOURCE_IP_HEADER]: "198.51.100.7" })).toBeNull();
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("gives no pool caller to a client claiming a claude.ai address", async () => {
+    stubSecrets();
+    expect(await overHttp({ now: () => NOW }, { [SOURCE_IP_HEADER]: "160.79.104.10" })).toBeNull();
+  });
+
+  it("gives no caller for a wrong attestation, of any length", async () => {
+    stubSecrets();
+    const real = viaAdapter("198.51.100.7")[ATTESTATION_HEADER] ?? "";
+    expect(real).not.toBe("");
+    const forged = [
+      "forged",
+      "",
+      "0".repeat(real.length),
+      `${real.slice(0, -1)}${real.endsWith("0") ? "1" : "0"}`,
+      `${real}0`,
+    ];
+    for (const attestation of forged) {
+      const identify = vi.fn<Identify>(() => FAKE_CALLER);
+      const caller = await overHttp(
+        { now: () => NOW, identify },
+        { [SOURCE_IP_HEADER]: "160.79.104.10", [ATTESTATION_HEADER]: attestation },
+      );
+      expect(caller, `attestation ${JSON.stringify(attestation)}`).toBeNull();
+      expect(identify).not.toHaveBeenCalled();
     }
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ATTESTATION_HEADER, isAttested } from "./attestation.js";
 import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER } from "./caller.js";
 import { lambdaRequestHeaders } from "./lambda-headers.js";
 
@@ -46,12 +47,36 @@ describe("lambdaRequestHeaders", () => {
 
   it("drops undefined header values and tolerates an event with no headers", () => {
     const headers = lambdaRequestHeaders(event({ accept: undefined }));
-    expect(headers).toEqual({ [SOURCE_IP_HEADER]: "203.0.113.9" });
-    expect(lambdaRequestHeaders(event(undefined))).toEqual({ [SOURCE_IP_HEADER]: "203.0.113.9" });
+    expect(Object.keys(headers).sort()).toEqual([ATTESTATION_HEADER, SOURCE_IP_HEADER].sort());
+    expect(headers[SOURCE_IP_HEADER]).toBe("203.0.113.9");
+    expect(lambdaRequestHeaders(event(undefined))).toEqual(headers);
   });
 
-  it("forwards no source header when API Gateway gave no source address", () => {
-    const headers = lambdaRequestHeaders(event({ [SOURCE_IP_HEADER]: "160.79.104.1" }, ""));
+  it("forwards no source header and no attestation when API Gateway gave no source address", () => {
+    const headers = lambdaRequestHeaders(
+      event({ [SOURCE_IP_HEADER]: "160.79.104.1", [ATTESTATION_HEADER]: "forged" }, ""),
+    );
     expect(headers[SOURCE_IP_HEADER]).toBeUndefined();
+    expect(headers[ATTESTATION_HEADER]).toBeUndefined();
+  });
+
+  it("attests the source header with this process's nonce", () => {
+    const headers = lambdaRequestHeaders(event({}));
+    expect(headers[ATTESTATION_HEADER]).toMatch(/^[0-9a-f]{64}$/);
+    expect(isAttested(headers)).toBe(true);
+    // The same nonce for every request in the process.
+    expect(lambdaRequestHeaders(event({}, "198.51.100.1"))[ATTESTATION_HEADER]).toBe(
+      headers[ATTESTATION_HEADER],
+    );
+  });
+
+  it("replaces a client-sent attestation header, whatever its case", () => {
+    const real = lambdaRequestHeaders(event({}))[ATTESTATION_HEADER];
+    for (const name of [ATTESTATION_HEADER, "X-Federal-MCPS-Attestation"]) {
+      const headers = lambdaRequestHeaders(event({ [name]: "forged" }));
+      const copies = Object.keys(headers).filter((key) => key.toLowerCase() === ATTESTATION_HEADER);
+      expect(copies).toEqual([ATTESTATION_HEADER]);
+      expect(headers[ATTESTATION_HEADER]).toBe(real);
+    }
   });
 });
