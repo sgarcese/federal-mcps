@@ -51,10 +51,16 @@ export class TimeoutError extends HttpClientError {
 /** The per-source daily budget is exhausted; `fetch` was never invoked. */
 export class QuotaExceededError extends HttpClientError {
   readonly resetsAt: string;
+  /** The daily budget, when known (core's budget store knows it; an agency's own refusal does not). */
+  readonly limit?: number;
+  /** Queries counted today, when known. */
+  readonly used?: number;
 
-  constructor(params: { source: string; resetsAt: string }) {
+  constructor(params: { source: string; resetsAt: string; limit?: number; used?: number }) {
     super(`${params.source}: daily quota exceeded, resets at ${params.resetsAt}`, params.source);
     this.resetsAt = params.resetsAt;
+    if (params.limit !== undefined) this.limit = params.limit;
+    if (params.used !== undefined) this.used = params.used;
   }
 }
 

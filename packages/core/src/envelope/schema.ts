@@ -43,6 +43,16 @@ export const FootnoteSchema = z.object({
   flags: z.array(z.enum(FOOTNOTE_FLAGS)),
 });
 
+/** Zod mirror of `EnvelopeLimit` (types.ts): the refusal's `limit` block (ADR-020 §4). */
+export const LimitBlockSchema = z.object({
+  scope: z.enum(["network", "pool", "service"]),
+  kind: z.enum(["upstream", "toolCalls"]),
+  source: z.string().optional(),
+  limit: z.number().int().nonnegative().optional(),
+  used: z.number().int().nonnegative().optional(),
+  resetsAt: z.iso.datetime({ offset: true }),
+});
+
 /**
  * Builds the Zod schema for `Envelope<T>` given a schema for `T`. Every field
  * beyond `data` is fixed by the family's provenance contract.
@@ -57,6 +67,8 @@ export function envelopeSchema<DataSchema extends z.ZodTypeAny>(dataSchema: Data
     footnotes: z.array(FootnoteSchema),
     limitations: z.array(z.string()),
     cache: CacheInfoSchema,
+    /** Present only on refusals (ADR-020 §4). */
+    limit: LimitBlockSchema.optional(),
   });
 }
 

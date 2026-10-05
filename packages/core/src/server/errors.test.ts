@@ -40,9 +40,10 @@ describe("toToolError", () => {
   it("tells the caller when the quota budget resets", () => {
     const error = new QuotaExceededError({ source: "bls", resetsAt: "2026-09-09T00:00:00.000Z" });
     const text = textOf(toToolError(error, context));
-    expect(text).toContain("quota");
+    // A refusal (#323): the service's daily budget, its reset, and the tools that still work.
+    expect(text).toContain("daily budget");
     expect(text).toContain("2026-09-09T00:00:00.000Z");
-    expect(text).toContain("bls_get_unemployment");
+    expect(text).toContain("bls_describe_source");
   });
 
   it("reports timeouts, network failures and missing fixtures against their URL", () => {

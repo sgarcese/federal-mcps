@@ -1,5 +1,6 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
-import type { Limiter } from "../limits/limiter.js";
+import { currentCall } from "../limits/context.js";
+import { LimitExceededError, type Limiter } from "../limits/limiter.js";
 import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
 import {
@@ -369,7 +370,13 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 
     const budgetResult = await budget.consume(source, 1);
     if (!budgetResult.allowed) {
-      throw new QuotaExceededError({ source, resetsAt: budgetResult.resetsAt });
+      const { limit, remaining, resetsAt } = budgetResult;
+      throw new QuotaExceededError({
+        source,
+        resetsAt,
+        // The numbers let the refusal say them (#323); a store that does not know its limit omits both.
+        ...(limit === undefined ? {} : { limit, used: Math.max(0, limit - remaining) }),
+      });
     }
 
     const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth);
@@ -380,6 +387,25 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     }
 
     return response;
+  }
+
+  /**
+   * When a share or the service budget refused the query and the cache answered instead, leaves a
+   * note for the shell to add to the answer's limitations (limits/context.ts). Other failures served
+   * stale (an outage) carry only the envelope's `cache.stale` flag, as before.
+   */
+  function noteRefusalServedStale(err: unknown, storedAt: number): void {
+    const refusal =
+      err instanceof LimitExceededError
+        ? { scope: err.info.scope, source: err.info.source ?? source, resetsAt: err.info.resetsAt }
+        : err instanceof QuotaExceededError
+          ? { scope: "service", source: err.source, resetsAt: err.resetsAt }
+          : undefined;
+    if (refusal === undefined) return;
+    currentCall()?.notes.push(
+      `Served from cache (retrieved ${new Date(storedAt).toISOString()}): today's ` +
+        `${refusal.scope} share for ${refusal.source} is spent; resets ${refusal.resetsAt}.`,
+    );
   }
 
   async function getWithCache<T>(
@@ -429,6 +455,8 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       } catch (err) {
         const staleLimit = staleTtlSeconds ?? fresh;
         if (ageSeconds <= staleLimit) {
+          // Stale first (ADR-020 §4, #323): a refused query is answered from cache, and says why.
+          noteRefusalServedStale(err, existing.storedAt);
           return {
             value: existing.value as T,
             cache: { hit: true, ageSeconds, stale: true },

@@ -1,5 +1,5 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
-import type { Footnote, PlaceRef, Source } from "./types.js";
+import type { EnvelopeLimit, Footnote, PlaceRef, Source } from "./types.js";
 
 /** The provenance envelope every family tool returns (docs/architecture.md "The shared core"). */
 export interface Envelope<T> {
@@ -13,6 +13,8 @@ export interface Envelope<T> {
   footnotes: Footnote[];
   limitations: string[];
   cache: CacheInfo;
+  /** Whose share a refusal spent (ADR-020 §4); present only on refusals. */
+  limit?: EnvelopeLimit;
 }
 
 export interface EnvelopeInput<T> {
@@ -23,6 +25,7 @@ export interface EnvelopeInput<T> {
   footnotes?: Footnote[];
   limitations?: string[];
   cache?: CacheInfo;
+  limit?: EnvelopeLimit;
   /** Clock override for tests; defaults to `new Date()`. */
   now?: Date;
 }
@@ -33,7 +36,7 @@ export interface EnvelopeInput<T> {
  * passed in.
  */
 export function envelope<T>(input: EnvelopeInput<T>): Envelope<T> {
-  const { data, place, source, vintage, footnotes, limitations, cache, now } = input;
+  const { data, place, source, vintage, footnotes, limitations, cache, limit, now } = input;
   const result: Envelope<T> = {
     data,
     source,
@@ -47,6 +50,9 @@ export function envelope<T>(input: EnvelopeInput<T>): Envelope<T> {
   }
   if (vintage !== undefined) {
     result.vintage = vintage;
+  }
+  if (limit !== undefined) {
+    result.limit = limit;
   }
   return result;
 }

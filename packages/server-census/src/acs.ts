@@ -16,6 +16,8 @@ export const ACS_VINTAGE = "2024";
 export const ACS_ONE_YEAR_THRESHOLD = 65_000;
 /** Query responses are immutable once a vintage is released; cache for 30 days. */
 const ACS_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, capped at 90 days. */
+const ACS_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 /** Summary levels the 1-year product never covers (tract, block group, ZCTA). */
 const FIVE_YEAR_ONLY = new Set(["140", "150", "860"]);
 
@@ -220,6 +222,7 @@ export const acsFetch: IndicatorFetch = async (client, keys, options): Promise<S
   const results: SeriesResult[] = [];
   const request = {
     freshTtlSeconds: ACS_CACHE_TTL_SECONDS,
+    staleTtlSeconds: ACS_STALE_TTL_SECONDS,
     ...(options.apiKey ? { queryAuth: { key: options.apiKey } } : {}),
   };
   for (const key of keys) {

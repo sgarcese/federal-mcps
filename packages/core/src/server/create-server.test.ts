@@ -106,7 +106,7 @@ describe("createServer", () => {
     expect(result.isError).toBe(true);
     const text = JSON.stringify(result.content);
     expect(text).toContain("demo:");
-    expect(text).toContain("quota");
+    expect(text).toContain("daily budget");
     expect(text).toContain("2026-09-09T00:00:00.000Z");
     expect(text).not.toContain("create-server.ts");
     expect(text).not.toContain("    at ");

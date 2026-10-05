@@ -1,22 +1,26 @@
-import type { HttpClient, PlaceCandidate } from "@federal-mcps/core";
+import type {
+  DimensionDefinition,
+  HttpClient,
+  IndicatorDefinition,
+  PlaceCandidate,
+} from "@federal-mcps/core";
 import { QCEW_ENDPOINT } from "./describe-source.js";
+import { isNation } from "./nation.js";
 import {
+  EARLIEST_QCEW_YEAR,
+  fetchQcewCsv,
   INDUSTRY_ALL,
   latestPublishedQuarter,
   OWN_TOTAL_COVERED,
+  parseQcewRow,
   priorQuarter,
+  QCEW_US_TOTAL_AREA,
   type QcewHeadline,
   type QcewRowSelection,
-  EARLIEST_QCEW_YEAR,
-  fetchQcewCsv,
-  parseQcewRow,
   qcewAnnualUrl,
   qcewAreaUrl,
   qcewDisclosureText,
-  QCEW_US_TOTAL_AREA,
 } from "./qcew.js";
-import { isNation } from "./nation.js";
-import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
 import type { IndicatorFetch, SeriesObservation, SeriesResult } from "./series-fetch.js";
 
 /**
@@ -37,6 +41,8 @@ const COUNTY_SUMLEVEL = "050";
 const STATE_SUMLEVEL = "040";
 /** A quarter is fixed once released, so cache the slice for 30 days. */
 const QCEW_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, capped at 90 days. */
+const QCEW_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 /** How many quarters to walk back if the newest expected slice isn't published yet. */
 const QCEW_MAX_LOOKBACK = 3;
 /** Separates the area, ownership and industry codes in the opaque series key. */
@@ -244,7 +250,10 @@ async function fetchRows(
   const window = periods.slice(0, want + QCEW_MAX_LOOKBACK);
   const csvs = await Promise.all(
     window.map((p) =>
-      fetchQcewCsv(client, periodUrl(area, p), { freshTtlSeconds: QCEW_CACHE_TTL_SECONDS }),
+      fetchQcewCsv(client, periodUrl(area, p), {
+        freshTtlSeconds: QCEW_CACHE_TTL_SECONDS,
+        staleTtlSeconds: QCEW_STALE_TTL_SECONDS,
+      }),
     ),
   );
   const rows: QcewHeadline[] = [];

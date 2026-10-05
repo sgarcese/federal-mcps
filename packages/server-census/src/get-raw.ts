@@ -18,6 +18,8 @@ import { CENSUS_API_ENDPOINT } from "./describe-source.js";
  */
 
 const CENSUS_GET_RAW_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** Served stale past the fresh window when a refresh is refused or fails (#323): 4× fresh, capped at 90 days. */
+const CENSUS_GET_RAW_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 
 const DATASET_RE = /^[a-z0-9]+(\/[a-z0-9]+){1,3}$/;
 /** A variable id (`B19013_001E`, `NAME`) or a table group given as `group(B19013)`. */
@@ -170,6 +172,7 @@ export function censusGetRawTool(options: CensusGetRawToolOptions): ToolDefiniti
       const key = options.apiKey?.();
       const { value: text } = await options.httpClient().getText(url, {
         freshTtlSeconds: CENSUS_GET_RAW_CACHE_TTL_SECONDS,
+        staleTtlSeconds: CENSUS_GET_RAW_STALE_TTL_SECONDS,
         ...(key ? { queryAuth: { key } } : {}),
       });
 

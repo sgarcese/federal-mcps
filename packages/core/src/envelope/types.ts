@@ -128,3 +128,22 @@ export function placeRef(input: PlaceRefInput): PlaceRef {
   }
   return result;
 }
+
+/**
+ * The `limit` block (ADR-020 §4, #323): on a refusal only, whose share was spent, of what, how
+ * much and when it resets. It mirrors the limiter's `LimitInfo`, except that `limit` and `used`
+ * may be absent: an agency that refuses on its own count (BLS's daily threshold) does not say the
+ * numbers, and the envelope never invents them.
+ */
+export interface EnvelopeLimit {
+  /** One network, the claude.ai pool, or the whole service. */
+  scope: "network" | "pool" | "service";
+  /** Upstream queries to an agency, or tool calls to this server. */
+  kind: "upstream" | "toolCalls";
+  /** The upstream budget key (e.g. "bls", "bls-qcew"), for `kind: "upstream"`. */
+  source?: string;
+  limit?: number;
+  used?: number;
+  /** ISO time the share resets. */
+  resetsAt: string;
+}
