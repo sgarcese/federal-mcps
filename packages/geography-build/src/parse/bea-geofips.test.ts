@@ -101,3 +101,16 @@ describe("stripBeaRequest (#257: the key BEA echoes never reaches the download c
     expect(JSON.parse(out)).toEqual({ BEAAPI: { Results: { ParamValue: [] } } });
   });
 });
+
+describe("parseBeaCombinations on hostile input (CodeQL js/polynomial-redos, #332)", () => {
+  it("parses a long, repetitive name in linear time", () => {
+    const started = performance.now();
+    const desc = `${"a,".repeat(50_000)} + ${" + ".repeat(50_000)}, VA`;
+    try {
+      parseBeaCombinations(LIST([["51999", desc]]), ENTITIES);
+    } catch {
+      // An unmatched name may throw; only the time matters here.
+    }
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+});

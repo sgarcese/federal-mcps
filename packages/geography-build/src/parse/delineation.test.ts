@@ -64,3 +64,15 @@ describe("parseDelineation (#271)", () => {
     expect(() => parseDelineation([["something else"]])).toThrow(/CBSA Code/);
   });
 });
+
+describe("the xlsx reader on hostile input (CodeQL js/polynomial-redos, #332)", () => {
+  it("scans unterminated and repetitive markup in linear time", () => {
+    const started = performance.now();
+    parseSharedStrings(`<si>${"<t>".repeat(50_000)}`);
+    parseSharedStrings("<si><t ".repeat(50_000));
+    parseSheetRows(`<row>${'<c r="A1"'.repeat(50_000)}`, []);
+    parseSheetRows(`<row><c r="A1" t="inlineStr"><is>${"<t ".repeat(50_000)}</c></row>`, []);
+    parseSheetRows(`<row><c r="A1"><v>${"<v>".repeat(50_000)}</c></row>`, []);
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+});

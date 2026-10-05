@@ -146,9 +146,9 @@ export function parseAcsResponse(text: string, variable: string): AcsParsed | nu
   } else if (ESTIMATE_SENTINELS[e]) {
     caveats.push(ESTIMATE_SENTINELS[e] ?? "");
   } else {
-    const n = Number(e.replace(/[,+-]+$/, ""));
+    const n = Number(trimTrailing(e, ",+-"));
     value = Number.isFinite(n) ? n : null;
-    if (ea === "+" || /\+$/.test(e))
+    if (ea === "+" || e.endsWith("+"))
       caveats.push(
         "the median falls in the highest open-ended interval; the true value is at or above the figure shown",
       );
@@ -251,3 +251,10 @@ export const acsFetch: IndicatorFetch = async (client, keys, options): Promise<S
   }
   return results;
 };
+
+/** `text` without any run of `chars` at its end: linear, unlike `/[,+-]+$/` (CodeQL js/polynomial-redos, #332). */
+function trimTrailing(text: string, chars: string): string {
+  let end = text.length;
+  while (end > 0 && chars.includes(text.charAt(end - 1))) end -= 1;
+  return text.slice(0, end);
+}
