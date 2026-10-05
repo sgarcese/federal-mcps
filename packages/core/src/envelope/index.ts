@@ -7,12 +7,14 @@ export {
   EnvelopeSchema,
   envelopeSchema,
   FootnoteSchema,
+  LimitBlockSchema,
   PlaceRefSchema,
   SourceSchema,
 } from "./schema.js";
 export {
   agencyDisplayName,
   buildCitation,
+  type EnvelopeLimit,
   FOOTNOTE_FLAGS,
   type Footnote,
   type FootnoteFlag,
