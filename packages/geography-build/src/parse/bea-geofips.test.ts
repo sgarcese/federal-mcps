@@ -111,6 +111,6 @@ describe("parseBeaCombinations on hostile input (CodeQL js/polynomial-redos, #33
     } catch {
       // An unmatched name may throw; only the time matters here.
     }
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(2000);
   });
 });

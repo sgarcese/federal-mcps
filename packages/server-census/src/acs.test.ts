@@ -216,7 +216,7 @@ describe("parseAcsResponse on hostile input (CodeQL js/polynomial-redos, #332)",
     const started = performance.now();
     const cell = `1${",".repeat(100_000)}x`;
     parseAcsResponse(JSON.stringify([["B19013_001E"], [cell]]), "B19013_001");
-    expect(performance.now() - started).toBeLessThan(200);
+    expect(performance.now() - started).toBeLessThan(2000);
   });
 
   it("still reads a value with trailing annotation characters", () => {

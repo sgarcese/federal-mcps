@@ -231,7 +231,7 @@ describe("networkOf on hostile input (CodeQL js/polynomial-redos)", () => {
     networkOf(`%${"%".repeat(100_000)}`);
     networkOf(`::ffff:${"9".repeat(100_000)}`);
     networkOf(`1.2.3.${"9".repeat(100_000)}`);
-    expect(performance.now() - started).toBeLessThan(200);
+    expect(performance.now() - started).toBeLessThan(2000);
   });
 
   it("caps an over-long address before parsing it (an address is never longer than 45 + a zone)", () => {

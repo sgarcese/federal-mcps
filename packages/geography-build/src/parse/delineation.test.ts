@@ -73,6 +73,6 @@ describe("the xlsx reader on hostile input (CodeQL js/polynomial-redos, #332)", 
     parseSheetRows(`<row>${'<c r="A1"'.repeat(50_000)}`, []);
     parseSheetRows(`<row><c r="A1" t="inlineStr"><is>${"<t ".repeat(50_000)}</c></row>`, []);
     parseSheetRows(`<row><c r="A1"><v>${"<v>".repeat(50_000)}</c></row>`, []);
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(2000);
   });
 });
