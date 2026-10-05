@@ -209,7 +209,7 @@ export function createServer(
   );
 
   for (const tool of definition.tools) {
-    registerDefinitionTool(server, definition, tool, now, callerFor);
+    registerDefinitionTool(server, definition, tool, now, callerFor, options?.limiter);
   }
 
   // Read once, at cold start: a malformed value throws here, loudly (config.ts).
@@ -237,6 +237,7 @@ function registerDefinitionTool(
   tool: ToolDefinition<any, any>,
   now: () => Date,
   callerFor: CallerFor,
+  limiter: Limiter | undefined,
 ): void {
   server.registerTool(
     tool.name,
@@ -259,6 +260,8 @@ function registerDefinitionTool(
         // Each call runs in its own context (ADR-020 seam): the HTTP client reads the caller from
         // it, and notes left there (e.g. a budget warning) follow the handler's own limitations.
         const result = await runInCall(caller === undefined ? {} : { caller }, async () => {
+          // The caller's tool-call share (#322, ADR-020 §2): a refusal throws before the handler.
+          await limiter?.beginToolCall(caller, now());
           const handled = await tool.handler(args, {
             now,
             ...(extra.signal === undefined ? {} : { signal: extra.signal }),

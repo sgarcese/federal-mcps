@@ -1,6 +1,6 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
 import { currentCall } from "../limits/context.js";
-import { LimitExceededError, type Limiter } from "../limits/limiter.js";
+import { LimitExceededError, type Limiter, type UsageSnapshot } from "../limits/limiter.js";
 import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
 import {
@@ -121,6 +121,8 @@ interface RawResponse {
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_FIXTURE_DIR = "fixtures";
 const DEFAULT_MAX_WAIT_MS = 60_000;
+/** A service budget this full warns in the answer (#322, ADR-020 §4). */
+const NEAR_LIMIT_PCT = 80;
 
 export function createHttpClient(options: HttpClientOptions): HttpClient {
   const { source, budget, cache } = options;
@@ -347,6 +349,19 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     }
   }
 
+  /** Past 80% of a service budget, one warning per call in its limitations (#322, ADR-020 §4). */
+  function noteNearLimit(usage: UsageSnapshot | undefined): void {
+    const notes = currentCall()?.notes;
+    if (notes === undefined || usage === undefined || usage.limit <= 0) return;
+    const pct = Math.floor((usage.used / usage.limit) * 100);
+    if (pct < NEAR_LIMIT_PCT) return;
+    const prefix = `${usage.source} daily quota `;
+    if (notes.some((note) => note.startsWith(prefix))) return;
+    notes.push(
+      `${prefix}${pct}% used; later answers may come from cache or be refused until ${usage.resetsAt}.`,
+    );
+  }
+
   async function performRequest(
     url: string,
     headers: Record<string, string> | undefined,
@@ -367,6 +382,13 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     // means a blocked call never even consumes a unit of the daily budget.
     checkErrorLimit();
     await acquireRateLimitToken();
+
+    // The persistent limiter (#322, ADR-020 §2): only a real fetch reaches here, so a cache hit or
+    // a replayed fixture costs nothing. A `LimitExceededError` propagates unchanged.
+    if (options.limiter !== undefined) {
+      const usage = await options.limiter.beforeUpstream(source, currentCall()?.caller, now());
+      noteNearLimit(usage);
+    }
 
     const budgetResult = await budget.consume(source, 1);
     if (!budgetResult.allowed) {
