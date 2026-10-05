@@ -18,12 +18,7 @@ import {
   splitUpstreamPerMinute,
 } from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import {
-  BEA_ERRORS_PER_MINUTE,
-  BEA_PER_MINUTE,
-  beaBodyError,
-  sanitizeBeaBody,
-} from "./bea-api.js";
+import { BEA_ERRORS_PER_MINUTE, BEA_PER_MINUTE, beaBodyError, sanitizeBeaBody } from "./bea-api.js";
 import { buildBeaDefinition } from "./definition.js";
 
 export {

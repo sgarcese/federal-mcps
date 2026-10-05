@@ -48,9 +48,9 @@ describe("resolveBeaPerMinute / resolveBeaErrorsPerMinute (#324, ADR-020 §2)", 
   });
 
   it("splits BEA's 90/min across 2 reserved containers to 45", () => {
-    expect(
-      resolveBeaPerMinute({ upstreamPerMinute: { bea: 90 }, reservedConcurrency: 2 }),
-    ).toBe(45);
+    expect(resolveBeaPerMinute({ upstreamPerMinute: { bea: 90 }, reservedConcurrency: 2 })).toBe(
+      45,
+    );
   });
 
   it("splits BEA's 30 errors/min across 2 reserved containers to 15", () => {

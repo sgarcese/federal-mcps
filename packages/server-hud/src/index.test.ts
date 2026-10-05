@@ -45,8 +45,8 @@ describe("resolveHudPerMinute (#324, ADR-020 §2)", () => {
   });
 
   it("splits HUD's 60/min across 2 reserved containers to 30", () => {
-    expect(
-      resolveHudPerMinute({ upstreamPerMinute: { hud: 60 }, reservedConcurrency: 2 }),
-    ).toBe(30);
+    expect(resolveHudPerMinute({ upstreamPerMinute: { hud: 60 }, reservedConcurrency: 2 })).toBe(
+      30,
+    );
   });
 });
