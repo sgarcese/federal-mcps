@@ -37,13 +37,14 @@ files, or any other content from your Claude session or other host.
   shared pool rather than as individual addresses, because every claude.ai user's request
   arrives from that one range; this means a heavy claude.ai day can affect other claude.ai
   users' shares, which [`connect.md`](connect.md) names as the design's known weak point. A
-  `User-Agent` string may be recorded as a metric label (to show how traffic splits by host)
+  `User-Agent` string (truncated to 128 characters) is recorded on the per-call log line below (to
+  show how traffic splits by host)
   but is never used to identify or enforce a limit on you.
 - **A per-call metrics line (M17, ADR-020 §5).** Each tool call produces one
   structured log line for operational metrics: which server and tool were called, the outcome
   (success, tool error, or which kind of limit refused it), how long it took, how many upstream
-  requests it made, whether the answer came from cache, and which scope (if any) a limit
-  applied to. **Tool arguments are never part of this line** — no place name, no series id, no
+  requests it made, whether the answer came from cache, which scope (if any) a limit
+  applied to, and whether the caller was one network, the claude.ai pool, or unidentified. **Tool arguments are never part of this line** — no place name, no series id, no
   free-text input — because a free-text argument could hold anything, and this policy promises
   arguments are not logged. Neither the raw source address nor the hashed counter key appears
   in it.
@@ -75,7 +76,7 @@ query.
 |---|---|---|
 | API Gateway access logs (request id, status, route, source IP) | AWS CloudWatch Logs | 30 days |
 | Lambda diagnostic logs | AWS CloudWatch Logs | 30 days |
-| Per-call metrics line (server, tool, outcome, latency, upstream calls, cache hit, limit scope; never arguments) | AWS CloudWatch Logs (EMF) | 30 days |
+| Per-call metrics line (server, tool, outcome, latency, upstream calls, cache hit, limit scope, caller kind, truncated User-Agent; never arguments, keys or addresses) | AWS CloudWatch Logs (EMF) | 30 days |
 | Per-network fair-use counters (daily HMAC of the source address, never the address) | DynamoDB | Two days after the day counted |
 | Cached upstream responses | Server memory | Until the server instance recycles |
 | Conversation content, files, memory | Never received | — |
