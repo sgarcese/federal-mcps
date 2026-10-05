@@ -232,6 +232,59 @@ describe("createLimiter: beforeUpstream", () => {
   });
 });
 
+describe("createLimiter: a refused caller never drains the service budget", () => {
+  const ROOMY: LimitsConfig = { serviceDaily: { bls: 100 }, network: { upstreamDaily: 3 } };
+  const SVC = "svc#bls#2026-10-05";
+  const SHARE = "network#upstream#bls#net-key-a#2026-10-05";
+
+  it("within one limiter: attempts past the share leave the service count unchanged", async () => {
+    const store = new MemoryCounterStore();
+    const limiter = createLimiter({ config: ROOMY, store });
+    for (let i = 0; i < 3; i++) await limiter.beforeUpstream("bls", caller(), AT);
+    expect(await store.get(SVC)).toBe(3);
+    for (let i = 0; i < 10; i++) {
+      const error = await refusal(limiter.beforeUpstream("bls", caller(), AT));
+      expect(error.info.scope).toBe("network");
+    }
+    expect(await store.get(SVC)).toBe(3);
+  });
+
+  it("across two containers: the store's refusal of the share spends no service unit", async () => {
+    const store = new MemoryCounterStore();
+    const a = createLimiter({ config: ROOMY, store });
+    for (let i = 0; i < 3; i++) await a.beforeUpstream("bls", caller(), AT);
+    // Each fresh container learns of the spent share only from the store's conditional refusal.
+    for (let i = 0; i < 5; i++) {
+      const b = createLimiter({ config: ROOMY, store });
+      await refusal(b.beforeUpstream("bls", caller(), AT));
+    }
+    expect(await store.get(SVC)).toBe(3);
+    expect(await store.get(SHARE)).toBe(3);
+  });
+
+  it("refuses from memory, charging no share, once the service budget is known to be over", async () => {
+    const store = new MemoryCounterStore();
+    const limiter = createLimiter({
+      config: { serviceDaily: { bls: 2 }, network: { upstreamDaily: 10 } },
+      store,
+    });
+    await limiter.beforeUpstream("bls", undefined, AT);
+    await limiter.beforeUpstream("bls", undefined, AT);
+    await refusal(limiter.beforeUpstream("bls", undefined, AT));
+    const error = await refusal(limiter.beforeUpstream("bls", caller(), AT));
+    expect(error.info.scope).toBe("service");
+    expect(await store.get(SHARE)).toBe(0);
+  });
+
+  it("a bypass caller still charges the service budget", async () => {
+    const store = new MemoryCounterStore();
+    const limiter = createLimiter({ config: ROOMY, store });
+    for (let i = 0; i < 5; i++) await limiter.beforeUpstream("bls", caller({ bypass: true }), AT);
+    expect(await store.get(SVC)).toBe(5);
+    expect(await store.get(SHARE)).toBe(0);
+  });
+});
+
 describe("createLimiter: a failing store (ADR-020 §3)", () => {
   it("fails open on shares, falls back to an in-memory service budget, and signals degraded", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
