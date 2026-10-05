@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { CacheInfo } from "../cache.js";
 import type { Footnote, PlaceRef, Source } from "../envelope/index.js";
+import type { Caller } from "./caller.js";
 import type { CompactRendering } from "./wrap.js";
 
 /**
@@ -67,6 +68,8 @@ export interface ToolContext {
   readonly signal?: AbortSignal;
   /** Clock, injectable for tests. */
   readonly now: () => Date;
+  /** Who is calling (ADR-020 §1); absent on stdio and local runs, where no limiter applies. */
+  readonly caller?: Caller;
 }
 
 /**
