@@ -87,6 +87,8 @@ resource "aws_lambda_function" "portal" {
   memory_size = var.memory_size
   timeout     = var.timeout
 
+  reserved_concurrent_executions = var.reserved_concurrency
+
   environment {
     variables = {
       OPENCONTEXT_CONFIG = jsonencode(local.config)
@@ -137,6 +139,12 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.portal.id
   name        = "$default"
   auto_deploy = true
+
+  # Edge throttling (#319, ADR-020 §2, §6): the only layer the CDC portal gets.
+  default_route_settings {
+    throttling_rate_limit  = var.throttling_rate_limit
+    throttling_burst_limit = var.throttling_burst_limit
+  }
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn

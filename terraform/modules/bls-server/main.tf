@@ -19,6 +19,28 @@ locals {
   function_name         = "${var.service_name}-${var.environment_tag}"
   lambda_log_group_name = "/aws/lambda/${local.function_name}"
   api_log_group_name    = "/aws/apigateway/${local.function_name}"
+
+  # The in-app limits configuration (#319, ADR-020 §2, §6, §7): one FEDERAL_MCPS_LIMITS JSON
+  # blob per server, matching packages/core/src/limits/config.ts's LimitsConfigSchema. Keys
+  # a module has no number for (e.g. no per-minute quota) are omitted rather than null, since
+  # the schema treats every field as optional.
+  limits = merge(
+    var.service_daily_limit != null ? { serviceDaily = { bls = var.service_daily_limit } } : {},
+    {
+      network = merge(
+        { toolCallsDaily = var.network_tool_calls_daily },
+        var.network_upstream_daily != null ? { upstreamDaily = var.network_upstream_daily } : {},
+      )
+      pool = merge(
+        { toolCallsDaily = var.pool_tool_calls_daily },
+        var.pool_upstream_daily != null ? { upstreamDaily = var.pool_upstream_daily } : {},
+      )
+    },
+    var.upstream_per_minute != null ? { upstreamPerMinute = { bls = var.upstream_per_minute } } : {},
+    var.upstream_errors_per_minute != null ? { upstreamErrorsPerMinute = { bls = var.upstream_errors_per_minute } } : {},
+    { reservedConcurrency = var.reserved_concurrency },
+  )
+  limits_json = jsonencode(local.limits)
 }
 
 # --- Lambda ------------------------------------------------------------
@@ -56,6 +78,8 @@ resource "aws_lambda_function" "bls" {
   memory_size = var.memory_size
   timeout     = var.timeout
 
+  reserved_concurrent_executions = var.reserved_concurrency
+
   environment {
     variables = {
       MCP_TRANSPORT = "http"
@@ -63,6 +87,11 @@ resource "aws_lambda_function" "bls" {
       # The BLS server resolves places off the bundled geography catalog (#59, ADR-008 §7),
       # baked into this Lambda's zip like server-geo's. Not a secret.
       GEO_CATALOG_PATH = var.catalog_path
+      # Public-use protection (#319, ADR-020 §2, §6, §7): the in-app limits configuration and
+      # the two optional secrets (empty means no per-identity limiter, as today).
+      FEDERAL_MCPS_LIMITS         = local.limits_json
+      FEDERAL_MCPS_CALLER_SECRET  = var.caller_hmac_secret
+      FEDERAL_MCPS_OPERATOR_TOKEN = var.operator_bypass_token
     }
   }
 
@@ -111,6 +140,13 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.bls.id
   name        = "$default"
   auto_deploy = true
+
+  # Edge throttling (#319, ADR-020 §2, §6): a cost and noisy-neighbour ceiling an honest
+  # user never meets; no WAF in M17 (ADR-020, "No WAF in M17").
+  default_route_settings {
+    throttling_rate_limit  = var.throttling_rate_limit
+    throttling_burst_limit = var.throttling_burst_limit
+  }
 
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api.arn

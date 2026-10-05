@@ -59,3 +59,90 @@ variable "alias_domain_names" {
   type        = list(string)
   default     = []
 }
+
+# --- Public-use protection (#319, ADR-020 §2, §6, §7) -----------------------
+
+variable "throttling_rate_limit" {
+  description = "API Gateway $default stage steady-state requests/second (ADR-020 §6); from instances.json → limits.bea.stageRateLimit."
+  type        = number
+  default     = 10
+  nullable    = false
+}
+
+variable "throttling_burst_limit" {
+  description = "API Gateway $default stage burst capacity (ADR-020 §6); from instances.json → limits.bea.stageBurstLimit."
+  type        = number
+  default     = 20
+  nullable    = false
+}
+
+variable "reserved_concurrency" {
+  description = "Lambda reserved concurrency, a cost/noisy-neighbour ceiling (ADR-020 §6); from instances.json → limits.bea.reservedConcurrency."
+  type        = number
+  default     = 2
+  nullable    = false
+}
+
+variable "service_daily_limit" {
+  description = "Family-wide daily BEA API query budget (ADR-020 §6); BEA publishes no daily cap (only per-minute quotas), so this stays null unless the fleet record sets it."
+  type        = number
+  default     = null
+}
+
+variable "network_upstream_daily" {
+  description = "Per-network daily BEA upstream query share (ADR-020 §6, question 5); from instances.json → limits.bea.network.upstreamDaily."
+  type        = number
+  default     = 1000
+  nullable    = false
+}
+
+variable "network_tool_calls_daily" {
+  description = "Per-network daily tool-call ceiling (ADR-020 §6); from instances.json → limits.bea.network.toolCallsDaily."
+  type        = number
+  default     = 500
+  nullable    = false
+}
+
+variable "pool_upstream_daily" {
+  description = "The claude.ai pool's daily BEA upstream query share (ADR-020 §6); from instances.json → limits.bea.pool.upstreamDaily."
+  type        = number
+  default     = 3000
+  nullable    = false
+}
+
+variable "pool_tool_calls_daily" {
+  description = "The claude.ai pool's daily tool-call ceiling (ADR-020 §6); from instances.json → limits.bea.pool.toolCallsDaily."
+  type        = number
+  default     = 5000
+  nullable    = false
+}
+
+variable "upstream_per_minute" {
+  description = "BEA Data API's per-minute request quota (BEA_PER_MINUTE = 90, see packages/server-bea/src/bea-api.ts), before the reserved-concurrency split core performs; from instances.json → limits.bea.upstreamPerMinute."
+  type        = number
+  default     = 90
+  nullable    = false
+}
+
+variable "upstream_errors_per_minute" {
+  description = "BEA Data API's per-minute error quota (30 errors/minute); from instances.json → limits.bea.upstreamErrorsPerMinute."
+  type        = number
+  default     = 30
+  nullable    = false
+}
+
+variable "caller_hmac_secret" {
+  description = "HMAC secret for daily-rotating caller keys (ADR-020 §1), set on the Lambda as FEDERAL_MCPS_CALLER_SECRET. Optional: empty runs without per-identity limits (ADR-006 §3 pattern; supplied as TF_VAR_caller_hmac_secret from .env)."
+  type        = string
+  default     = ""
+  sensitive   = true
+  nullable    = false
+}
+
+variable "operator_bypass_token" {
+  description = "Expected value of the operator-bypass header (ADR-020 §9), set on the Lambda as FEDERAL_MCPS_OPERATOR_TOKEN. Never documented publicly; optional (supplied as TF_VAR_operator_bypass_token from .env)."
+  type        = string
+  default     = ""
+  sensitive   = true
+  nullable    = false
+}
