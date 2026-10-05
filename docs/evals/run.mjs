@@ -26,11 +26,24 @@ const URLS = {
 const BAR = Number.parseFloat(process.env.BAR ?? "0.9");
 const log = (line = "") => process.stdout.write(`${line}\n`);
 
+/**
+ * The operator-bypass header (ADR-020 §9): when `FEDERAL_MCPS_OPERATOR_TOKEN` is set, every
+ * request below carries it, so this release eval is exempt from the per-network and claude.ai-
+ * pool shares it would otherwise spend on the owner's own address. It is never logged or
+ * printed, and it is never sent at all when the variable is unset.
+ */
+const OPERATOR_TOKEN = process.env.FEDERAL_MCPS_OPERATOR_TOKEN;
+const OPERATOR_HEADERS = OPERATOR_TOKEN ? { "x-federal-mcps-operator": OPERATOR_TOKEN } : {};
+
 /** Call one MCP tool over Streamable HTTP and return its structured envelope (or an error marker). */
 async function callTool(url, name, args) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      ...OPERATOR_HEADERS,
+    },
     body: JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
@@ -137,6 +150,7 @@ const entries = sets.flatMap((f) =>
 );
 
 log(`Running ${entries.length} evals from ${sets.join(", ")} (bar ${BAR})`);
+log(OPERATOR_TOKEN ? "  operator bypass: on (per-network/pool shares exempt)" : "  operator bypass: off");
 for (const [name, url] of Object.entries(URLS)) log(`  ${name}: ${url}`);
 log();
 let passed = 0;
