@@ -55,6 +55,106 @@ describe("instance record loader", () => {
     expect(() => selectInstance("nope")).toThrow(/Unknown federal-mcps instance "nope".*dev/);
   });
 
+  it("carries an optional limits block per server (#319, ADR-020 §7)", () => {
+    // instances.example.json is expected to carry the ADR-020 defaults table so
+    // self-hosters see the shape; shape only here, exact literals live in the
+    // terraform tests.
+    const dev = selectInstance();
+    for (const service of ["bls", "census", "hud", "bea", "geo"]) {
+      const serviceLimits = dev.limits?.[service];
+      expect(serviceLimits).toBeDefined();
+      expect(typeof serviceLimits?.reservedConcurrency).toBe("number");
+    }
+  });
+
+  it("rejects a limits block with an unknown service key", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-limits-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "x",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "x", stateKey: "y" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+              limits: { nope: { reservedConcurrency: 5 } },
+            },
+          ],
+        }),
+      );
+      expect(() => loadInstances(path)).toThrow(/limits has unknown service "nope"/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a limits entry whose fields are not numbers", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-limits-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "x",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "x", stateKey: "y" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+              limits: { bls: { reservedConcurrency: "five" } },
+            },
+          ],
+        }),
+      );
+      expect(() => loadInstances(path)).toThrow(/limits\.bls\.reservedConcurrency must be a number/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("derives the state bucket and backend flags from the record", () => {
     const dev = selectInstance();
     expect(stateBucket(dev)).toBe(`rc-tfstate-${dev.account}`);
