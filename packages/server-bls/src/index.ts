@@ -16,7 +16,6 @@ import {
 } from "@federal-mcps/core";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { buildBlsDefinition } from "./definition.js";
-import { setQcewHttpClient } from "./qcew-indicators.js";
 
 export { buildBlsDefinition } from "./definition.js";
 export { describeSource } from "./describe-source.js";
@@ -68,17 +67,17 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     budget: new MemoryBudgetStore(BLS_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
   });
-  // QCEW's own source key ("bls-qcew") so its fetches never decrement the BLS API's budget.
-  setQcewHttpClient(
-    createHttpClient({
-      source: "bls-qcew",
-      budget: new MemoryBudgetStore(QCEW_DAILY_BUDGET),
-      cache: new MemoryCacheStore(),
-    }),
-  );
+  // QCEW's own source key ("bls-qcew") so its fetches never decrement the BLS API's budget;
+  // passed as a dependency rather than set on module state (#324 review).
+  const qcewHttpClient = createHttpClient({
+    source: "bls-qcew",
+    budget: new MemoryBudgetStore(QCEW_DAILY_BUDGET),
+    cache: new MemoryCacheStore(),
+  });
   const definition = buildBlsDefinition({
     catalog: openBundledCatalog(),
     httpClient,
+    qcewHttpClient,
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     apiKey: () => process.env["BLS_API_KEY"],
   });

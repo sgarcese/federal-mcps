@@ -291,26 +291,9 @@ function toObservation(row: QcewHeadline, measure: QcewMeasure): SeriesObservati
  * latest published period, or — when the caller gave years — every published period in range,
  * newest first. A code the area does not publish yields no observation and a note, never a guess.
  */
-/**
- * The dedicated QCEW HTTP client (#324, ADR-020 §2): the generic indicator machinery passes
- * every indicator's fetch the same client — whichever one `bls_get_indicator` was built with —
- * so QCEW's own client, once configured, is substituted for it here, inside the fetch capability
- * itself. Unconfigured (every existing unit test, and `bls_get_raw`, which never calls QCEW), it
- * falls back to the client the machinery handed in: unchanged behaviour. Set once at server
- * startup (`index.ts`'s `createBlsServer`) so QCEW's open-data CSV slices never draw on the BLS
- * API's registered-key daily budget.
- */
-let qcewHttpClient: HttpClient | undefined;
-
-/** Sets (or, with `undefined`, clears) the dedicated QCEW HTTP client. */
-export function setQcewHttpClient(client: HttpClient | undefined): void {
-  qcewHttpClient = client;
-}
-
 function qcewFetch(measure: QcewMeasure): IndicatorFetch {
-  return async (client, keys, options): Promise<SeriesResult[]> => {
-    const activeClient = qcewHttpClient ?? client;
-    return Promise.all(
+  return async (client, keys, options): Promise<SeriesResult[]> =>
+    Promise.all(
       keys.map(async (key): Promise<SeriesResult> => {
         const parsed = parseQcewKey(key);
         if (!parsed) return { seriesId: key, observations: [] };
@@ -318,7 +301,7 @@ function qcewFetch(measure: QcewMeasure): IndicatorFetch {
         const latestOnly = !options.explicitYears;
         const periods = candidatePeriods(parsed.annual, options, notes);
         const { rows, anyPublished } = await fetchRows(
-          activeClient,
+          client,
           parsed.area,
           parsed.selection,
           periods,
@@ -337,7 +320,6 @@ function qcewFetch(measure: QcewMeasure): IndicatorFetch {
         };
       }),
     );
-  };
 }
 
 /** Where the QCEW open data slices live; a comparison across areas cites this (#212). */
