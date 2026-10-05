@@ -1,42 +1,71 @@
-# Privacy policy — federal-mcps BLS connector
+# Privacy policy — federal-mcps connectors
 
-**Status:** current · applies to the hosted connector at `https://bls-mcp.responsive.city/mcp`
-and to the same server run locally over stdio. Last updated 2026-09-17.
+**Status:** current · applies to every hosted connector in the family (BLS, Census, HUD User,
+BEA and the geography server, plus the CDC OpenContext portal) and to the same servers run
+locally over stdio. Last updated 2026-10-05 (M17, ADR-020 §11).
 
-This connector serves published statistics from the U.S. Bureau of Labor Statistics (BLS),
-organized by place. It is read-only and has no accounts, no sign-in, and no user profiles.
+These connectors serve published federal statistics, organized by place. They are read-only
+and have no accounts, no sign-in, and no user profiles.
 
 ## What the connector receives
 
 Only the arguments of the tool call your MCP host sends: a place name or identifier, an
-indicator name, optional series ids, years, and similar query parameters. The connector never
-requests, reads, or stores your conversation, chat history, memory, uploaded files, or any
-other content from your Claude session or other host.
+indicator name, optional series or variable ids, years, and similar query parameters. The
+connector never requests, reads, or stores your conversation, chat history, memory, uploaded
+files, or any other content from your Claude session or other host.
 
 ## What is stored
 
-- **Request logs.** The hosted endpoint runs on AWS (API Gateway and Lambda in the Responsive
+- **Request logs.** The hosted endpoints run on AWS (API Gateway and Lambda in the Responsive
   City account). API Gateway access logs record the request id, HTTP status, route, source IP
   address, and any integration error. Lambda logs record server diagnostics (for example a
   missing configuration warning). Tool arguments and responses are not written to logs by the
   application. Logs are retained for **30 days** and then deleted automatically.
-- **Response cache.** Upstream BLS responses are cached in memory for the life of a server
-  instance to stay within the BLS API quota. The cache is keyed by the BLS request, not by
-  who asked, and holds only public statistics.
+- **Response cache.** Upstream agency responses are cached in memory for the life of a server
+  instance (and, for BLS timeseries, for up to 24 hours) to stay within each agency's API
+  quota. The cache is keyed by the request itself, not by who asked, and holds only public
+  statistics.
+- **Per-network fair-use counters (M17, ADR-020).** To keep the shared endpoints usable for
+  everyone without requiring sign-in, each server counts tool calls and upstream queries
+  per day against a daily share. The counter is keyed not on your address but on a
+  **daily-rotating HMAC of the source address** — a one-way digest that changes every day at
+  UTC midnight, computed with a secret the servers hold and never expose. The address itself
+  is never written to the counter, logged, or returned to any caller. Counters are stored in
+  DynamoDB and expire automatically after **at most two days** (the day they were written for,
+  plus one day's grace). The **claude.ai egress range** (`160.79.104.0/21`) is counted as one
+  shared pool rather than as individual addresses, because every claude.ai user's request
+  arrives from that one range; this means a heavy claude.ai day can affect other claude.ai
+  users' shares, which [`connect.md`](connect.md) names as the design's known weak point. A
+  `User-Agent` string may be recorded as a metric label (to show how traffic splits by host)
+  but is never used to identify or enforce a limit on you.
+- **A per-call metrics line (M17, ADR-020 §5; landing with #326).** Each tool call produces one
+  structured log line for operational metrics: which server and tool were called, the outcome
+  (success, tool error, or which kind of limit refused it), how long it took, how many upstream
+  requests it made, whether the answer came from cache, and which scope (if any) a limit
+  applied to. **Tool arguments are never part of this line** — no place name, no series id, no
+  free-text input — because a free-text argument could hold anything, and this policy promises
+  arguments are not logged. Neither the raw source address nor the hashed counter key appears
+  in it.
+- **An operator-bypass token.** A sensitive, internal credential lets the project's own release
+  checks (the eval run before a deploy) skip the per-network and claude.ai-pool shares without
+  spending them on behalf of real users. It is configured as a deploy secret, never committed,
+  and its value is never logged or printed; this policy states that it exists, not what it is.
 
-Nothing else is stored. There is no database of users or queries.
+Nothing else is stored. There is no database of users or queries, and no counter or log line
+can be traced back to a specific address beyond the day it was written, even by the project's
+own operator, without the HMAC secret.
 
 ## Third parties
 
-To answer a query the connector calls two public government data sources:
+To answer a query a connector calls the public government data source(s) it serves — for
+example the BLS Public Data API (`api.bls.gov`) and the QCEW open data feed (`data.bls.gov`)
+for the BLS server, using the connector's own registration key; similarly for Census, HUD User
+and BEA. Geography lookups are answered from a catalog bundled with the server, built from
+public Census, OMB and agency reference tables, so they call no third party at all.
 
-- the BLS Public Data API (`api.bls.gov`) and the QCEW open data feed (`data.bls.gov`), using
-  the connector's own BLS registration key; and
-- no others. Geography lookups are answered from a catalog bundled with the server, built
-  from public Census, OMB and BLS reference tables.
-
-Your place and indicator parameters are sent to BLS as part of those requests. No data is sold,
-shared with advertisers, or used for any purpose other than answering your query.
+Your place and indicator parameters are sent to the relevant agency as part of those requests.
+No data is sold, shared with advertisers, or used for any purpose other than answering your
+query.
 
 ## Data retention summary
 
@@ -44,14 +73,18 @@ shared with advertisers, or used for any purpose other than answering your query
 |---|---|---|
 | API Gateway access logs (request id, status, route, source IP) | AWS CloudWatch Logs | 30 days |
 | Lambda diagnostic logs | AWS CloudWatch Logs | 30 days |
-| Cached BLS responses | Server memory | Until the instance recycles |
+| Per-call metrics line (server, tool, outcome, latency, upstream calls, cache hit, limit scope; never arguments) | AWS CloudWatch Logs (EMF) | 30 days |
+| Per-network fair-use counters (daily HMAC of the source address, never the address) | DynamoDB | 2 days |
+| Cached upstream responses | Server memory (BLS timeseries: up to 24 hours) | Until the instance recycles, or 24 hours |
 | Conversation content, files, memory | Never received | — |
 
 ## Your choices
 
-The connector needs no account, so there is nothing to delete on request beyond the
-automatically expiring logs. You can disconnect it from your host at any time; no data
-persists about you afterwards.
+The connectors need no account, so there is nothing to delete on request beyond the
+automatically expiring logs and counters. You can disconnect any of them from your host at any
+time; no data persists about you afterwards. If a daily share is exhausted, `describe_source`
+on that server shows the configured limits and when they reset — see
+[`connect.md`](connect.md#limits) for what a limited answer looks like.
 
 ## Contact
 
