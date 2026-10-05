@@ -71,9 +71,14 @@ export function createLimiter(options: CreateLimiterOptions): Limiter {
    * Counts one against `counted`; throws `LimitExceededError` past its limit. A store failure
    * returns the fallback's count for the service budget and lets a share through.
    */
-  async function charge(counted: Counted, at: Date): Promise<number> {
+  function refuseIfKnownOver(counted: Counted | undefined): void {
+    if (counted === undefined) return;
     const known = over.get(counted.key);
     if (known !== undefined) throw new LimitExceededError({ ...counted.info, used: known });
+  }
+
+  async function charge(counted: Counted, at: Date): Promise<number> {
+    refuseIfKnownOver(counted);
     const expiresAt = new Date(dayStart(at) + (1 + RETAIN_DAYS) * DAY_MS);
     let result: { value: number; applied: boolean };
     try {
@@ -125,6 +130,9 @@ export function createLimiter(options: CreateLimiterOptions): Limiter {
   }
 
   return {
+    // One key only (the caller's tool-call share), so there is no charge order to get wrong; if
+    // this ever charges a second key, pre-check both from memory and charge the caller's first,
+    // as beforeUpstream does.
     async beginToolCall(caller, at) {
       const share = shareCounted(caller, "toolCalls", undefined, at);
       if (share !== undefined) await charge(share, at);
@@ -132,11 +140,17 @@ export function createLimiter(options: CreateLimiterOptions): Limiter {
 
     async beforeUpstream(source, caller, at) {
       const service = serviceCounted(source, at);
-      const used = service === undefined ? undefined : await charge(service, at);
       const share = shareCounted(caller, "upstream", source, at);
+      // 1. Refuse from memory, before any write, when either key is already known to be over.
+      refuseIfKnownOver(share);
+      refuseIfKnownOver(service);
+      // 2. The caller's own share first, so a caller refused its share never spends the shared
+      //    service budget: a script looping on refusals cannot drain it for everyone.
       if (share !== undefined) await charge(share, at);
-      if (service === undefined || used === undefined) return undefined;
-      return snapshot(service, used);
+      // 3. Then the service budget. If it refuses here, the share has lost one unit; that costs
+      //    only this caller, which is acceptable.
+      if (service === undefined) return undefined;
+      return snapshot(service, await charge(service, at));
     },
 
     async usage(source, at) {
