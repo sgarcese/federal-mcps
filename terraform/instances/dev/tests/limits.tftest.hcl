@@ -160,3 +160,20 @@ run "fleet_record_override_wires_through_to_the_modules" {
     error_message = "the fixture's limits.hud.upstreamPerMinute (30) must override the module default"
   }
 }
+
+# The persistent limiter's table (#322, ADR-020 §2, §10): every Node server gets the same
+# family-wide rc-federal-mcps-<env>-limits table, named from the fleet record's environment tag.
+run "every_node_server_gets_the_limits_table" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      module.bls_server.limits_table_name == "rc-federal-mcps-dev-limits",
+      module.geo_server.limits_table_name == "rc-federal-mcps-dev-limits",
+      module.census_server.limits_table_name == "rc-federal-mcps-dev-limits",
+      module.hud_server.limits_table_name == "rc-federal-mcps-dev-limits",
+      module.bea_server.limits_table_name == "rc-federal-mcps-dev-limits",
+    ])
+    error_message = "all five Node modules must carry FEDERAL_MCPS_LIMITS_TABLE = rc-federal-mcps-dev-limits"
+  }
+}
