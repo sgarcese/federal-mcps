@@ -18,7 +18,7 @@ import { isJtSeriesId } from "./jt.js";
 import { isLausSeriesId } from "./laus.js";
 import { isOeSeriesId } from "./oe.js";
 import { isWpuSeriesId } from "./ppi.js";
-import { fetchSeriesRaw, timeseriesFetch } from "./series-fetch.js";
+import { fetchSeriesRawWithCache, timeseriesFetch } from "./series-fetch.js";
 
 export interface BlsIndicatorToolsOptions {
   /** How the handler gets a read-only catalog (cached upstream). */
@@ -201,7 +201,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
         );
       }
 
-      const responses = await fetchSeriesRaw(options.httpClient(), q.ids, {
+      const { responses, cache } = await fetchSeriesRawWithCache(options.httpClient(), q.ids, {
         ...(startYear === undefined ? {} : { startYear }),
         ...(endYear === undefined ? {} : { endYear }),
         ...(options.apiKey?.() ? { apiKey: options.apiKey() as string } : {}),
@@ -230,6 +230,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
             now(),
           ),
         },
+        cache,
         ...(limitations.length > 0 ? { limitations } : {}),
       };
     },

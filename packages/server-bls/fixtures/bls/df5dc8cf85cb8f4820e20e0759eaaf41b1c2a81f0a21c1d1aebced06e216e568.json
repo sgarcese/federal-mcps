@@ -1,0 +1,9 @@
+{
+  "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"status\":\"REQUEST_NOT_PROCESSED\",\"responseTime\":8,\"message\":[\"Request could not be serviced, as the daily threshold for total number of requests allocated to the user with registration key XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX has been reached.\"],\"Results\":{}}",
+  "recordedAt": "2026-10-05T00:00:00.000Z"
+}

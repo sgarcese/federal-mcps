@@ -1,7 +1,20 @@
 import { fileURLToPath } from "node:url";
-import { createHttpClient, MemoryBudgetStore, MemoryCacheStore } from "@federal-mcps/core";
-import { describe, expect, it, vi } from "vitest";
-import { fetchSeriesObservations, BLS_SERIES_ENDPOINT } from "./series-fetch.js";
+import {
+  createHttpClient,
+  MemoryBudgetStore,
+  MemoryCacheStore,
+  QuotaExceededError,
+} from "@federal-mcps/core";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  BLS_SERIES_ENDPOINT,
+  BLS_TIMESERIES_CACHE_TTL_SECONDS,
+  blsDailyThresholdBodyError,
+  fetchSeriesObservations,
+  fetchSeriesObservationsWithCache,
+  fetchSeriesRaw,
+  fetchSeriesRawWithCache,
+} from "./series-fetch.js";
 
 const FIXTURE_DIR = fileURLToPath(new URL("../fixtures", import.meta.url));
 
@@ -19,17 +32,28 @@ function replayClient() {
   });
 }
 
-/** A client whose fetch returns a scripted JSON response (fixtures off), for shape/error tests. */
-function scriptedClient(handler: () => Response) {
+/**
+ * A client whose fetch returns a scripted JSON response (fixtures off), for shape/error tests.
+ * Wires `blsDailyThresholdBodyError` by default, the same way `index.ts` does in production
+ * (#325), so a daily-threshold refusal is caught before anything is cached, same as it would be
+ * for a real call.
+ */
+function scriptedClient(
+  handler: () => Response,
+  overrides: Partial<Parameters<typeof createHttpClient>[0]> = {},
+) {
   const fetchFn = vi.fn(async () => handler());
+  const cache = new MemoryCacheStore();
   const client = createHttpClient({
     source: "bls",
     budget: new MemoryBudgetStore(500),
-    cache: new MemoryCacheStore(),
+    cache,
     fetch: fetchFn as unknown as typeof fetch,
     fixtures: { mode: "off" },
+    bodyError: blsDailyThresholdBodyError,
+    ...overrides,
   });
-  return { client, fetchFn };
+  return { client, fetchFn, cache };
 }
 
 describe("fetchSeriesObservations (recorded fixture)", () => {
@@ -124,11 +148,14 @@ describe("fetchSeriesObservations parsing and batching", () => {
     expect(fetchFn.mock.calls[0]?.[0]).toBe(BLS_SERIES_ENDPOINT);
   });
 
-  it("throws with the API message when the request is not processed", async () => {
+  it("throws with the API message when the request is not processed for a reason other than the daily threshold", async () => {
     const { client } = scriptedClient(
       () =>
         new Response(
-          JSON.stringify({ status: "REQUEST_NOT_PROCESSED", message: ["daily threshold reached"] }),
+          JSON.stringify({
+            status: "REQUEST_NOT_PROCESSED",
+            message: ["series does not exist"],
+          }),
           {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -136,8 +163,245 @@ describe("fetchSeriesObservations parsing and batching", () => {
         ),
     );
     await expect(fetchSeriesObservations(client, ["LAUCN080310000000003"])).rejects.toThrow(
-      /daily threshold reached/,
+      /series does not exist/,
     );
+    await expect(
+      fetchSeriesObservations(client, ["LAUCN080310000000003"]),
+    ).rejects.not.toBeInstanceOf(QuotaExceededError);
+  });
+});
+
+describe("a BLS daily-threshold refusal (#325, ADR-020 §8)", () => {
+  const refusal = () =>
+    new Response(
+      JSON.stringify({
+        status: "REQUEST_NOT_PROCESSED",
+        message: [
+          "Request could not be serviced, as the daily threshold for total number of " +
+            "requests allocated to the user with registration key XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " +
+            "has been reached.",
+        ],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-05T15:30:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("raises QuotaExceededError with a UTC-midnight resetsAt, for the indicator fetch", async () => {
+    const { client } = scriptedClient(refusal);
+    const err: unknown = await fetchSeriesObservations(client, ["LAUCN080310000000003"]).catch(
+      (e) => e,
+    );
+    expect(err).toBeInstanceOf(QuotaExceededError);
+    expect((err as QuotaExceededError).source).toBe("bls");
+    expect((err as QuotaExceededError).resetsAt).toBe("2026-10-06T00:00:00.000Z");
+  });
+
+  it("raises QuotaExceededError for the raw fetch too (bls_get_raw's path)", async () => {
+    const { client } = scriptedClient(refusal);
+    await expect(fetchSeriesRaw(client, ["LAUCN080310000000003"])).rejects.toBeInstanceOf(
+      QuotaExceededError,
+    );
+  });
+
+  it("replays a synthesized daily-threshold fixture (no live refusal recorded yet, #325) as QuotaExceededError", async () => {
+    // fixtures/bls/df5dc8cf…json: BLS's documented wording for this refusal, synthesized (not a
+    // live recording — see `blsDailyThresholdBodyError`'s doc comment for the source).
+    await expect(
+      fetchSeriesObservations(replayClient(), ["LAUCN080310000000003"]),
+    ).rejects.toBeInstanceOf(QuotaExceededError);
+  });
+
+  it("is caught by the bodyError hook as an AgencyApiError before parse/cache (the hook's own contract)", () => {
+    const err = blsDailyThresholdBodyError(
+      JSON.stringify({
+        status: "REQUEST_NOT_PROCESSED",
+        message: ["daily threshold for total number of requests has been reached"],
+      }),
+    );
+    expect(err).toMatchObject({ retryable: false });
+  });
+
+  it("never caches the refusal: a later call still hits the network, not a 'fresh' cache entry", async () => {
+    const { client, fetchFn } = scriptedClient(refusal);
+    await expect(fetchSeriesObservations(client, ["LAUCN080310000000003"])).rejects.toBeInstanceOf(
+      QuotaExceededError,
+    );
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+
+    // If the refusal had been cached under a 24h-fresh entry, this second call would be
+    // served from cache instead of refetching — the bodyError hook throws before
+    // getWithCache's cache.set ever runs, so it refetches instead.
+    await expect(fetchSeriesObservations(client, ["LAUCN080310000000003"])).rejects.toBeInstanceOf(
+      QuotaExceededError,
+    );
+    expect(fetchFn).toHaveBeenCalledTimes(2); // refetched, not served from a cached refusal
+  });
+
+  it("leaves other REQUEST_NOT_PROCESSED reasons as the generic error, not QuotaExceededError", async () => {
+    const { client } = scriptedClient(
+      () =>
+        new Response(JSON.stringify({ status: "REQUEST_NOT_PROCESSED", message: ["bad syntax"] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const err: unknown = await fetchSeriesObservations(client, ["LAUCN080310000000003"]).catch(
+      (e) => e,
+    );
+    expect(err).not.toBeInstanceOf(QuotaExceededError);
+    expect((err as Error).message).toMatch(/bad syntax/);
+  });
+});
+
+describe("the 24h timeseries cache TTL (#325, ADR-020 §8)", () => {
+  const ok = (series: unknown[] = []) =>
+    new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series } }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+
+  it("sets a 24h freshTtlSeconds on every timeseries POST, for both the indicator and raw paths", async () => {
+    const postJson = vi.fn(async () => ({
+      value: { status: "REQUEST_SUCCEEDED", Results: { series: [] } },
+      cache: { hit: false },
+      status: 200,
+    }));
+    const client = { postJson } as unknown as Parameters<typeof fetchSeriesObservations>[0];
+
+    await fetchSeriesObservations(client, ["LAUCN080310000000003"]);
+    expect(postJson).toHaveBeenLastCalledWith(
+      BLS_SERIES_ENDPOINT,
+      expect.anything(),
+      expect.objectContaining({ freshTtlSeconds: BLS_TIMESERIES_CACHE_TTL_SECONDS }),
+    );
+
+    await fetchSeriesRaw(client, ["LAUCN080310000000003"]);
+    expect(postJson).toHaveBeenLastCalledWith(
+      BLS_SERIES_ENDPOINT,
+      expect.anything(),
+      expect.objectContaining({ freshTtlSeconds: BLS_TIMESERIES_CACHE_TTL_SECONDS }),
+    );
+  });
+
+  it("serves a fresh cache hit within 24h, and refetches once the TTL has elapsed", async () => {
+    let current = new Date("2026-10-05T00:00:00.000Z");
+    const fetchFn = vi.fn(async () => ok([]));
+    const client = createHttpClient({
+      source: "bls",
+      budget: new MemoryBudgetStore(500),
+      cache: new MemoryCacheStore(),
+      fetch: fetchFn as unknown as typeof fetch,
+      fixtures: { mode: "off" },
+      now: () => current,
+    });
+
+    const { cache: firstCache } = await fetchSeriesObservationsWithCache(client, [
+      "LAUCN080310000000003",
+    ]);
+    expect(firstCache.hit).toBe(false);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+
+    current = new Date(current.getTime() + 23 * 60 * 60 * 1000); // +23h: still fresh
+    const { cache: secondCache } = await fetchSeriesObservationsWithCache(client, [
+      "LAUCN080310000000003",
+    ]);
+    expect(secondCache.hit).toBe(true);
+    expect(fetchFn).toHaveBeenCalledTimes(1); // no refetch
+
+    current = new Date(current.getTime() + 2 * 60 * 60 * 1000); // +2h more: past 24h
+    const { cache: thirdCache } = await fetchSeriesObservationsWithCache(client, [
+      "LAUCN080310000000003",
+    ]);
+    expect(thirdCache.hit).toBe(false);
+    expect(fetchFn).toHaveBeenCalledTimes(2); // refetched
+  });
+
+  it("still serves a stale cache entry when BLS fails on refetch", async () => {
+    let current = new Date("2026-10-05T00:00:00.000Z");
+    let fail = false;
+    const fetchFn = vi.fn(async () => {
+      if (fail) return new Response("nope", { status: 500 });
+      return ok([]);
+    });
+    const client = createHttpClient({
+      source: "bls",
+      budget: new MemoryBudgetStore(500),
+      cache: new MemoryCacheStore(),
+      fetch: fetchFn as unknown as typeof fetch,
+      fixtures: { mode: "off" },
+      now: () => current,
+    });
+
+    await fetchSeriesObservationsWithCache(client, ["LAUCN080310000000003"]);
+    current = new Date(current.getTime() + 25 * 60 * 60 * 1000); // past the 24h fresh window
+    fail = true;
+    const { cache } = await fetchSeriesObservationsWithCache(client, ["LAUCN080310000000003"]);
+    expect(cache).toMatchObject({ hit: true, stale: true });
+  });
+});
+
+describe("the cache key stays keyless regardless of registrationkey (#325)", () => {
+  it("two calls that differ only by apiKey hit the same cache entry", async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series: [] } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const client = createHttpClient({
+      source: "bls",
+      budget: new MemoryBudgetStore(500),
+      cache: new MemoryCacheStore(),
+      fetch: fetchFn as unknown as typeof fetch,
+      fixtures: { mode: "off" },
+    });
+
+    const first = await fetchSeriesObservationsWithCache(client, ["LAUCN080310000000003"], {
+      apiKey: "KEY-ONE",
+    });
+    expect(first.cache.hit).toBe(false);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+
+    const second = await fetchSeriesObservationsWithCache(client, ["LAUCN080310000000003"], {
+      apiKey: "KEY-TWO",
+    });
+    expect(second.cache.hit).toBe(true); // same cache entry despite a different key
+    expect(fetchFn).toHaveBeenCalledTimes(1); // no second network call
+
+    // The key still rode on the wire for the real (first) request.
+    const [, firstInit] = fetchFn.mock.calls[0] as [string, RequestInit];
+    expect(String(firstInit.body)).toContain("KEY-ONE");
+  });
+
+  it("fetchSeriesRawWithCache carries the same merged cache info", async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series: [] } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const client = createHttpClient({
+      source: "bls",
+      budget: new MemoryBudgetStore(500),
+      cache: new MemoryCacheStore(),
+      fetch: fetchFn as unknown as typeof fetch,
+      fixtures: { mode: "off" },
+    });
+    await fetchSeriesRawWithCache(client, ["LAUCN080310000000003"], { apiKey: "KEY-ONE" });
+    const second = await fetchSeriesRawWithCache(client, ["LAUCN080310000000003"], {
+      apiKey: "KEY-TWO",
+    });
+    expect(second.cache.hit).toBe(true);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 });
 
