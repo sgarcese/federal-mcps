@@ -12,6 +12,7 @@ import {
   createServer,
   LIMITS_ENV,
   type LimitsConfig,
+  limiterFromEnv,
   MemoryBudgetStore,
   MemoryCacheStore,
   openBundledCatalog,
@@ -56,6 +57,9 @@ export function resolveHudPerMinute(limits: LimitsConfig | undefined): number {
 
 /** Builds the configured HUD User `McpServer` over the bundled catalog. */
 export function createHudServer(options?: CreateServerOptions): McpServer {
+  // One limiter per container (#322, ADR-020 §2, §7): the shell counts tool calls, and every
+  // client charges its upstream fetches, against the same counters.
+  const limiter = options?.limiter ?? limiterFromEnv();
   // The core client's per-minute limiter (#231, ADR-018 §5) enforces HUD User's 60/minute per
   // token, split across reserved containers when FEDERAL_MCPS_LIMITS is configured (#324).
   const limits = parseLimitsConfig(process.env[LIMITS_ENV]);
@@ -64,6 +68,7 @@ export function createHudServer(options?: CreateServerOptions): McpServer {
     budget: new MemoryBudgetStore(HUD_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
     perMinute: resolveHudPerMinute(limits),
+    limiter,
   });
   const definition = buildHudDefinition({
     catalog: openBundledCatalog(),
@@ -71,7 +76,7 @@ export function createHudServer(options?: CreateServerOptions): McpServer {
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     token: () => process.env["HUD_USER_TOKEN"],
   });
-  return createServer(definition, options);
+  return createServer(definition, { ...options, limiter });
 }
 
 export {

@@ -10,6 +10,7 @@ import {
   type CreateServerOptions,
   createHttpClient,
   createServer,
+  limiterFromEnv,
   MemoryBudgetStore,
   MemoryCacheStore,
   openBundledCatalog,
@@ -69,6 +70,9 @@ const QCEW_DAILY_BUDGET = 50_000;
 
 /** Builds the configured BLS `McpServer` over the bundled catalog + BLS API client, ready to run. */
 export function createBlsServer(options?: CreateServerOptions): McpServer {
+  // One limiter per container (#322, ADR-020 §2, §7): the shell counts tool calls, and every
+  // client charges its upstream fetches, against the same counters.
+  const limiter = options?.limiter ?? limiterFromEnv();
   const httpClient = createHttpClient({
     source: "bls",
     budget: new MemoryBudgetStore(BLS_DAILY_BUDGET),
@@ -76,6 +80,7 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     // Catches a daily-threshold refusal (HTTP 200, `REQUEST_NOT_PROCESSED`) before it is parsed
     // and cached, converting it to `QuotaExceededError` (#325, ADR-020 §8).
     bodyError: blsDailyThresholdBodyError,
+    limiter,
   });
   // QCEW's own source key ("bls-qcew") so its fetches never decrement the BLS API's budget;
   // passed as a dependency rather than set on module state (#324 review).
@@ -83,6 +88,7 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     source: "bls-qcew",
     budget: new MemoryBudgetStore(QCEW_DAILY_BUDGET),
     cache: new MemoryCacheStore(),
+    limiter,
   });
   const definition = buildBlsDefinition({
     catalog: openBundledCatalog(),
@@ -91,5 +97,5 @@ export function createBlsServer(options?: CreateServerOptions): McpServer {
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     apiKey: () => process.env["BLS_API_KEY"],
   });
-  return createServer(definition, options);
+  return createServer(definition, { ...options, limiter });
 }

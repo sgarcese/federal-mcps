@@ -10,7 +10,9 @@ import {
   createHttpClient,
   createServer,
   LIMITS_ENV,
+  type Limiter,
   type LimitsConfig,
+  limiterFromEnv,
   MemoryBudgetStore,
   MemoryCacheStore,
   openBundledCatalog,
@@ -61,7 +63,7 @@ export function resolveBeaErrorsPerMinute(limits: LimitsConfig | undefined): num
 }
 
 /** The core client for the BEA Data API: the limiter, and BEA's sanitize and 200-error hooks. */
-export function createBeaHttpClient(): ReturnType<typeof createHttpClient> {
+export function createBeaHttpClient(limiter?: Limiter): ReturnType<typeof createHttpClient> {
   const limits = parseLimitsConfig(process.env[LIMITS_ENV]);
   return createHttpClient({
     source: "bea",
@@ -71,16 +73,20 @@ export function createBeaHttpClient(): ReturnType<typeof createHttpClient> {
     errorsPerMinute: resolveBeaErrorsPerMinute(limits),
     sanitize: sanitizeBeaBody,
     bodyError: beaBodyError,
+    ...(limiter === undefined ? {} : { limiter }),
   });
 }
 
 /** Builds the configured BEA `McpServer` over the bundled catalog. */
 export function createBeaServer(options?: CreateServerOptions): McpServer {
+  // One limiter per container (#322, ADR-020 §2, §7): the shell counts tool calls, and every
+  // client charges its upstream fetches, against the same counters.
+  const limiter = options?.limiter ?? limiterFromEnv();
   const definition = buildBeaDefinition({
     catalog: openBundledCatalog(),
-    httpClient: createBeaHttpClient(),
+    httpClient: createBeaHttpClient(limiter),
     // biome-ignore lint/complexity/useLiteralKeys: process.env is an index signature under noPropertyAccessFromIndexSignature.
     apiKey: () => process.env["BEA_API_KEY"],
   });
-  return createServer(definition, options);
+  return createServer(definition, { ...options, limiter });
 }
