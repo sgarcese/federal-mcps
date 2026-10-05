@@ -211,7 +211,10 @@ describe("identifyFromEnv", () => {
       { [CALLER_SECRET_ENV]: SECRET, [OPERATOR_TOKEN_ENV]: TOKEN },
       () => {},
     );
-    const fromEnv = id({ [SOURCE_IP_HEADER]: "198.51.100.7", [OPERATOR_BYPASS_HEADER]: TOKEN }, NOON);
+    const fromEnv = id(
+      { [SOURCE_IP_HEADER]: "198.51.100.7", [OPERATOR_BYPASS_HEADER]: TOKEN },
+      NOON,
+    );
     const direct = identify()(
       { [SOURCE_IP_HEADER]: "198.51.100.7", [OPERATOR_BYPASS_HEADER]: TOKEN },
       NOON,

@@ -7,6 +7,7 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
+import { type Caller, type Identify, type RequestHeaders, SOURCE_IP_HEADER } from "./caller.js";
 import {
   describeSourceToolName,
   type ServerDefinition,
@@ -14,6 +15,7 @@ import {
   type ToolDefinition,
 } from "./definition.js";
 import { toToolError } from "./errors.js";
+import { identifyFromEnv } from "./identify.js";
 import { wrapResult } from "./wrap.js";
 
 /**
@@ -53,6 +55,46 @@ export interface CreateServerOptions {
    * disagree.
    */
   readonly now?: () => Date;
+  /**
+   * Turns a request's headers into the caller (ADR-020 §1), injectable for tests. Default:
+   * `identifyFromEnv()`, built on the first request that carries a forwarded source address,
+   * so stdio and local runs never read the secret or warn about its absence.
+   */
+  readonly identify?: Identify;
+}
+
+type Extra = RequestHandlerExtra<ServerRequest, ServerNotification>;
+
+/** Builds the per-call caller from the HTTP request behind a tool call, if there is one. */
+type CallerFor = (extra: Extra) => Caller | undefined;
+
+function callerResolver(options: CreateServerOptions | undefined, now: () => Date): CallerFor {
+  let fromEnv: Identify | undefined;
+  const identify: Identify =
+    options?.identify ??
+    ((headers, at) => {
+      if (!headers[SOURCE_IP_HEADER]) return undefined;
+      fromEnv ??= identifyFromEnv();
+      return fromEnv(headers, at);
+    });
+  return (extra) => {
+    // Stdio (and the in-memory transport) carry no HTTP request, so there is no caller.
+    const raw = extra.requestInfo?.headers;
+    if (raw === undefined) return undefined;
+    return identify(normalizeHeaders(raw), now());
+  };
+}
+
+/** Lower-cased names; a repeated header joined the way Node and fetch join one. */
+function normalizeHeaders(
+  raw: Readonly<Record<string, string | string[] | undefined>>,
+): RequestHeaders {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(raw)) {
+    if (value === undefined) continue;
+    headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : value;
+  }
+  return headers;
 }
 
 /** The `source` block for the auto-registered `describe_source` tool. */
@@ -78,6 +120,7 @@ export function createServer(
   options?: CreateServerOptions,
 ): McpServer {
   const now = options?.now ?? (() => new Date());
+  const callerFor = callerResolver(options, now);
 
   const server = new McpServer(
     { name: definition.name, version: definition.version },
@@ -86,7 +129,7 @@ export function createServer(
   );
 
   for (const tool of definition.tools) {
-    registerDefinitionTool(server, definition, tool, now);
+    registerDefinitionTool(server, definition, tool, now, callerFor);
   }
 
   registerDescribeSource(server, definition, now);
@@ -111,6 +154,7 @@ function registerDefinitionTool(
   // biome-ignore lint/suspicious/noExplicitAny: the seam types the tool list heterogeneously; each tool is typed at its definition site.
   tool: ToolDefinition<any, any>,
   now: () => Date,
+  callerFor: CallerFor,
 ): void {
   server.registerTool(
     tool.name,
@@ -127,14 +171,13 @@ function registerDefinitionTool(
       outputSchema: EnvelopeSchema,
       annotations: { ...FAMILY_TOOL_ANNOTATIONS },
     },
-    async (
-      args: unknown,
-      extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-    ): Promise<CallToolResult> => {
+    async (args: unknown, extra: Extra): Promise<CallToolResult> => {
       try {
+        const caller = callerFor(extra);
         const result = await tool.handler(args, {
           now,
           ...(extra.signal === undefined ? {} : { signal: extra.signal }),
+          ...(caller === undefined ? {} : { caller }),
         });
         return asCallToolResult(
           wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),
