@@ -6,6 +6,8 @@ export interface BudgetConsumeResult {
   readonly allowed: boolean;
   readonly remaining: number;
   readonly resetsAt: string;
+  /** The daily limit, when the store knows it, so a refusal can say the number (#323). */
+  readonly limit?: number;
 }
 
 export interface BudgetStore {
@@ -39,11 +41,21 @@ export class MemoryBudgetStore implements BudgetStore {
     const usedSoFar = this.used.get(key) ?? 0;
 
     if (usedSoFar + n > this.limitPerDay) {
-      return { allowed: false, remaining: Math.max(0, this.limitPerDay - usedSoFar), resetsAt };
+      return {
+        allowed: false,
+        remaining: Math.max(0, this.limitPerDay - usedSoFar),
+        resetsAt,
+        limit: this.limitPerDay,
+      };
     }
 
     const newUsed = usedSoFar + n;
     this.used.set(key, newUsed);
-    return { allowed: true, remaining: this.limitPerDay - newUsed, resetsAt };
+    return {
+      allowed: true,
+      remaining: this.limitPerDay - newUsed,
+      resetsAt,
+      limit: this.limitPerDay,
+    };
   }
 }
