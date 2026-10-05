@@ -7,7 +7,8 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
-import { type Caller, type Identify, type RequestHeaders, SOURCE_IP_HEADER } from "./caller.js";
+import { ATTESTATION_HEADER, isAttested } from "./attestation.js";
+import { type Caller, type Identify, SOURCE_IP_HEADER } from "./caller.js";
 import {
   describeSourceToolName,
   type ServerDefinition,
@@ -56,9 +57,10 @@ export interface CreateServerOptions {
    */
   readonly now?: () => Date;
   /**
-   * Turns a request's headers into the caller (ADR-020 §1), injectable for tests. Default:
-   * `identifyFromEnv()`, built on the first request that carries a forwarded source address,
-   * so stdio and local runs never read the secret or warn about its absence.
+   * Turns a request's headers into the caller (ADR-020 §1), injectable for tests. Called only
+   * for requests our Lambda adapter attested (attestation.ts); any other request has no caller.
+   * Default: `identifyFromEnv()`, built on the first attested request that carries a source
+   * address, so stdio and local runs never read the secret or warn about its absence.
    */
   readonly identify?: Identify;
 }
@@ -81,14 +83,21 @@ function callerResolver(options: CreateServerOptions | undefined, now: () => Dat
     // Stdio (and the in-memory transport) carry no HTTP request, so there is no caller.
     const raw = extra.requestInfo?.headers;
     if (raw === undefined) return undefined;
-    return identify(normalizeHeaders(raw), now());
+    const headers = normalizeHeaders(raw);
+    // A source address counts only when our Lambda adapter, in this process, attested it
+    // (attestation.ts). A client that reaches the handler directly and sends the header itself
+    // gets no caller, silently, and identify() is never consulted. The nonce stops here.
+    const attested = isAttested(headers);
+    delete headers[ATTESTATION_HEADER];
+    if (!attested) return undefined;
+    return identify(headers, now());
   };
 }
 
 /** Lower-cased names; a repeated header joined the way Node and fetch join one. */
 function normalizeHeaders(
   raw: Readonly<Record<string, string | string[] | undefined>>,
-): RequestHeaders {
+): Record<string, string> {
   const headers: Record<string, string> = {};
   for (const [name, value] of Object.entries(raw)) {
     if (value === undefined) continue;

@@ -7,6 +7,7 @@
  * helpers are exported because the contract harness (#7) asserts against them.
  */
 
+export { ATTESTATION_HEADER } from "./attestation.js";
 export * from "./caller.js";
 export {
   type CreateServerOptions,

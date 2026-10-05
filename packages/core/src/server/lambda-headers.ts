@@ -1,15 +1,20 @@
+import { ATTESTATION_HEADER, attest } from "./attestation.js";
 import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER } from "./caller.js";
 
 /**
  * The headers a Lambda adapter replays against its loopback server (#321, ADR-020 §1).
  *
  * Every agency server's adapter turns an API Gateway v2 event into one `http.request` against a
- * loopback server; this builds that request's headers. It is the only place the source address
- * enters the process, so it is where the trust boundary sits:
+ * loopback server in the same process; this builds that request's headers. It is the only place
+ * a source address is asserted, so it is where the trust boundary sits:
  *
- * - Any client-sent `SOURCE_IP_HEADER`, under any spelling, is deleted, then the header is set
- *   from `requestContext.http.sourceIp`: the TCP peer API Gateway saw, which a client cannot
- *   forge. `x-forwarded-for` is passed through untouched and never read for identity.
+ * - Any client-sent `SOURCE_IP_HEADER` or `ATTESTATION_HEADER`, under any spelling, is deleted.
+ *   The source header is then set from `requestContext.http.sourceIp` (the TCP peer API Gateway
+ *   saw, which a client cannot forge), together with the attestation header carrying this
+ *   process's nonce (`attestation.ts`). The shell honours the source header only when that
+ *   attestation matches, so a `createHttpHandler` reached any other way (a self-hoster's public
+ *   port, a local dev server) yields no caller whatever the client sends.
+ * - `x-forwarded-for` is passed through untouched and never read for identity.
  * - `OPERATOR_BYPASS_HEADER` is client-sent by design; it is not trusted here but kept under its
  *   lower-cased name for `identify()`, which compares it to the token in constant time. When a
  *   request carries it under more than one spelling, it is dropped rather than guessed at.
@@ -27,7 +32,7 @@ export function lambdaRequestHeaders(event: LambdaHeaderEvent): Record<string, s
   for (const [name, value] of Object.entries(event.headers ?? {})) {
     if (value === undefined) continue;
     const lower = name.toLowerCase();
-    if (lower === SOURCE_IP_HEADER) continue;
+    if (lower === SOURCE_IP_HEADER || lower === ATTESTATION_HEADER) continue;
     if (lower === OPERATOR_BYPASS_HEADER) {
       operatorValues.push(value);
       continue;
@@ -38,6 +43,9 @@ export function lambdaRequestHeaders(event: LambdaHeaderEvent): Record<string, s
     headers[OPERATOR_BYPASS_HEADER] = operatorValues[0];
   }
   const sourceIp = event.requestContext.http.sourceIp;
-  if (sourceIp) headers[SOURCE_IP_HEADER] = sourceIp;
+  if (sourceIp) {
+    headers[SOURCE_IP_HEADER] = sourceIp;
+    Object.assign(headers, attest());
+  }
   return headers;
 }

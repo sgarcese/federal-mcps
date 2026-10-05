@@ -11,14 +11,20 @@ import {
 /**
  * `identify()` (#321, ADR-020 §1): request headers in, a `Caller` out.
  *
- * - No forwarded source address (stdio, local runs, the loopback without the Lambda adapter)
- *   means no caller, so no per-identity limits.
+ * - No forwarded source address (stdio, local runs, any HTTP request our Lambda adapter did not
+ *   attest; see below) means no caller, so no per-identity limits.
  * - An address in the claude.ai range `160.79.104.0/21` is one shared **pool**: every claude.ai
  *   user arrives from it, so it gets one capped share rather than one share per address.
  * - Any other address is a **network**, keyed by HMAC-SHA256(secret, utcDay + "|" + network),
  *   hex, truncated to `CALLER_KEY_HEX_LENGTH`. The key rotates at UTC midnight, so a stored
  *   counter can only be linked to an address on the day it was written, and only by someone
  *   holding the secret. The raw address is never stored on the Caller, logged or returned.
+ *
+ * Trust boundary: `identify()` trusts `SOURCE_IP_HEADER` because the shell (`create-server.ts`)
+ * calls it only for requests our Lambda adapter attested with this process's nonce
+ * (`attestation.ts`, `lambda-headers.ts`). A client that reaches a `createHttpHandler` directly
+ * and sends the header itself never gets this far, so it cannot choose its network or claim the
+ * pool. Any other caller of `identify()` must apply the same check first.
  *
  * x-forwarded-for is never read: a client can write any value into it.
  */
