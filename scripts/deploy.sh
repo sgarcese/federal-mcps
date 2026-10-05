@@ -44,6 +44,11 @@ export TF_VAR_bea_api_key="$BEA_API_KEY"
 # The Socrata App Token for the CDC portal is optional (ADR-016 §3): data.cdc.gov serves untokened
 # requests, a token only lifts per-IP throttling. Passed through only when set in .env.
 if [ -n "${SOCRATA_APP_TOKEN:-}" ]; then export TF_VAR_socrata_app_token="$SOCRATA_APP_TOKEN"; fi
+# #319, ADR-020 §1, §9: the caller-identity HMAC secret and the operator-bypass token, both
+# optional (empty means no per-identity limiter / no bypass, as today). Same pattern as
+# BEA_API_KEY: passed through only when set in .env, never required.
+if [ -n "${FEDERAL_MCPS_CALLER_SECRET:-}" ]; then export TF_VAR_caller_hmac_secret="$FEDERAL_MCPS_CALLER_SECRET"; fi
+if [ -n "${FEDERAL_MCPS_OPERATOR_TOKEN:-}" ]; then export TF_VAR_operator_bypass_token="$FEDERAL_MCPS_OPERATOR_TOKEN"; fi
 
 echo "== identity"
 aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output json
