@@ -57,9 +57,24 @@ export function createLimiter(options: CreateLimiterOptions): Limiter {
     const at = now().getTime();
     if (at - lastDegradedLogMs < DEGRADED_LOG_INTERVAL_MS) return;
     lastDegradedLogMs = at;
-    // No key, caller or address: only what failed and the error's name.
+    // No key, caller or address: only what failed and the error's name. Also a valid EMF
+    // sample for a family-wide `LimiterDegraded` count (#326, ADR-020 §5) — chosen over a
+    // Terraform Logs metric filter because EMF needs no new IAM (the execution roles already
+    // hold logs:PutLogEvents; admin-grant-protection.sh grants rc-deploy no
+    // logs:PutMetricFilter a Terraform filter would need).
     console.warn(
       JSON.stringify({
+        _aws: {
+          Timestamp: at,
+          CloudWatchMetrics: [
+            {
+              Namespace: "FederalMCPs",
+              Dimensions: [[]],
+              Metrics: [{ Name: "LimiterDegraded", Unit: "Count" }],
+            },
+          ],
+        },
+        LimiterDegraded: 1,
         event: LIMITER_DEGRADED_EVENT,
         operation,
         error: error instanceof Error ? error.name : "unknown",

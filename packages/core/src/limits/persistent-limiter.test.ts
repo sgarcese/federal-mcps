@@ -304,6 +304,24 @@ describe("createLimiter: a failing store (ADR-020 §3)", () => {
     expect(line).not.toContain("net-key-a");
   });
 
+  // #326, ADR-020 §5: "make limiter_degraded countable." EMF on the existing warn line
+  // (not a Logs metric filter in Terraform), because EMF needs no new IAM — the execution
+  // roles already hold logs:PutLogEvents, and admin-grant-protection.sh grants rc-deploy no
+  // logs:PutMetricFilter right a Terraform metric filter would need.
+  it("the degraded line is also a valid EMF sample for a LimiterDegraded count (#326)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const limiter = createLimiter({ config: CONFIG, store: BROKEN, now: () => AT });
+    for (let i = 0; i < 5; i++) await limiter.beforeUpstream("bls", caller({ key: "x" }), AT);
+    await refusal(limiter.beforeUpstream("bls", undefined, AT));
+
+    const parsed = JSON.parse(String(warn.mock.calls[0]?.[0]));
+    expect(parsed._aws.CloudWatchMetrics[0]).toMatchObject({
+      Namespace: "FederalMCPs",
+      Metrics: [{ Name: "LimiterDegraded", Unit: "Count" }],
+    });
+    expect(parsed.LimiterDegraded).toBe(1);
+  });
+
   it("signals again after a minute", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     let clock = AT;
