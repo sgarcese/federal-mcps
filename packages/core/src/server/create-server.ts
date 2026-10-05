@@ -77,12 +77,20 @@ export interface CreateServerOptions {
 
 /** The `limits` block `describe_source` answers with (ADR-020 §4). */
 export interface SourceLimits {
-  readonly network?: { readonly upstreamDaily?: number; readonly toolCallsDaily?: number };
-  readonly pool?: { readonly upstreamDaily?: number; readonly toolCallsDaily?: number };
+  /** Daily shares for one network, as configured. */
+  readonly network?: NonNullable<LimitsConfig["network"]>;
+  /** Daily shares for all claude.ai users together, as configured. */
+  readonly pool?: NonNullable<LimitsConfig["pool"]>;
   /** Per upstream budget key: the daily budget, and today's use when a limiter counts it. */
-  readonly service?: Readonly<
-    Record<string, { daily: number; used?: number; remaining?: number; resetsAt?: string }>
-  >;
+  readonly service?: Readonly<Record<string, ServiceBudget>>;
+}
+
+/** One service budget in `describe_source`'s `limits` block. */
+export interface ServiceBudget {
+  readonly daily: number;
+  readonly used?: number;
+  readonly remaining?: number;
+  readonly resetsAt?: string;
 }
 
 /** Builds `describe_source`'s `limits` block from the configuration and the limiter's counts. */
@@ -91,10 +99,7 @@ async function sourceLimits(
   limiter: Limiter | undefined,
   at: Date,
 ): Promise<SourceLimits> {
-  const service: Record<
-    string,
-    { daily: number; used?: number; remaining?: number; resetsAt?: string }
-  > = {};
+  const service: Record<string, ServiceBudget> = {};
   for (const [source, daily] of Object.entries(config.serviceDaily ?? {})) {
     const usage = await limiter?.usage(source, at);
     service[source] =
