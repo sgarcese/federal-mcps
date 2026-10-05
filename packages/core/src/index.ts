@@ -31,5 +31,7 @@ export * from "./geography/index.js";
 export * from "./http/index.js";
 export * from "./indicators/index.js";
 export * from "./limits/config.js";
+export * from "./limits/context.js";
+export * from "./limits/limiter.js";
 export * from "./limits/split.js";
 export * from "./server/index.js";

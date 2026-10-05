@@ -1,4 +1,5 @@
 import { CACHE_MISS, type CacheInfo } from "../cache.js";
+import type { Limiter } from "../limits/limiter.js";
 import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
 import {
@@ -67,6 +68,11 @@ export interface HttpClientOptions {
    * client unlimited (unchanged behaviour).
    */
   readonly errorsPerMinute?: number;
+  /**
+   * Charges each upstream query to the service budget and the current caller's share (ADR-020
+   * §2, #322), reading the caller from the per-call context. Default: no limiter.
+   */
+  readonly limiter?: Limiter;
 }
 
 export interface RequestOptions {
