@@ -8,6 +8,7 @@ import {
   QuotaExceededError,
   RateLimitWaitError,
   TimeoutError,
+  UpstreamErrorLimitError,
 } from "./errors.js";
 import { type FixtureMode, readFixture, resolveFixtureMode, writeFixture } from "./fixtures.js";
 import { computeDelayMs, DEFAULT_BACKOFF, isRetryableStatus, parseRetryAfter } from "./retry.js";
@@ -58,6 +59,14 @@ export interface HttpClientOptions {
   readonly bodyError?: (
     body: string,
   ) => { code: string; message: string; retryable: boolean } | undefined;
+  /**
+   * An agency's own per-minute error budget (#324, ADR-020 §2), e.g. BEA's 30 errors/minute,
+   * past which it may block the key. Counts failures `bodyError` raises and HTTP 4xx responses
+   * in a rolling one-minute window; once the count reaches this limit, further calls this
+   * minute throw `UpstreamErrorLimitError` before `fetch` is ever invoked. Omit to leave the
+   * client unlimited (unchanged behaviour).
+   */
+  readonly errorsPerMinute?: number;
 }
 
 export interface RequestOptions {
@@ -174,6 +183,43 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     }
   }
 
+  // Fixed-window state for the optional per-minute upstream error limiter (#324, ADR-020 §2).
+  // Unlike the rate limiter's continuous token bucket, the error budget is a simple rolling
+  // window: the count resets the first time it's checked after the window's minute has
+  // elapsed. Only used when `errorsPerMinute` is set.
+  const errorsPerMinute = options.errorsPerMinute;
+  let errorCount = 0;
+  let errorWindowStartMs = now().getTime();
+
+  /** Rolls the error window over to a fresh minute if it has elapsed. */
+  function rollErrorWindow(): void {
+    const nowMs = now().getTime();
+    if (nowMs - errorWindowStartMs >= 60_000) {
+      errorWindowStartMs = nowMs;
+      errorCount = 0;
+    }
+  }
+
+  /** Refuses the call, before any upstream fetch, once this minute's error budget is spent. */
+  function checkErrorLimit(): void {
+    if (errorsPerMinute === undefined) return;
+    rollErrorWindow();
+    if (errorCount >= errorsPerMinute) {
+      throw new UpstreamErrorLimitError({
+        source,
+        errorsPerMinute,
+        resetsAt: new Date(errorWindowStartMs + 60_000).toISOString(),
+      });
+    }
+  }
+
+  /** Counts one failure toward this minute's error budget (HTTP 4xx or a `bodyError`). */
+  function noteError(): void {
+    if (errorsPerMinute === undefined) return;
+    rollErrorWindow();
+    errorCount += 1;
+  }
+
   async function doFetchOnce(
     url: string,
     headers: Record<string, string> | undefined,
@@ -247,12 +293,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 
       if (!isRetryableStatus(raw.status)) {
         if (raw.status >= 400) {
+          if (raw.status < 500) noteError();
           throw new HttpError({ source, status: raw.status, url, attempts: attempt });
         }
         const clean = options.sanitize ? { ...raw, body: options.sanitize(raw.body) } : raw;
         const agencyError = options.bodyError?.(clean.body);
         if (!agencyError) return clean;
         if (!agencyError.retryable || attempt >= DEFAULT_BACKOFF.maxAttempts) {
+          noteError();
           throw new AgencyApiError({
             source,
             code: agencyError.code,
@@ -266,6 +314,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
 
       if (attempt >= DEFAULT_BACKOFF.maxAttempts) {
+        if (raw.status >= 400 && raw.status < 500) noteError();
         throw new HttpError({ source, status: raw.status, url, attempts: attempt });
       }
 
@@ -290,6 +339,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       return fixture;
     }
 
+    checkErrorLimit();
     await acquireRateLimitToken();
 
     const budgetResult = await budget.consume(source, 1);
