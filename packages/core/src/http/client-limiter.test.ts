@@ -115,6 +115,29 @@ describe("createHttpClient: the limiter", () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
+  it("charges inside the stale-on-failure path: a refused query serves the cached entry", async () => {
+    let clock = NOW;
+    const limiter = fakeLimiter();
+    const { client, fetchFn } = makeClient(limiter, { now: () => clock });
+    const options = { freshTtlSeconds: 60, staleTtlSeconds: 86_400 };
+    await client.getJson("https://api.bls.gov/x", options);
+    limiter.beforeUpstream.mockRejectedValueOnce(
+      new LimitExceededError({
+        scope: "network",
+        kind: "upstream",
+        source: "bls",
+        limit: 100,
+        used: 100,
+        resetsAt: "2026-10-06T00:00:00.000Z",
+      }),
+    );
+    clock = new Date(NOW.getTime() + 120_000);
+    const result = await client.getJson<{ ok: boolean }>("https://api.bls.gov/x", options);
+    expect(result.value).toEqual({ ok: true });
+    expect(result.cache).toMatchObject({ hit: true, stale: true });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it("leaves one 80% note per call, however many fetches cross it", async () => {
     const limiter = fakeLimiter({
       source: "bls",
