@@ -150,7 +150,11 @@ const entries = sets.flatMap((f) =>
 );
 
 log(`Running ${entries.length} evals from ${sets.join(", ")} (bar ${BAR})`);
-log(OPERATOR_TOKEN ? "  operator bypass: on (per-network/pool shares exempt)" : "  operator bypass: off");
+log(
+  OPERATOR_TOKEN
+    ? "  operator bypass: on (per-network/pool shares exempt)"
+    : "  operator bypass: off",
+);
 for (const [name, url] of Object.entries(URLS)) log(`  ${name}: ${url}`);
 log();
 let passed = 0;

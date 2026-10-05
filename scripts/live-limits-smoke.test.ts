@@ -73,9 +73,7 @@ describe("parseRefusal", () => {
       content: [
         {
           type: "text",
-          text:
-            "geo: this network has used its 1000 tool calls for today; resets at " +
-            `${RESET}.`,
+          text: `geo: this network has used its 1000 tool calls for today; resets at ${RESET}.`,
         },
       ],
       structuredContent: {
@@ -90,7 +88,9 @@ describe("parseRefusal", () => {
   });
 
   it("is undefined for a successful (non-isError) result", () => {
-    expect(parseRefusal({ isError: false, content: [], structuredContent: { data: {} } })).toBeUndefined();
+    expect(
+      parseRefusal({ isError: false, content: [], structuredContent: { data: {} } }),
+    ).toBeUndefined();
     expect(parseRefusal({ content: [] })).toBeUndefined();
   });
 
@@ -123,7 +123,14 @@ describe("isNetworkToolCallsRefusal", () => {
     expect(
       isNetworkToolCallsRefusal({
         sentence: "x",
-        limit: { scope: "network", kind: "upstream", source: "bls", limit: 100, used: 100, resetsAt: RESET },
+        limit: {
+          scope: "network",
+          kind: "upstream",
+          source: "bls",
+          limit: 100,
+          used: 100,
+          resetsAt: RESET,
+        },
       }),
     ).toBe(false);
   });
@@ -143,7 +150,9 @@ describe("cacheBustingYear", () => {
   it("rotates across days (not the same value every day)", () => {
     const day0 = new Date("2026-01-01T00:00:00.000Z");
     const values = new Set(
-      Array.from({ length: 10 }, (_, i) => cacheBustingYear(new Date(day0.getTime() + i * 86_400_000))),
+      Array.from({ length: 10 }, (_, i) =>
+        cacheBustingYear(new Date(day0.getTime() + i * 86_400_000)),
+      ),
     );
     expect(values.size).toBeGreaterThan(1);
   });

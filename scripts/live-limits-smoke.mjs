@@ -88,7 +88,9 @@ export function parseRefusal(toolResult) {
 /** True when a parsed refusal is specifically a per-network tool-call-share refusal. */
 export function isNetworkToolCallsRefusal(refusal) {
   return (
-    refusal !== undefined && refusal.limit?.scope === "network" && refusal.limit?.kind === "toolCalls"
+    refusal !== undefined &&
+    refusal.limit?.scope === "network" &&
+    refusal.limit?.kind === "toolCalls"
   );
 }
 
@@ -132,21 +134,29 @@ async function main() {
   const results = [];
   const record = (name, ok, detail) => {
     results.push({ name, ok, detail });
-    console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  ${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
   };
 
   // Step 1: describe_source carries a limits block for both servers.
   for (const [server, url] of Object.entries(URLS)) {
     const result = await callTool(url, `${server}_describe_source`, {});
     const ok = !result.isError && hasLimitsBlock(result.structuredContent?.data);
-    record(`${server}_describe_source has a limits block`, ok, result.isError ? "isError" : undefined);
+    record(
+      `${server}_describe_source has a limits block`,
+      ok,
+      result.isError ? "isError" : undefined,
+    );
   }
 
   // Step 2: a cache-busting BLS query really increments the DynamoDB-backed service counter.
   const before = await callTool(URLS.bls, "bls_describe_source", {});
   const usedBefore = extractServiceUsed(before.structuredContent?.data, "bls");
   if (typeof usedBefore !== "number") {
-    record("bls service budget reports a used count", false, "no numeric used — is the limiter configured?");
+    record(
+      "bls service budget reports a used count",
+      false,
+      "no numeric used — is the limiter configured?",
+    );
   } else {
     const year = cacheBustingYear();
     const raw = await callTool(URLS.bls, "bls_get_raw", {
@@ -154,7 +164,11 @@ async function main() {
       startYear: year,
       endYear: year,
     });
-    record("bls_get_raw (cache-busting year) succeeds", !raw.isError, raw.isError ? raw.content?.[0]?.text : undefined);
+    record(
+      "bls_get_raw (cache-busting year) succeeds",
+      !raw.isError,
+      raw.isError ? raw.content?.[0]?.text : undefined,
+    );
 
     const after = await callTool(URLS.bls, "bls_describe_source", {});
     const usedAfter = extractServiceUsed(after.structuredContent?.data, "bls");
@@ -170,9 +184,13 @@ async function main() {
   const describeGeo = await callTool(URLS.geo, "geo_describe_source", {});
   const toolCallsDaily = extractNetworkToolCallsDaily(describeGeo.structuredContent?.data);
   if (typeof toolCallsDaily !== "number") {
-    record("geo network tool-call share is configured", false, "no toolCallsDaily — is the limiter configured?");
+    record(
+      "geo network tool-call share is configured",
+      false,
+      "no toolCallsDaily — is the limiter configured?",
+    );
   } else {
-    console.log(`  spending the geo network share: ${toolCallsDaily + 1} calls, paced at 6/s...`);
+    console.error(`  spending the geo network share: ${toolCallsDaily + 1} calls, paced at 6/s...`);
     let last;
     for (let i = 0; i < toolCallsDaily + 1; i++) {
       last = await callTool(URLS.geo, "geo_resolve_place", { query: "Denver" });
@@ -181,11 +199,11 @@ async function main() {
     const refusal = parseRefusal(last);
     const ok = isNetworkToolCallsRefusal(refusal);
     record("final geo_resolve_place call is a network tool-call refusal", ok);
-    if (refusal?.sentence) console.log(`    "${refusal.sentence}"`);
+    if (refusal?.sentence) console.error(`    "${refusal.sentence}"`);
   }
 
   const failed = results.filter((r) => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} passed.`);
+  console.error(`\n${results.length - failed.length}/${results.length} passed.`);
   process.exitCode = failed.length === 0 ? 0 : 1;
 }
 
