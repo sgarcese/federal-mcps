@@ -48,6 +48,15 @@ const SOURCE = {
 const MAX_RAW_YEAR_SPAN = 20;
 
 /**
+ * BLS's per-query span limit is also "50 series" (see `MAX_RAW_YEAR_SPAN`'s comment); `fetchSeriesRaw`
+ * batches a longer `ids` list into several queries, so `bls_get_raw` caps the list at 200 — 4 BLS
+ * queries of up to 50 series each — rather than letting one call fan out an unbounded number of
+ * upstream requests against the shared daily budget (#324, ADR-020 §2).
+ */
+const MAX_RAW_IDS = 200;
+const MAX_RAW_IDS_MESSAGE = `bls_get_raw accepts at most ${MAX_RAW_IDS} ids (4 BLS queries of up to 50 series each); ask for fewer series per call.`;
+
+/**
  * The shape of any BLS Public Data API timeseries id: a two-letter survey prefix, then capitals
  * and digits, 5–30 characters in all (e.g. `LNU04000000`, `CEU2000000003`, `CUUR0000SA0`). The
  * API is the authority on whether a series exists; this only keeps garbage and QCEW's internal
@@ -134,6 +143,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
       ids: z
         .array(z.string())
         .min(1)
+        .max(MAX_RAW_IDS, MAX_RAW_IDS_MESSAGE)
         .describe("BLS timeseries ids, e.g. ['LAUCN080310000000003']."),
       startYear: z
         .number()
@@ -153,7 +163,7 @@ export function blsIndicatorTools(options: BlsIndicatorToolsOptions): ToolDefini
     textBudget: RAW_TEXT_BUDGET,
     handler: async (args): Promise<ToolHandlerResult> => {
       const rawInput = z.object({
-        ids: z.array(z.string()).min(1),
+        ids: z.array(z.string()).min(1).max(MAX_RAW_IDS, MAX_RAW_IDS_MESSAGE),
         startYear: z.number().int().optional(),
         endYear: z.number().int().optional(),
       });
