@@ -42,6 +42,47 @@ That creates `rc-bls-mcp-dev-role`, `rc-geo-mcp-dev-role`, `rc-census-mcp-dev-ro
 `iam:PassRole` on each. Idempotent; re-running only updates the policies. The server
 argument defaults to `bls` if omitted.
 
+## One-time: public-use protection (M17, ADR-020 §10)
+
+Run `scripts/admin-grant-protection.sh <instance>` once per instance, **after** the execution
+roles above exist and **before** the M17 deploy (the limiter's Terraform expects the table and
+the role grants already in place; `scripts/deploy.sh` itself never creates them, matching
+ADR-007):
+
+```sh
+AWS_PROFILE=<admin> scripts/admin-grant-protection.sh dev
+```
+
+It is idempotent — re-running updates the inline policies in place and skips table creation if
+the table already exists. What it does:
+
+- **Creates** the on-demand DynamoDB table `rc-federal-mcps-<env>-limits` (partition key `pk`,
+  string; TTL enabled on `expiresAt`), tagged like the project's other resources, unless it
+  already exists.
+- **Grants** `dynamodb:UpdateItem` and `dynamodb:GetItem`, scoped to that table's ARN only, to
+  each non-CDC server's execution role (`rc-bls-mcp-<env>-role`, `rc-census-mcp-<env>-role`,
+  `rc-huduser-mcp-<env>-role`, `rc-bea-mcp-<env>-role`, `rc-geo-mcp-<env>-role`). The CDC
+  OpenContext portal's role is never touched — ADR-020 §2 notes core's in-app limiter layer does
+  not reach OpenContext, so the portal gets only the edge layer (stage throttling and reserved
+  concurrency), set by Terraform, not this script.
+- **Grants `rc-deploy`** an inline policy with the CloudWatch (alarms, dashboards), SNS and AWS
+  Budgets rights the coming monitoring module needs, scoped to `rc-*` resource names wherever
+  that AWS service supports resource-level scoping (alarms, dashboards, SNS topics, budgets);
+  a few CloudWatch read actions (`DescribeAlarms` and similar) don't support resource scoping at
+  all and are granted on `"*"`, same as `admin-create-exec-role.sh`'s existing pattern of adding
+  inline policy statements directly to `rc-deploy` rather than managing a separate policy
+  document.
+- **Activates** the `project` cost-allocation tag (`aws ce update-cost-allocation-tags-status`),
+  so per-project cost reporting works ahead of the monitoring module's AWS Budget.
+- **Reports** the account's Lambda concurrency (`aws lambda get-account-settings`): the account
+  limit, the amount unreserved today, and what would remain unreserved after reserving ADR-020's
+  defaults (5 each for bls, census, geo and the CDC portal; 2 each for HUD and BEA — 24 total). It
+  warns if fewer than 100 would remain, so reserved concurrency can be set safely before the
+  Terraform edge layer applies it.
+
+Pass `--dry-run` to print every AWS call and policy document it would make without calling AWS —
+useful for an administrator to review before granting anything for real.
+
 ## The CDC portal (OpenContext, ADR-016 §4-5)
 
 The instance also deploys `rc-cdc-mcp-<env>` at `cdc.responsive.city/mcp`: an OpenContext
