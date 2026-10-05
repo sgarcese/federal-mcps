@@ -83,7 +83,10 @@ async function esbuildBundle() {
     format: "esm",
     // better-sqlite3 is a native addon: keep it external so Node resolves it (and its
     // prebuilt binary) from node_modules next to the bundle at runtime.
-    external: ["better-sqlite3"],
+    // The AWS SDK v3 (the limiter's DynamoDB client, #322) ships with the Lambda Node runtime,
+    // so it stays external too: core loads it lazily with a CommonJS require, which resolves it
+    // through the runtime's NODE_PATH.
+    external: ["better-sqlite3", "@aws-sdk/*"],
     outfile: join(stageDir, "lambda.mjs"),
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",

@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import type {
   GetItemCommandInput,
   GetItemCommandOutput,
@@ -80,11 +81,18 @@ export class DynamoCounterStore implements CounterStore {
   }
 
   /**
-   * Loaded lazily so stdio and local runs, which never build this store, never load the SDK; on
-   * Lambda the Node runtime provides `@aws-sdk/*`, which the bundle leaves external.
+   * Loaded lazily so stdio and local runs, which never build this store, never load the SDK. On
+   * Lambda the Node runtime provides `@aws-sdk/*` under `NODE_PATH`, and the bundle leaves it
+   * external (scripts/bundle-lambda.mjs). A CommonJS `require` is used because it honours
+   * `NODE_PATH`, which an ES module `import` does not.
    */
   private dynamo(): Promise<DynamoLike> {
-    this.client ??= import("@aws-sdk/client-dynamodb").then(({ DynamoDB }) => new DynamoDB({}));
+    this.client ??= Promise.resolve().then(() => {
+      const { DynamoDB } = createRequire(import.meta.url)(
+        "@aws-sdk/client-dynamodb",
+      ) as typeof import("@aws-sdk/client-dynamodb");
+      return new DynamoDB({});
+    });
     return this.client;
   }
 }
