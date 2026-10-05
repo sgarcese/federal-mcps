@@ -21,9 +21,10 @@ files, or any other content from your Claude session or other host.
   address, and any integration error. Lambda logs record server diagnostics (for example a
   missing configuration warning). Tool arguments and responses are not written to logs by the
   application. Logs are retained for **30 days** and then deleted automatically.
-- **Response cache.** Upstream agency responses are cached in memory for the life of a server
-  instance (and, for BLS timeseries, for up to 24 hours) to stay within each agency's API
-  quota. The cache is keyed by the request itself, not by who asked, and holds only public
+- **Response cache.** Upstream agency responses are cached in server memory to stay within each
+  agency's API quota: answered fresh for a day (BLS timeseries) to 30 days (QCEW, Census, HUD),
+  and kept a while longer to answer when an agency is down or a limit is spent, until the
+  server instance recycles. The cache is keyed by the request itself, not by who asked, and holds only public
   statistics.
 - **Per-network fair-use counters (M17, ADR-020).** To keep the shared endpoints usable for
   everyone without requiring sign-in, each server counts tool calls and upstream queries
@@ -31,14 +32,14 @@ files, or any other content from your Claude session or other host.
   **daily-rotating HMAC of the source address** — a one-way digest that changes every day at
   UTC midnight, computed with a secret the servers hold and never expose. The address itself
   is never written to the counter, logged, or returned to any caller. Counters are stored in
-  DynamoDB and expire automatically after **at most two days** (the day they were written for,
-  plus one day's grace). The **claude.ai egress range** (`160.79.104.0/21`) is counted as one
+  DynamoDB and expire **two days after the UTC day they count ends** (DynamoDB then deletes
+  expired items automatically, usually within a day or two). The **claude.ai egress range** (`160.79.104.0/21`) is counted as one
   shared pool rather than as individual addresses, because every claude.ai user's request
   arrives from that one range; this means a heavy claude.ai day can affect other claude.ai
   users' shares, which [`connect.md`](connect.md) names as the design's known weak point. A
   `User-Agent` string may be recorded as a metric label (to show how traffic splits by host)
   but is never used to identify or enforce a limit on you.
-- **A per-call metrics line (M17, ADR-020 §5; landing with #326).** Each tool call produces one
+- **A per-call metrics line (M17, ADR-020 §5).** Each tool call produces one
   structured log line for operational metrics: which server and tool were called, the outcome
   (success, tool error, or which kind of limit refused it), how long it took, how many upstream
   requests it made, whether the answer came from cache, and which scope (if any) a limit
@@ -51,9 +52,10 @@ files, or any other content from your Claude session or other host.
   spending them on behalf of real users. It is configured as a deploy secret, never committed,
   and its value is never logged or printed; this policy states that it exists, not what it is.
 
-Nothing else is stored. There is no database of users or queries, and no counter or log line
-can be traced back to a specific address beyond the day it was written, even by the project's
-own operator, without the HMAC secret.
+Nothing else is stored. There is no database of users or queries. The API Gateway access
+logs above are the only place a source address appears (for 30 days); the fair-use counters
+and the metrics line never contain one, and a counter key can be linked to an address only on
+the day it was written, and only with the HMAC secret.
 
 ## Third parties
 
@@ -74,8 +76,8 @@ query.
 | API Gateway access logs (request id, status, route, source IP) | AWS CloudWatch Logs | 30 days |
 | Lambda diagnostic logs | AWS CloudWatch Logs | 30 days |
 | Per-call metrics line (server, tool, outcome, latency, upstream calls, cache hit, limit scope; never arguments) | AWS CloudWatch Logs (EMF) | 30 days |
-| Per-network fair-use counters (daily HMAC of the source address, never the address) | DynamoDB | 2 days |
-| Cached upstream responses | Server memory (BLS timeseries: up to 24 hours) | Until the instance recycles, or 24 hours |
+| Per-network fair-use counters (daily HMAC of the source address, never the address) | DynamoDB | Two days after the day counted |
+| Cached upstream responses | Server memory | Until the server instance recycles |
 | Conversation content, files, memory | Never received | — |
 
 ## Your choices

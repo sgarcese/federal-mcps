@@ -127,19 +127,23 @@ agencies publish no daily cap of their own):
 | Tool calls, per network | 500 a day | 500 a day |
 | Tool calls, the claude.ai pool | 5,000 a day | 5,000 a day |
 
+The geography server (`geo_*`) makes no upstream queries; its tool-call shares are 1,000 a day
+per network and 10,000 for the claude.ai pool. BLS and Census also have a service-wide daily
+budget of upstream queries (490 and 5,000), shared by every caller.
+
 A "network" is whoever is calling from one address — typically you, or everyone behind one
 office's shared internet connection. These ceilings sit well above a normal working session
 (a handful of questions is a handful of tool calls); they exist to catch loops and scripts, not
 people.
 
-**What a limited answer looks like.** If a share is close to spent, the server reaches for a
-cached answer first — you may see a note that the number came from cache rather than a fresh
-query, with the reason. If there is truly nothing left to serve, you get a plain sentence
-instead of a silent failure or an invented number, for example:
+**What a limited answer looks like.** When a service's daily budget passes 80%, answers carry a
+note saying so. Once a share is spent, the server answers from its cache if it has that
+answer, with a note saying the number came from cache and why. If it has nothing cached, you
+get a plain sentence instead of a silent failure or an invented number, for example:
 
 > bls: this network has used its 100 BLS queries for today; resets at
-> 2026-10-06T00:00:00Z. Tools that need no new query (resolve_place, list_indicators,
-> describe_source) still work.
+> 2026-10-06T00:00:00Z. Tools that need no new query (bls_resolve_place,
+> bls_list_indicators, bls_describe_source) still work.
 
 The sentence always says what was limited, whose share it was, and when it resets — Claude can
 relay that to you directly, and the tools that need no new upstream query keep working in the
