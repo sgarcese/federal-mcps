@@ -117,20 +117,36 @@ run "bls_budget_alarms_default_to_80_and_100_pct" {
   }
 }
 
-run "refusal_spike_alarm_sums_refusals_across_servers_and_scopes" {
+run "refusal_spike_alarm_uses_a_metrics_insights_query_not_search" {
   command = plan
 
+  # CloudWatch alarms reject SEARCH() ("SEARCH is not supported in alarms"); only dashboards
+  # may use it. Metrics Insights (a SQL-like SELECT) IS supported in alarms, and one query
+  # covers every {server,limitScope} series without hitting the 10-metric-per-alarm cap that
+  # explicit metric math would (up to 15 series here).
   assert {
     condition     = aws_cloudwatch_metric_alarm.refusal_spike.threshold == 50
     error_message = "the refusal spike threshold must default to 50 (spike's question-4 suggestion)"
   }
   assert {
     condition     = one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).expression != null
-    error_message = "the refusal spike alarm must use a metric_query (a SEARCH expression) rather than a single dimension"
+    error_message = "the refusal spike alarm must use a metric_query"
   }
   assert {
-    condition     = strcontains(one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).expression, "Refusals")
-    error_message = "the refusal spike alarm's expression must reference the Refusals metric"
+    condition     = startswith(one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).expression, "SELECT")
+    error_message = "the refusal spike alarm's expression must be a Metrics Insights SELECT, not a SEARCH()"
+  }
+  assert {
+    condition     = strcontains(one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).expression, "SUM(Refusals)")
+    error_message = "the refusal spike query must sum the Refusals metric"
+  }
+  assert {
+    condition     = strcontains(one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).expression, "SCHEMA(FederalMCPs, limitScope, server)")
+    error_message = "the refusal spike query must select from the FederalMCPs schema keyed on limitScope and server"
+  }
+  assert {
+    condition     = one(aws_cloudwatch_metric_alarm.refusal_spike.metric_query).period == 3600
+    error_message = "the refusal spike query must run over a one-hour period"
   }
 }
 
@@ -164,21 +180,100 @@ run "limiter_degraded_alarm_watches_the_dimensionless_count" {
   }
 }
 
-run "lambda_throttles_and_errors_alarms_cover_every_family_function" {
+run "lambda_throttles_and_errors_alarms_use_metric_math_not_search" {
   command = plan
 
+  # CloudWatch alarms reject SEARCH(); explicit metric math (one metric_query per function,
+  # dimensioned by FunctionName, plus a sum expression) is supported and fits the 10-metric
+  # alarm cap with 6 functions.
   assert {
     condition     = length(aws_cloudwatch_metric_alarm.lambda_throttles) == 1
     error_message = "with lambda_function_names set, the throttles alarm must be created"
   }
   assert {
-    condition     = strcontains(one(aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query).expression, "rc-cdc-mcp-dev")
-    error_message = "the throttles alarm must cover the CDC portal too (AWS/Lambda metrics reach it; EMF does not)"
-  }
-  assert {
     condition     = length(aws_cloudwatch_metric_alarm.lambda_errors) == 1
     error_message = "with lambda_function_names set, the errors alarm must be created"
   }
+
+  # One metric_query per function (return_data = false) plus one sum expression
+  # (return_data = true): 6 functions here means 7 metric_query blocks.
+  assert {
+    condition     = length(aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query) == length(var.lambda_function_names) + 1
+    error_message = "the throttles alarm must have one metric_query per function plus one sum expression"
+  }
+  assert {
+    condition     = length(aws_cloudwatch_metric_alarm.lambda_errors[0].metric_query) == length(var.lambda_function_names) + 1
+    error_message = "the errors alarm must have one metric_query per function plus one sum expression"
+  }
+
+  # Exactly one metric_query returns data: the sum expression.
+  assert {
+    condition     = length([for q in aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query : q if q.return_data]) == 1
+    error_message = "exactly one metric_query (the sum) must have return_data = true"
+  }
+  assert {
+    condition     = length([for q in aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query : q if q.expression != null && q.expression != ""]) == 1
+    error_message = "exactly one metric_query (the sum) may carry an expression; the rest must be plain metric queries"
+  }
+
+  # Every per-function query watches FunctionName, dimensioned, never a SEARCH.
+  assert {
+    condition = alltrue([
+      for q in aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query :
+      !strcontains(coalesce(q.expression, ""), "SEARCH(")
+    ])
+    error_message = "no metric_query in the throttles alarm may use SEARCH()"
+  }
+  assert {
+    condition = alltrue([
+      for q in aws_cloudwatch_metric_alarm.lambda_errors[0].metric_query :
+      !strcontains(coalesce(q.expression, ""), "SEARCH(")
+    ])
+    error_message = "no metric_query in the errors alarm may use SEARCH()"
+  }
+
+  # The CDC portal's function is one of the per-function metrics (AWS/Lambda metrics reach
+  # it; the core EMF line does not).
+  assert {
+    condition = anytrue([
+      for q in aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query :
+      length(q.metric) > 0 && q.metric[0].dimensions["FunctionName"] == "rc-cdc-mcp-dev"
+    ])
+    error_message = "the throttles alarm must cover the CDC portal's function too"
+  }
+}
+
+run "no_alarm_expression_uses_search" {
+  command = plan
+
+  # The deploy blocker this guards against: "SEARCH is not supported in alarms" — only
+  # dashboards may use SEARCH(). Checked across every alarm's every metric_query.
+  assert {
+    condition = alltrue(flatten([
+      for alarm_queries in [
+        aws_cloudwatch_metric_alarm.refusal_spike.metric_query,
+        aws_cloudwatch_metric_alarm.lambda_throttles[0].metric_query,
+        aws_cloudwatch_metric_alarm.lambda_errors[0].metric_query,
+        ] : [
+        for q in alarm_queries : !strcontains(coalesce(q.expression, ""), "SEARCH(")
+      ]
+    ]))
+    error_message = "no aws_cloudwatch_metric_alarm metric_query may use SEARCH() — AWS rejects it at apply time"
+  }
+}
+
+run "lambda_function_names_rejects_more_than_nine" {
+  command = plan
+
+  variables {
+    lambda_function_names = [
+      "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9",
+    ]
+  }
+
+  expect_failures = [
+    var.lambda_function_names,
+  ]
 }
 
 run "no_lambda_names_means_no_lambda_alarms" {
