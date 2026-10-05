@@ -14,7 +14,7 @@ export type {
   HttpResult,
   RequestOptions,
 } from "./client.js";
-export { createHttpClient } from "./client.js";
+export { createHttpClient, STALE_SERVED_NOTE_PREFIX } from "./client.js";
 export {
   AgencyApiError,
   HttpClientError,

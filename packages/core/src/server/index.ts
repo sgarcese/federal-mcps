@@ -31,6 +31,17 @@ export {
   OPERATOR_TOKEN_ENV,
 } from "./identify.js";
 export { type LambdaHeaderEvent, lambdaRequestHeaders } from "./lambda-headers.js";
+export {
+  buildServiceBudgetMetricLine,
+  buildToolCallMetricLine,
+  type CallerKind,
+  logServiceBudgetMetric,
+  logToolCallMetric,
+  METRICS_NAMESPACE,
+  type ServiceBudgetMetricInput,
+  type ToolCallMetricInput,
+  type ToolCallOutcome,
+} from "./metrics.js";
 export { runStdio, type StdioOptions } from "./stdio.js";
 export {
   type CompactRendering,
