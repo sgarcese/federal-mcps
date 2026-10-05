@@ -7,6 +7,8 @@ import type {
   ToolAnnotations,
 } from "@modelcontextprotocol/sdk/types.js";
 import { buildCitation, EnvelopeSchema, type Source } from "../envelope/index.js";
+import { ATTESTATION_HEADER, isAttested } from "./attestation.js";
+import { type Caller, type Identify, SOURCE_IP_HEADER } from "./caller.js";
 import {
   describeSourceToolName,
   type ServerDefinition,
@@ -14,6 +16,7 @@ import {
   type ToolDefinition,
 } from "./definition.js";
 import { toToolError } from "./errors.js";
+import { identifyFromEnv } from "./identify.js";
 import { wrapResult } from "./wrap.js";
 
 /**
@@ -53,6 +56,54 @@ export interface CreateServerOptions {
    * disagree.
    */
   readonly now?: () => Date;
+  /**
+   * Turns a request's headers into the caller (ADR-020 §1), injectable for tests. Called only
+   * for requests our Lambda adapter attested (attestation.ts); any other request has no caller.
+   * Default: `identifyFromEnv()`, built on the first attested request that carries a source
+   * address, so stdio and local runs never read the secret or warn about its absence.
+   */
+  readonly identify?: Identify;
+}
+
+type Extra = RequestHandlerExtra<ServerRequest, ServerNotification>;
+
+/** Builds the per-call caller from the HTTP request behind a tool call, if there is one. */
+type CallerFor = (extra: Extra) => Caller | undefined;
+
+function callerResolver(options: CreateServerOptions | undefined, now: () => Date): CallerFor {
+  let fromEnv: Identify | undefined;
+  const identify: Identify =
+    options?.identify ??
+    ((headers, at) => {
+      if (!headers[SOURCE_IP_HEADER]) return undefined;
+      fromEnv ??= identifyFromEnv();
+      return fromEnv(headers, at);
+    });
+  return (extra) => {
+    // Stdio (and the in-memory transport) carry no HTTP request, so there is no caller.
+    const raw = extra.requestInfo?.headers;
+    if (raw === undefined) return undefined;
+    const headers = normalizeHeaders(raw);
+    // A source address counts only when our Lambda adapter, in this process, attested it
+    // (attestation.ts). A client that reaches the handler directly and sends the header itself
+    // gets no caller, silently, and identify() is never consulted. The nonce stops here.
+    const attested = isAttested(headers);
+    delete headers[ATTESTATION_HEADER];
+    if (!attested) return undefined;
+    return identify(headers, now());
+  };
+}
+
+/** Lower-cased names; a repeated header joined the way Node and fetch join one. */
+function normalizeHeaders(
+  raw: Readonly<Record<string, string | string[] | undefined>>,
+): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(raw)) {
+    if (value === undefined) continue;
+    headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : value;
+  }
+  return headers;
 }
 
 /** The `source` block for the auto-registered `describe_source` tool. */
@@ -78,6 +129,7 @@ export function createServer(
   options?: CreateServerOptions,
 ): McpServer {
   const now = options?.now ?? (() => new Date());
+  const callerFor = callerResolver(options, now);
 
   const server = new McpServer(
     { name: definition.name, version: definition.version },
@@ -86,7 +138,7 @@ export function createServer(
   );
 
   for (const tool of definition.tools) {
-    registerDefinitionTool(server, definition, tool, now);
+    registerDefinitionTool(server, definition, tool, now, callerFor);
   }
 
   registerDescribeSource(server, definition, now);
@@ -111,6 +163,7 @@ function registerDefinitionTool(
   // biome-ignore lint/suspicious/noExplicitAny: the seam types the tool list heterogeneously; each tool is typed at its definition site.
   tool: ToolDefinition<any, any>,
   now: () => Date,
+  callerFor: CallerFor,
 ): void {
   server.registerTool(
     tool.name,
@@ -127,14 +180,13 @@ function registerDefinitionTool(
       outputSchema: EnvelopeSchema,
       annotations: { ...FAMILY_TOOL_ANNOTATIONS },
     },
-    async (
-      args: unknown,
-      extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-    ): Promise<CallToolResult> => {
+    async (args: unknown, extra: Extra): Promise<CallToolResult> => {
       try {
+        const caller = callerFor(extra);
         const result = await tool.handler(args, {
           now,
           ...(extra.signal === undefined ? {} : { signal: extra.signal }),
+          ...(caller === undefined ? {} : { caller }),
         });
         return asCallToolResult(
           wrapResult(result, now(), { renderData: tool.renderData, textBudget: tool.textBudget }),

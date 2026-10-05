@@ -21,7 +21,7 @@
  */
 import { createServer as createNodeServer, request as httpRequest, type Server } from "node:http";
 import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
-import { createHttpHandler } from "@federal-mcps/core";
+import { createHttpHandler, lambdaRequestHeaders } from "@federal-mcps/core";
 import { createHudServer } from "./index.js";
 
 // biome-ignore lint/complexity/useLiteralKeys: tsconfig's noPropertyAccessFromIndexSignature requires bracket access here.
@@ -74,7 +74,8 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
         port,
         path: requestPath(event),
         method: event.requestContext.http.method,
-        headers: event.headers as Record<string, string>,
+        // Source address from requestContext, client-sent copies stripped (#321, ADR-020 §1).
+        headers: lambdaRequestHeaders(event),
       },
       (response) => {
         const chunks: Buffer[] = [];
