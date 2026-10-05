@@ -1,11 +1,19 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
-import { GeographyCatalog, type HttpClient, type HttpResult } from "@federal-mcps/core";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  createHttpClient,
+  GeographyCatalog,
+  type HttpClient,
+  type HttpResult,
+  MemoryBudgetStore,
+  MemoryCacheStore,
+} from "@federal-mcps/core";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { blsIndicatorTools } from "./get-indicator.js";
 import { blsIndicatorDefinitions } from "./indicators.js";
 import type { IndicatorDefinition } from "@federal-mcps/core";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
+import { setQcewHttpClient } from "./qcew-indicators.js";
 import { scriptedBlsClient } from "./__fixtures__/scripted-client.js";
 
 let path: string;
@@ -161,6 +169,118 @@ describe("bls_get_indicator", () => {
   it("returns not_found for a name that resolves to nothing", async () => {
     const res = await run({ place: "Nowheresville", indicator: "unemployment_rate" });
     expect((res.data as { status: string }).status).toBe("not_found");
+  });
+});
+
+const QCEW_CSV = [
+  '"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","qtrly_estabs","month1_emplvl","month2_emplvl","month3_emplvl","total_qtrly_wages","taxable_qtrly_wages","qtrly_contributions","avg_wkly_wage"',
+  '"08031","0","10","70","0","2024","1","",45970,559807,561820,561041,15497545518,7590975514,149132980,2125',
+].join("\n");
+
+describe("QCEW has its own budget key, not the BLS API's (#324, ADR-020 §2)", () => {
+  afterEach(() => {
+    setQcewHttpClient(undefined); // never leak a configured client into another test
+  });
+
+  it("uses the dedicated QCEW client instead of the one bls_get_indicator was given", async () => {
+    const neverCalled: HttpClient = {
+      getJson: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+      postJson: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+      getText: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+    };
+    const qcewClient: HttpClient = {
+      getJson: () => {
+        throw new Error("only getText");
+      },
+      postJson: () => {
+        throw new Error("only getText");
+      },
+      async getText(): Promise<HttpResult<string>> {
+        return { value: QCEW_CSV, status: 200, cache: { hit: false } };
+      },
+    };
+    setQcewHttpClient(qcewClient);
+
+    const getIndicator = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => neverCalled,
+      now: NOW,
+    })[0];
+    const res = await call(getIndicator, {
+      place: "Denver",
+      kind: "county",
+      indicator: "covered_employment",
+    });
+    const data = res.data as { latest: { value: number } | null };
+    expect(data.latest).toEqual({ period: "2024-Q01", value: 560889 });
+  });
+
+  it("does not decrement the bls budget when its own client is configured", async () => {
+    const budget = new MemoryBudgetStore(500);
+    const qcewClient = createHttpClient({
+      source: "bls-qcew",
+      budget,
+      cache: new MemoryCacheStore(),
+      fetch: async () => new Response(QCEW_CSV),
+      fixtures: { mode: "off" },
+    });
+    setQcewHttpClient(qcewClient);
+
+    const mainClient: HttpClient = {
+      getJson: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+      postJson: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+      getText: () => {
+        throw new Error("the generic BLS client must not be called for QCEW");
+      },
+    };
+    const getIndicator = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => mainClient,
+      now: NOW,
+    })[0];
+    await call(getIndicator, { place: "Denver", kind: "county", indicator: "covered_employment" });
+
+    const blsRemaining = await budget.consume("bls", 0);
+    expect(blsRemaining.remaining).toBe(500); // untouched
+
+    const qcewRemaining = await budget.consume("bls-qcew", 0);
+    expect(qcewRemaining.remaining).toBeLessThan(500); // the QCEW fetch(es) drew on its own key
+  });
+
+  it("falls back to the client the generic machinery passed in when unconfigured (unchanged behaviour)", async () => {
+    const qcewClient: HttpClient = {
+      getJson: () => {
+        throw new Error("only getText");
+      },
+      postJson: () => {
+        throw new Error("only getText");
+      },
+      async getText(): Promise<HttpResult<string>> {
+        return { value: QCEW_CSV, status: 200, cache: { hit: false } };
+      },
+    };
+    const getIndicator = blsIndicatorTools({
+      catalog: () => catalog,
+      httpClient: () => qcewClient,
+      now: NOW,
+    })[0];
+    const res = await call(getIndicator, {
+      place: "Denver",
+      kind: "county",
+      indicator: "covered_employment",
+    });
+    const data = res.data as { latest: { value: number } | null };
+    expect(data.latest).toEqual({ period: "2024-Q01", value: 560889 });
   });
 });
 
