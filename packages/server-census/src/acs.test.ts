@@ -210,3 +210,18 @@ describe("acsFetch over recorded fixtures", () => {
     );
   });
 });
+
+describe("parseAcsResponse on hostile input (CodeQL js/polynomial-redos, #332)", () => {
+  it("strips trailing annotation characters in linear time", () => {
+    const started = performance.now();
+    const cell = `1${",".repeat(100_000)}x`;
+    parseAcsResponse(JSON.stringify([["B19013_001E"], [cell]]), "B19013_001");
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+
+  it("still reads a value with trailing annotation characters", () => {
+    expect(
+      parseAcsResponse(JSON.stringify([["B19013_001E"], ["250001+"]]), "B19013_001")?.value,
+    ).toBe(250001);
+  });
+});
