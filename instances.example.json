@@ -8,7 +8,8 @@
     "cdcDomainName / cdcService: the OpenContext portal Lambda for data.cdc.gov (ADR-016 \u00a75), serving the CDC PLACES source guide.",
     "hudDomainName / hudService: the HUD User server (M11, ADR-018); its primary hostname is already the short hud-user.responsive.city name.",
     "beaDomainName / beaService: the BEA Regional server (M14, ADR-019), at the short bea.responsive.city name.",
-    "limits.<service>: public-use protection (#319, ADR-020 §2, §6, §7) — stage throttling, Lambda reserved concurrency and the in-app FEDERAL_MCPS_LIMITS budget. Optional; every field shown here is also each terraform module's own default (ADR-020's question-5 table), so this block can be omitted entirely — it is spelled out so a self-hoster sees the shape and can override a field by editing their own instances.json."
+    "limits.<service>: public-use protection (#319, ADR-020 §2, §6, §7) — stage throttling, Lambda reserved concurrency and the in-app FEDERAL_MCPS_LIMITS budget. Optional; every field shown here is also each terraform module's own default (ADR-020's question-5 table), so this block can be omitted entirely — it is spelled out so a self-hoster sees the shape and can override a field by editing their own instances.json.",
+    "alerts.email: monitoring (#326, ADR-020 §5) — where the rc-federal-mcps-<env>-alerts SNS topic and the AWS Budgets alert notify. Optional and NEVER committed with a real address (per-deployer, like the account); this placeholder is example-only. With no email, terraform/modules/monitoring creates no SNS subscription and no Budgets notification."
   ],
   "instances": [
     {
@@ -90,6 +91,9 @@
           "stageBurstLimit": 20,
           "reservedConcurrency": 5
         }
+      },
+      "alerts": {
+        "email": "owner@example.com"
       }
     }
   ]

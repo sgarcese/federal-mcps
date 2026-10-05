@@ -159,6 +159,193 @@ describe("instance record loader", () => {
     }
   });
 
+  it("carries only a placeholder alerts.email in the example record (#326, ADR-020 §5)", () => {
+    // instances.example.json is expected to show the shape (CLAUDE.md: "a placeholder fleet
+    // record"); the real address is per-deployer and never committed — a deployer's own
+    // (gitignored) instances.json may omit the block entirely, which is the no-email case
+    // the monitoring module and this loader both treat as "no subscription, no alert".
+    const example = join(import.meta.dirname, "..", "instances.example.json");
+    const dev = loadInstances(example).find((i) => i.name === "dev");
+    expect(dev.alerts?.email).toBe("owner@example.com");
+  });
+
+  it("treats a record with no alerts block as having no email", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-alerts-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "d",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z1",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "s", stateKey: "k" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+            },
+          ],
+        }),
+      );
+      const dev = loadInstances(path).find((i) => i.name === "dev");
+      expect(dev.alerts).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts an optional alerts.email field (#326, ADR-020 §5)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-alerts-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "d",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z1",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "s", stateKey: "k" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+              alerts: { email: "owner@example.com" },
+            },
+          ],
+        }),
+      );
+      const dev = loadInstances(path).find((i) => i.name === "dev");
+      expect(dev.alerts?.email).toBe("owner@example.com");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects an alerts block whose email is not a string", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-alerts-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "d",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z1",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "s", stateKey: "k" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+              alerts: { email: 5 },
+            },
+          ],
+        }),
+      );
+      expect(() => loadInstances(path)).toThrow(/alerts\.email must be a string/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects an alerts.email that is not a plausible email address", () => {
+    const dir = mkdtempSync(join(tmpdir(), "instance-alerts-"));
+    try {
+      const path = join(dir, "instances.json");
+      writeFileSync(
+        path,
+        JSON.stringify({
+          instances: [
+            {
+              name: "dev",
+              description: "d",
+              account: "999999999999",
+              region: "us-east-1",
+              environmentTag: "dev",
+              domain: {
+                blsDomainName: "a",
+                geoDomainName: "b",
+                censusDomainName: "c",
+                cdcDomainName: "d",
+                hudDomainName: "e",
+                beaDomainName: "f",
+                hostedZoneId: "Z1",
+                hostedZoneName: "example.com",
+              },
+              terraform: { stateBucket: "s", stateKey: "k" },
+              naming: {
+                blsService: "a",
+                geoService: "b",
+                censusService: "c",
+                cdcService: "d",
+                hudService: "e",
+                beaService: "f",
+              },
+              alerts: { email: "not-an-email" },
+            },
+          ],
+        }),
+      );
+      expect(() => loadInstances(path)).toThrow(/alerts\.email must look like an email address/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("derives the state bucket and backend flags from the record", () => {
     const dev = selectInstance();
     expect(stateBucket(dev)).toBe(`rc-tfstate-${dev.account}`);
