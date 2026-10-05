@@ -58,8 +58,10 @@ describe("instance record loader", () => {
   it("carries an optional limits block per server (#319, ADR-020 §7)", () => {
     // instances.example.json is expected to carry the ADR-020 defaults table so
     // self-hosters see the shape; shape only here, exact literals live in the
-    // terraform tests.
-    const dev = selectInstance();
+    // terraform tests. Read the example file itself: a deployer's own (gitignored)
+    // instances.json may omit the optional block, and selectInstance() prefers it.
+    const example = join(import.meta.dirname, "..", "instances.example.json");
+    const dev = loadInstances(example).find((i) => i.name === "dev");
     for (const service of ["bls", "census", "hud", "bea", "geo"]) {
       const serviceLimits = dev.limits?.[service];
       expect(serviceLimits).toBeDefined();
