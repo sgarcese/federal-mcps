@@ -11,6 +11,13 @@ export const SOURCE_IP_HEADER = "x-federal-mcps-source-ip";
 /** The operator-bypass header (ADR-020 §9); its expected value is a sensitive deploy variable. */
 export const OPERATOR_BYPASS_HEADER = "x-federal-mcps-operator";
 
+/**
+ * With a valid operator token, `<limit>:<runId>` counts the request against an isolated test
+ * counter with that tiny limit (#347), so the live smoke test can provoke a real refusal without
+ * spending anyone's share. Ignored without the token.
+ */
+export const TEST_LIMIT_HEADER = "x-federal-mcps-test-limit";
+
 export interface Caller {
   /** A daily-rotating HMAC of the source address, or the pool's fixed key; never a raw address. */
   readonly key: string;
@@ -20,6 +27,8 @@ export interface Caller {
   readonly labels: { readonly userAgent?: string; readonly client?: string };
   /** True when the request carried a valid operator-bypass header: exempt from shares only. */
   readonly bypass: boolean;
+  /** An operator smoke test's own limit (#347): counted on an isolated key, never a real share. */
+  readonly testLimit?: number;
 }
 
 /** Request headers, lower-cased names. */

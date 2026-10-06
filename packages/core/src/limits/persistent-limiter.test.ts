@@ -336,8 +336,7 @@ describe("createLimiter: a failing store (ADR-020 §3)", () => {
 });
 
 describe("the token-gated test limit (#347)", () => {
-  const test = (runId: string, limit: number) =>
-    caller({ key: `test:${runId}`, testLimit: limit });
+  const test = (runId: string, limit: number) => caller({ key: `test:${runId}`, testLimit: limit });
 
   it("refuses the (n+1)th tool call at the caller's own test limit, not the configured share", async () => {
     const limiter = createLimiter({ config: CONFIG, store: new MemoryCounterStore() });

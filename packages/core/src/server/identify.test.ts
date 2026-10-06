@@ -246,14 +246,22 @@ describe("networkOf on hostile input (CodeQL js/polynomial-redos)", () => {
 
 describe("the token-gated test limit (#347)", () => {
   const at = new Date("2026-10-06T12:00:00.000Z");
-  const headers = (extra: Record<string, string>) => ({ [SOURCE_IP_HEADER]: "203.0.113.9", ...extra });
+  const headers = (extra: Record<string, string>) => ({
+    [SOURCE_IP_HEADER]: "203.0.113.9",
+    ...extra,
+  });
 
   it("a valid operator token with a well-formed header makes an isolated test caller, not a bypass", () => {
     const c = identify()(
       headers({ [OPERATOR_BYPASS_HEADER]: TOKEN, [TEST_LIMIT_HEADER]: "3:run-20261006a" }),
       at,
     );
-    expect(c).toMatchObject({ kind: "network", key: "test:run-20261006a", testLimit: 3, bypass: false });
+    expect(c).toMatchObject({
+      kind: "network",
+      key: "test:run-20261006a",
+      testLimit: 3,
+      bypass: false,
+    });
   });
 
   it("ignores the header without a valid token: the caller is the real network", () => {
@@ -271,8 +279,18 @@ describe("the token-gated test limit (#347)", () => {
   });
 
   it("ignores a malformed header (limit outside 1–10, bad run id) and falls back to the bypass", () => {
-    for (const value of ["0:run-20261006a", "11:run-20261006a", "3:short", "3:bad run id!", "3", "x:run-20261006a"]) {
-      const c = identify()(headers({ [OPERATOR_BYPASS_HEADER]: TOKEN, [TEST_LIMIT_HEADER]: value }), at);
+    for (const value of [
+      "0:run-20261006a",
+      "11:run-20261006a",
+      "3:short",
+      "3:bad run id!",
+      "3",
+      "x:run-20261006a",
+    ]) {
+      const c = identify()(
+        headers({ [OPERATOR_BYPASS_HEADER]: TOKEN, [TEST_LIMIT_HEADER]: value }),
+        at,
+      );
       expect(c?.testLimit).toBeUndefined();
       expect(c?.bypass).toBe(true);
     }

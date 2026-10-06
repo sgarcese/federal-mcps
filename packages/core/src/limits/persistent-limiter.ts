@@ -129,7 +129,9 @@ export function createLimiter(options: CreateLimiterOptions): Limiter {
     if (caller === undefined || caller.bypass) return undefined;
     const scope: LimitScope = caller.kind;
     const share = scope === "pool" ? config.pool : config.network;
-    const limit = kind === "upstream" ? share?.upstreamDaily : share?.toolCallsDaily;
+    // An operator smoke test's own limit (#347) replaces the configured share; its key is isolated.
+    const limit =
+      caller.testLimit ?? (kind === "upstream" ? share?.upstreamDaily : share?.toolCallsDaily);
     if (limit === undefined) return undefined;
     return {
       key: `${scope}#${kind}#${source ?? "*"}#${caller.key}#${dayKey(at)}`,

@@ -50,7 +50,8 @@ files, or any other content from your Claude session or other host.
   in it.
 - **An operator-bypass token.** A sensitive, internal credential lets the project's own release
   checks (the eval run before a deploy) skip the per-network and claude.ai-pool shares without
-  spending them on behalf of real users. It is configured as a deploy secret, never committed,
+  spending them on behalf of real users, or count a smoke test against an isolated test counter
+  with a tiny limit (#347), which touches no real share. It is configured as a deploy secret, never committed,
   and its value is never logged or printed; this policy states that it exists, not what it is.
 
 Nothing else is stored. There is no database of users or queries. The API Gateway access

@@ -4,7 +4,9 @@
  * REAL deployed servers, that the limiter is actually wired end to end in Lambda: that
  * `describe_source` reports a `limits` block, that a cache-busting upstream call really writes
  * to the DynamoDB counters table, and that a per-network tool-call share really refuses once
- * spent — in the plain-sentence, `limit`-block shape ADR-020 §4 specifies.
+ * spent — in the plain-sentence, `limit`-block shape ADR-020 §4 specifies. The refusal is
+ * provoked on an isolated test counter (#347): the operator token plus
+ * `x-federal-mcps-test-limit: 3:<runId>`, so no real share is spent.
  *
  * This is NOT part of `npm test` (CLAUDE.md: live tests are a separate job, never a merge gate).
  * It calls real agency and family endpoints and spends real quota. Run it only with
@@ -12,8 +14,9 @@
  *
  *   LIVE_TESTS=1 npm run smoke:limits -- --yes
  *
- * It never prints `FEDERAL_MCPS_OPERATOR_TOKEN` or any other secret — it deliberately never
- * sends the operator-bypass header, because the point is to prove a REAL refusal happens.
+ * It reads `FEDERAL_MCPS_OPERATOR_TOKEN` from the environment and never prints it or any other
+ * secret. The token is sent only with the test-limit header, which turns a request into an
+ * isolated test caller that IS limited (not a bypass), so the refusal is real.
  */
 import { fileURLToPath } from "node:url";
 
@@ -29,10 +32,10 @@ const MCP_ACCEPT = "application/json, text/event-stream";
  * Calls one MCP tool over stateless Streamable HTTP and returns the raw JSON-RPC `result`
  * (so callers see `isError`/`content`/`structuredContent` exactly as the host would).
  */
-export async function callTool(url, name, args) {
+export async function callTool(url, name, args, extraHeaders = {}) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: MCP_ACCEPT },
+    headers: { "content-type": "application/json", accept: MCP_ACCEPT, ...extraHeaders },
     body: JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
@@ -105,8 +108,12 @@ export function cacheBustingYear(now = new Date()) {
   return String(base + (Math.floor(now.getTime() / 86_400_000) % span));
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** The test counter's limit: small, so the refusal costs four calls (#347). */
+export const TEST_LIMIT = 3;
+
+/** A fresh run id for the isolated test counter, 8–64 of [A-Za-z0-9-] (#347). */
+export function testRunId(now = new Date()) {
+  return `smoke-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 async function main() {
@@ -120,11 +127,15 @@ async function main() {
   }
 
   console.warn(
-    "WARNING: this script spends real quota on the running machine's network share — " +
-      "specifically, it will exhaust the geo server's per-network tool-call share until UTC " +
-      "midnight, and it makes one real BLS query. Re-run after midnight UTC, or from a " +
-      "different network, if you need the geo share back sooner.",
+    "This script makes one real BLS query (one unit of the BLS daily budget) and four geo " +
+      "calls on an isolated test counter (#347); it spends no one's real share.",
   );
+  const operatorToken = process.env.FEDERAL_MCPS_OPERATOR_TOKEN;
+  if (!operatorToken) {
+    console.error("live-limits-smoke: FEDERAL_MCPS_OPERATOR_TOKEN is not set (source your .env).");
+    process.exitCode = 1;
+    return;
+  }
   if (!yes) {
     console.error("Pass --yes to proceed.");
     process.exitCode = 1;
@@ -160,7 +171,7 @@ async function main() {
   } else {
     const year = cacheBustingYear();
     const raw = await callTool(URLS.bls, "bls_get_raw", {
-      seriesIds: ["LNS14000000"],
+      ids: ["LNS14000000"],
       startYear: year,
       endYear: year,
     });
@@ -179,28 +190,25 @@ async function main() {
     );
   }
 
-  // Step 3: a real per-network tool-call refusal, which also proves the caller is attested in
-  // Lambda (an unattested request would get no caller at all, and so never a share refusal).
-  const describeGeo = await callTool(URLS.geo, "geo_describe_source", {});
-  const toolCallsDaily = extractNetworkToolCallsDaily(describeGeo.structuredContent?.data);
-  if (typeof toolCallsDaily !== "number") {
-    record(
-      "geo network tool-call share is configured",
-      false,
-      "no toolCallsDaily — is the limiter configured?",
-    );
-  } else {
-    console.error(`  spending the geo network share: ${toolCallsDaily + 1} calls, paced at 6/s...`);
-    let last;
-    for (let i = 0; i < toolCallsDaily + 1; i++) {
-      last = await callTool(URLS.geo, "geo_resolve_place", { query: "Denver" });
-      await sleep(165); // ~6/s, safely under the 10 req/s stage throttle (burst 20).
-    }
-    const refusal = parseRefusal(last);
-    const ok = isNetworkToolCallsRefusal(refusal);
-    record("final geo_resolve_place call is a network tool-call refusal", ok);
-    if (refusal?.sentence) console.error(`    "${refusal.sentence}"`);
+  // Step 3: a real tool-call refusal on an isolated test counter (#347). The operator token plus
+  // the test-limit header makes this request a test caller limited to TEST_LIMIT calls, keyed
+  // by a fresh run id. It also proves the caller is attested in Lambda: an unattested request
+  // has no caller, and so is never refused.
+  const runId = testRunId();
+  const testHeaders = {
+    "x-federal-mcps-operator": operatorToken,
+    "x-federal-mcps-test-limit": `${TEST_LIMIT}:${runId}`,
+  };
+  let last;
+  for (let i = 0; i < TEST_LIMIT + 1; i++) {
+    last = await callTool(URLS.geo, "geo_resolve_place", { query: "Denver" }, testHeaders);
   }
+  const refusal = parseRefusal(last);
+  record(
+    `call ${TEST_LIMIT + 1} on a test limit of ${TEST_LIMIT} is a network tool-call refusal`,
+    isNetworkToolCallsRefusal(refusal) && refusal?.limit?.limit === TEST_LIMIT,
+  );
+  if (refusal?.sentence) console.error(`    "${refusal.sentence}"`);
 
   const failed = results.filter((r) => !r.ok);
   console.error(`\n${results.length - failed.length}/${results.length} passed.`);

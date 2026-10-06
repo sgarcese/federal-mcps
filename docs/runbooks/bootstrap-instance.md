@@ -321,6 +321,27 @@ session. A result with `"isError": true` and text `unable to open database file`
 catalog didn't open — see Troubleshooting. `describe_source` succeeding tells you nothing
 about the catalog.
 
+### Verify the limits (M17, ADR-020)
+
+After a deploy that changes the limiter, run the live smoke test from a machine with the
+deploy's `.env` sourced:
+
+```bash
+set -a; . ./.env; set +a
+LIVE_TESTS=1 npm run smoke:limits -- --yes
+```
+
+It checks three things:
+- each server's `describe_source` shows a `limits` block;
+- one BLS query raises the BLS service counter, which proves the Lambda loads the AWS SDK and
+  writes the limits table;
+- four geo calls on an **isolated test counter** (#347) are refused on the fourth, with the plain
+  sentence and a `limit` block. This uses the operator token with
+  `x-federal-mcps-test-limit`, so it spends no one's real share.
+
+It costs one unit of the BLS daily budget. Run it once a day at most: the BLS query is chosen
+per day, so a second run the same day hits the 24-hour cache, and the counter check fails.
+
 ## Troubleshooting
 
 - **`Error: reading IAM Role (rc-<svc>-<env>-role): couldn't find resource`** (during
