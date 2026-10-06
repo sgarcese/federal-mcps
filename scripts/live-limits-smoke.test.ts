@@ -6,6 +6,7 @@ import {
   hasLimitsBlock,
   isNetworkToolCallsRefusal,
   parseRefusal,
+  resolveTestLimit,
   TEST_LIMIT,
   testRunId,
 } from "./live-limits-smoke.mjs";
@@ -171,5 +172,23 @@ describe("the isolated test counter's run id (#347)", () => {
 
   it("differs per run, so each run starts a fresh counter", () => {
     expect(testRunId()).not.toBe(testRunId());
+  });
+});
+
+describe("resolveTestLimit: SMOKE_TEST_LIMIT sets the artificial limit (#353)", () => {
+  it("defaults to TEST_LIMIT (3) when unset or empty", () => {
+    expect(resolveTestLimit(undefined)).toBe(3);
+    expect(resolveTestLimit("")).toBe(3);
+  });
+
+  it("accepts any whole number from 1 to 10, the range the server honours", () => {
+    expect(resolveTestLimit("1")).toBe(1);
+    expect(resolveTestLimit("10")).toBe(10);
+  });
+
+  it("rejects anything else clearly, before any call is made", () => {
+    for (const bad of ["0", "11", "2.5", "-1", "three"]) {
+      expect(() => resolveTestLimit(bad)).toThrow(/SMOKE_TEST_LIMIT must be a whole number from 1 to 10/);
+    }
   });
 });
