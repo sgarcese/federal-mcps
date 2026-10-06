@@ -1,7 +1,73 @@
 # Changelog
 
-All notable changes to federal-mcps. Versions follow ADR-012 §4: `0.x`, a minor bump per feature
-milestone, patches for fixes; `1.0.0` is reserved for the API-stability commitment.
+All notable changes to federal-mcps. Versions follow ADR-012 §4. Since 1.0.0 (the API-stability
+commitment), standard semver applies: a breaking change to the verbs or the envelope is a major
+version, new capability a minor one, a fix a patch. Before it, each feature milestone was a minor
+`0.x` bump.
+
+## 1.0.0 — M17 Public-use protection; the API is committed stable (2026-10-06)
+
+**Stability commitment** (ADR-012 §4, ADR-020 §12; owner ruling recorded on #327):
+- The family's tool verbs are stable: `resolve_place`, `list_indicators`, `get_indicator`,
+  `compare_places`, `get_raw` and `describe_source`.
+- So is the provenance envelope, now including the `limit` block on refusals. In that block,
+  `limit` and `used` are optional: an agency's own refusal reports no counts, and none are
+  invented.
+- Breaking changes to either now need a major version.
+
+**Release verification:**
+- Live eval after deploy: 88/88, run through the operator bypass.
+- `npm run smoke:limits` passes: each server shows its limits, a BLS query raises the DynamoDB
+  service counter, and a real refusal occurs on the token-gated test counter.
+
+Added
+- **Public use without authentication** (ADR-020, epic #318):
+  - **Caller identity** from the API Gateway source address. Only our Lambda adapter can assert
+    it, through an in-process attestation, and it is stored only as a daily-rotating HMAC. The
+    claude.ai range is one pool (#321).
+  - **A persistent limiter** in DynamoDB: per-network and pool daily shares of tool calls and
+    upstream queries, plus a service budget for BLS (490 a day) and Census. A caller already
+    refused its share spends no service budget. It fails open (#322).
+  - **What a limited caller sees:** stale cache first, flagged with the reason; otherwise a plain
+    sentence with the reset time and an envelope `limit` block, enforced by a contract rule. A
+    warning comes at 80% of a service budget, and every `describe_source` shows the limits.
+    Stale windows now cover every agency (#323).
+  - **Edge protection:** API Gateway throttling (10 a second, burst 20) and Lambda reserved
+    concurrency on all six endpoints, with limits configured per server in the fleet record
+    (#319).
+  - **Upstream protection:** HUD and BEA per-minute quotas split across containers, and a BEA
+    error limiter that counts every failed attempt (#324).
+  - **Monitoring:** one structured EMF log line per tool call (never arguments, keys or
+    addresses), metrics with per-tool dimensions, one dashboard, 11 alarms, SNS email and an
+    AWS Budgets cost alert (#326).
+  - **An operator bypass** for the release eval, and a token-gated test limit, so the live
+    smoke test refuses in four calls without spending anyone's share (#347).
+  - **`scripts/admin-grant-protection.sh`:** the limits table, the role grants and a
+    concurrency check (#320).
+- `npm run smoke:limits`, the live limiter smoke test (#327). The runbook gains "Changing
+  limits", "Monitoring" and "Verify the limits".
+
+Changed
+- **BLS timeseries answers are cached for 24 hours,** with a 7-day stale window. The
+  registration key no longer enters the cache or fixture identity. A BLS daily-threshold refusal
+  is a `QuotaExceededError` (#325).
+- **`bls_get_raw`** takes at most 200 ids, and QCEW CSV slices use their own budget instead of
+  the BLS API's 500 a day (#324).
+- `docs/privacy.md` covers the whole family: counters, the per-call log line, retention, and
+  what the operator token can do. `docs/connect.md` gains "Limits".
+
+Fixed
+- **Eight CodeQL polynomial-ReDoS sites** now use linear parsing. Two of them could hang for 20
+  seconds or more on hostile input (#332).
+- **Critical advisory `proxy-addr` GHSA-jqcg-44mw-7w3h,** pulled in transitively through the MCP
+  SDK's Express. It was not in any Lambda bundle (#343).
+- **Every Lambda failed at cold start after the first M17 deploy:** the bundle banner's
+  `createRequire` collided with core's. A new test now bundles a real server and parses the
+  output.
+- **`deploy.sh` dropped the limiter secrets** when `BLS_API_KEY` was already in the shell. It now
+  always reads `.env`, and warns when a secret is missing (#349).
+- **`rc-deploy` lacked tag and subscription permissions** for the monitoring resources (#320
+  follow-up).
 
 ## 0.8.0 — M16 Resolver and BLS fixes, M13 HUD guide (2026-10-05)
 

@@ -3,4 +3,4 @@
  * `bls_describe_source` tool. Kept in sync with `package.json` by hand, the
  * same pattern core's `CORE_VERSION` uses (`packages/core/src/index.ts`).
  */
-export const BLS_SERVER_VERSION = "0.8.0";
+export const BLS_SERVER_VERSION = "1.0.0";
