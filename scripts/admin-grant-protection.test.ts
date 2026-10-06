@@ -88,6 +88,21 @@ describe("admin-grant-protection.sh --dry-run", () => {
     expect(out).toMatch(/sns:Subscribe/);
     expect(out).toMatch(/budgets:ModifyBudget/);
     expect(out).toMatch(/budgets:ViewBudget/);
+    // The Terraform provider reads and writes tags and subscriptions on every plan/apply: the
+    // 2026-10-05 deploy failed without these (SNS ListTagsForResource, Budgets TagResource).
+    for (const action of [
+      "sns:ListTagsForResource",
+      "sns:UntagResource",
+      "sns:GetSubscriptionAttributes",
+      "sns:SetSubscriptionAttributes",
+      "sns:ListSubscriptionsByTopic",
+      "budgets:TagResource",
+      "budgets:UntagResource",
+      "budgets:ListTagsForResource",
+      "cloudwatch:UntagResource",
+    ]) {
+      expect(out).toContain(action);
+    }
     // Scoped names, not a blanket "*" everywhere a service supports resource ARNs.
     expect(out).toMatch(/dashboard\/rc-\*/);
     expect(out).toMatch(/alarm:rc-\*/);
