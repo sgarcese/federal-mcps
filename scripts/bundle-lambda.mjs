@@ -88,8 +88,11 @@ async function esbuildBundle() {
     // through the runtime's NODE_PATH.
     external: ["better-sqlite3", "@aws-sdk/*"],
     outfile: join(stageDir, "lambda.mjs"),
+    // The banner's import is aliased: bundled code may import `createRequire` itself (core's
+    // DynamoDB store does, #322), and two top-level declarations of one name are a SyntaxError
+    // at cold start — every server returned 500 on 2026-10-05 until this was renamed.
     banner: {
-      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+      js: "import { createRequire as __bannerCreateRequire } from 'module'; const require = __bannerCreateRequire(import.meta.url);",
     },
   });
 }
