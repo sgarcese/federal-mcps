@@ -334,3 +334,26 @@ describe("createLimiter: a failing store (ADR-020 §3)", () => {
     expect(warn).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("the token-gated test limit (#347)", () => {
+  const test = (runId: string, limit: number) =>
+    caller({ key: `test:${runId}`, testLimit: limit });
+
+  it("refuses the (n+1)th tool call at the caller's own test limit, not the configured share", async () => {
+    const limiter = createLimiter({ config: CONFIG, store: new MemoryCounterStore() });
+    for (let i = 0; i < 4; i += 1) await limiter.beginToolCall(test("run-0001", 4), AT);
+    const e = await refusal(limiter.beginToolCall(test("run-0001", 4), AT));
+    expect(e.info).toMatchObject({ scope: "network", kind: "toolCalls", limit: 4, used: 4 });
+  });
+
+  it("counts apart from the real network share, and a new run starts fresh", async () => {
+    const limiter = createLimiter({ config: CONFIG, store: new MemoryCounterStore() });
+    await limiter.beginToolCall(test("run-0001", 1), AT);
+    await refusal(limiter.beginToolCall(test("run-0001", 1), AT));
+    // The real network (toolCallsDaily 2) is untouched by the test run.
+    await limiter.beginToolCall(caller(), AT);
+    await limiter.beginToolCall(caller(), AT);
+    // A new run id is a new counter.
+    await expect(limiter.beginToolCall(test("run-0002", 1), AT)).resolves.toBeUndefined();
+  });
+});

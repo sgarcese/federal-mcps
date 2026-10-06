@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER } from "./caller.js";
+import { OPERATOR_BYPASS_HEADER, SOURCE_IP_HEADER, TEST_LIMIT_HEADER } from "./caller.js";
 import {
   CALLER_KEY_HEX_LENGTH,
   CALLER_SECRET_ENV,
@@ -241,5 +241,40 @@ describe("networkOf on hostile input (CodeQL js/polynomial-redos)", () => {
   it("still strips a zone id and reads a dotted IPv4 tail", () => {
     expect(networkOf("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
     expect(networkOf("::ffff:160.79.104.10")).toBe("160.79.104.10");
+  });
+});
+
+describe("the token-gated test limit (#347)", () => {
+  const at = new Date("2026-10-06T12:00:00.000Z");
+  const headers = (extra: Record<string, string>) => ({ [SOURCE_IP_HEADER]: "203.0.113.9", ...extra });
+
+  it("a valid operator token with a well-formed header makes an isolated test caller, not a bypass", () => {
+    const c = identify()(
+      headers({ [OPERATOR_BYPASS_HEADER]: TOKEN, [TEST_LIMIT_HEADER]: "3:run-20261006a" }),
+      at,
+    );
+    expect(c).toMatchObject({ kind: "network", key: "test:run-20261006a", testLimit: 3, bypass: false });
+  });
+
+  it("ignores the header without a valid token: the caller is the real network", () => {
+    for (const token of [undefined, "wrong-token"]) {
+      const c = identify()(
+        headers({
+          ...(token === undefined ? {} : { [OPERATOR_BYPASS_HEADER]: token }),
+          [TEST_LIMIT_HEADER]: "3:run-20261006a",
+        }),
+        at,
+      );
+      expect(c?.testLimit).toBeUndefined();
+      expect(c?.key).not.toMatch(/^test:/);
+    }
+  });
+
+  it("ignores a malformed header (limit outside 1–10, bad run id) and falls back to the bypass", () => {
+    for (const value of ["0:run-20261006a", "11:run-20261006a", "3:short", "3:bad run id!", "3", "x:run-20261006a"]) {
+      const c = identify()(headers({ [OPERATOR_BYPASS_HEADER]: TOKEN, [TEST_LIMIT_HEADER]: value }), at);
+      expect(c?.testLimit).toBeUndefined();
+      expect(c?.bypass).toBe(true);
+    }
   });
 });
