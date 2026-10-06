@@ -160,7 +160,8 @@ BUDGET_ARN="arn:aws:budgets::${ACCOUNT}:budget/rc-*"
 MONITORING_POLICY=$(cat <<JSON
 {"Version":"2012-10-17","Statement":[
   {"Sid":"CloudWatchAlarmsOnRcNames","Effect":"Allow",
-   "Action":["cloudwatch:PutMetricAlarm","cloudwatch:DeleteAlarms","cloudwatch:TagResource"],
+   "Action":["cloudwatch:PutMetricAlarm","cloudwatch:DeleteAlarms","cloudwatch:TagResource",
+             "cloudwatch:UntagResource"],
    "Resource":"${ALARM_ARN}"},
   {"Sid":"CloudWatchDescribeNotResourceScopable","Effect":"Allow",
    "Action":["cloudwatch:DescribeAlarms","cloudwatch:DescribeAlarmsForMetric","cloudwatch:ListTagsForResource"],
@@ -170,10 +171,13 @@ MONITORING_POLICY=$(cat <<JSON
    "Resource":"${DASHBOARD_ARN}"},
   {"Sid":"SnsTopicsOnRcNames","Effect":"Allow",
    "Action":["sns:CreateTopic","sns:DeleteTopic","sns:Subscribe","sns:Unsubscribe",
-             "sns:GetTopicAttributes","sns:SetTopicAttributes","sns:TagResource"],
+             "sns:GetTopicAttributes","sns:SetTopicAttributes","sns:TagResource",
+             "sns:UntagResource","sns:ListTagsForResource","sns:ListSubscriptionsByTopic",
+             "sns:GetSubscriptionAttributes","sns:SetSubscriptionAttributes"],
    "Resource":"${SNS_ARN}"},
   {"Sid":"BudgetsOnRcNames","Effect":"Allow",
-   "Action":["budgets:ModifyBudget","budgets:ViewBudget"],
+   "Action":["budgets:ModifyBudget","budgets:ViewBudget","budgets:TagResource",
+             "budgets:UntagResource","budgets:ListTagsForResource"],
    "Resource":"${BUDGET_ARN}"}
 ]}
 JSON
