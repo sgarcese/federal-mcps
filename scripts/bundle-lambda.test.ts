@@ -13,6 +13,8 @@ describe("bundle-lambda output", () => {
     const pkg = join(import.meta.dirname, "..", "packages", "server-geo");
     execFileSync("npm", ["run", "bundle"], { cwd: pkg, stdio: "pipe" });
     const bundle = join(pkg, "dist", "lambda", "lambda.mjs");
-    expect(() => execFileSync(process.execPath, ["--check", bundle], { stdio: "pipe" })).not.toThrow();
+    expect(() =>
+      execFileSync(process.execPath, ["--check", bundle], { stdio: "pipe" }),
+    ).not.toThrow();
   }, 180_000);
 });
