@@ -374,7 +374,10 @@ an envelope-shaped `structuredContent` (`data: null`) carrying a `limit` block
 facts; `describe_source` exposes the configured limits and today's remaining service budget to
 any caller. A sensitive operator-bypass header exempts the project's own release eval from the
 per-identity shares (never the service budget), and self-hosted or stdio runs with no
-`FEDERAL_MCPS_LIMITS` configured get no limiter at all, as before M17.
+`FEDERAL_MCPS_LIMITS` configured get no limiter at all, as before M17. An operator smoke test can provoke a real refusal without spending anyone's share: with the
+operator token, `x-federal-mcps-test-limit: <1–10>:<runId>` counts the request on an isolated
+per-run test counter with that artificial limit (#347; the runbook's "The artificial test
+limit").
 
 ## Repository settings
 

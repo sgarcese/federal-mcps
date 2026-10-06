@@ -335,12 +335,55 @@ It checks three things:
 - each server's `describe_source` shows a `limits` block;
 - one BLS query raises the BLS service counter, which proves the Lambda loads the AWS SDK and
   writes the limits table;
-- four geo calls on an **isolated test counter** (#347) are refused on the fourth, with the plain
-  sentence and a `limit` block. This uses the operator token with
-  `x-federal-mcps-test-limit`, so it spends no one's real share.
+- geo calls on an isolated test counter with an **artificial low limit** (3 by default) are
+  refused one call past it, with the plain sentence and a `limit` block. That proves a real
+  refusal without spending anyone's real share; see below.
 
 It costs one unit of the BLS daily budget. Run it once a day at most: the BLS query is chosen
 per day, so a second run the same day hits the 24-hour cache, and the counter check fails.
+
+#### The artificial test limit (#347, #353)
+
+The real per-network share for geo is 1,000 tool calls a day, too many to exhaust in a test.
+So the smoke test asks the server for an artificial limit on a counter of its own:
+
+- **The header.** It sends `x-federal-mcps-test-limit: <limit>:<runId>` together with
+  `x-federal-mcps-operator: <FEDERAL_MCPS_OPERATOR_TOKEN>`. Without a valid operator token
+  the header is ignored, so nobody else can use it.
+- **What the server does.** It counts the request against an **isolated test counter** keyed
+  by `runId`, with that limit in place of the real share. It is a real limit, not a bypass:
+  the call after the limit is refused exactly as a real caller's would be. Real network and
+  pool shares are never touched. Upstream queries still charge the real service budget, which
+  is why the test uses geo, whose calls make none.
+- **Bounds.** `<limit>` is a whole number from **1 to 10**. `<runId>` is 8 to 64 letters,
+  digits or hyphens. Any other value is ignored, and the request is then a plain operator
+  bypass that never refuses.
+- **Each run is fresh.** The script makes a new `runId` every time, so runs never share a
+  counter. Test counters expire with the others, two days after the day they count.
+
+**Setting the limit.** Set `SMOKE_TEST_LIMIT` (1–10; default 3). The script makes that many
+calls plus one, and expects the last to be refused with that limit:
+
+```bash
+set -a; . ./.env; set +a
+SMOKE_TEST_LIMIT=5 LIVE_TESTS=1 npm run smoke:limits -- --yes
+```
+
+A value outside 1–10 stops the script before it makes any call.
+
+**By hand.** The same refusal can be triggered with `curl`. The token is read from `.env` and
+never echoed:
+
+```bash
+set -a; . ./.env; set +a
+RUN="manual-$(date +%s)"
+for i in 1 2 3; do
+  curl -s -o /dev/null -X POST https://geo.responsive.city/mcp     -H 'content-type: application/json' -H 'accept: application/json, text/event-stream'     -H "x-federal-mcps-operator: $FEDERAL_MCPS_OPERATOR_TOKEN"     -H "x-federal-mcps-test-limit: 2:$RUN"     -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"geo_resolve_place","arguments":{"query":"Denver"}}}'
+done
+```
+
+With a limit of 2, the third call is refused. Drop the `-o /dev/null` from the last call to
+see the sentence and the `limit` block.
 
 ## Troubleshooting
 
