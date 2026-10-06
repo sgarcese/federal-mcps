@@ -108,8 +108,21 @@ export function cacheBustingYear(now = new Date()) {
   return base + (Math.floor(now.getTime() / 86_400_000) % span);
 }
 
-/** The test counter's limit: small, so the refusal costs four calls (#347). */
+/** The test counter's default limit: small, so the refusal costs four calls (#347). */
 export const TEST_LIMIT = 3;
+
+/**
+ * The artificial limit for this run (#353): `SMOKE_TEST_LIMIT` when set, else TEST_LIMIT. The
+ * server honours 1–10 (identify.ts) and ignores any other value, falling back to a plain bypass
+ * that would never refuse, so anything outside that range fails here, before any call.
+ */
+export function resolveTestLimit(raw) {
+  if (raw === undefined || raw === "") return TEST_LIMIT;
+  if (!/^(10|[1-9])$/.test(raw)) {
+    throw new Error(`SMOKE_TEST_LIMIT must be a whole number from 1 to 10 (got "${raw}")`);
+  }
+  return Number(raw);
+}
 
 /** A fresh run id for the isolated test counter, 8–64 of [A-Za-z0-9-] (#347). */
 export function testRunId(now = new Date()) {
@@ -127,9 +140,19 @@ async function main() {
   }
 
   console.warn(
-    "This script makes one real BLS query (one unit of the BLS daily budget) and four geo " +
-      "calls on an isolated test counter (#347); it spends no one's real share.",
+    "This script makes one real BLS query (one unit of the BLS daily budget) and, on an " +
+      "isolated test counter with an artificial limit (SMOKE_TEST_LIMIT, default 3; #347, #353), " +
+      "limit + 1 geo calls; it spends no one's real share.",
   );
+  // Validated before any call, so a bad SMOKE_TEST_LIMIT spends nothing (#353).
+  let limit;
+  try {
+    limit = resolveTestLimit(process.env.SMOKE_TEST_LIMIT);
+  } catch (error) {
+    console.error(`live-limits-smoke: ${error.message}`);
+    process.exitCode = 1;
+    return;
+  }
   const operatorToken = process.env.FEDERAL_MCPS_OPERATOR_TOKEN;
   if (!operatorToken) {
     console.error("live-limits-smoke: FEDERAL_MCPS_OPERATOR_TOKEN is not set (source your .env).");
@@ -197,16 +220,16 @@ async function main() {
   const runId = testRunId();
   const testHeaders = {
     "x-federal-mcps-operator": operatorToken,
-    "x-federal-mcps-test-limit": `${TEST_LIMIT}:${runId}`,
+    "x-federal-mcps-test-limit": `${limit}:${runId}`,
   };
   let last;
-  for (let i = 0; i < TEST_LIMIT + 1; i++) {
+  for (let i = 0; i < limit + 1; i++) {
     last = await callTool(URLS.geo, "geo_resolve_place", { query: "Denver" }, testHeaders);
   }
   const refusal = parseRefusal(last);
   record(
-    `call ${TEST_LIMIT + 1} on a test limit of ${TEST_LIMIT} is a network tool-call refusal`,
-    isNetworkToolCallsRefusal(refusal) && refusal?.limit?.limit === TEST_LIMIT,
+    `call ${limit + 1} on a test limit of ${limit} is a network tool-call refusal`,
+    isNetworkToolCallsRefusal(refusal) && refusal?.limit?.limit === limit,
   );
   if (refusal?.sentence) console.error(`    "${refusal.sentence}"`);
 
