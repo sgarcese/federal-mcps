@@ -90,7 +90,11 @@ The spike found four constraints that shape every choice:
    This is the main lever for serving more people from the same quota.
 9. **Operator bypass.** A secret header (a sensitive variable, not documented publicly) exempts a
    request from per-network and pool shares, but not from the service budget, so the release
-   eval is never refused by its own shares.
+   eval is never refused by its own shares. *Amended 2026-10-06 (#347, owner ruling):* the same
+   token, with `x-federal-mcps-test-limit: <1–10>:<runId>`, counts a request against an isolated
+   test counter with that limit, which is a real limit rather than a bypass. It lets the live smoke test
+   provoke a refusal in four calls without spending anyone's share. Without the token, the
+   header is ignored.
 10. **Administrator step.** `scripts/admin-grant-protection.sh <instance>`, idempotent and run once
     by an administrator. It:
     - creates the `rc-federal-mcps-<env>-limits` table (on demand, TTL on `expiresAt`);

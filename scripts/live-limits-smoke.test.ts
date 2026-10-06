@@ -6,6 +6,8 @@ import {
   hasLimitsBlock,
   isNetworkToolCallsRefusal,
   parseRefusal,
+  TEST_LIMIT,
+  testRunId,
 } from "./live-limits-smoke.mjs";
 
 /**
@@ -155,5 +157,18 @@ describe("cacheBustingYear", () => {
       ),
     );
     expect(values.size).toBeGreaterThan(1);
+  });
+});
+
+describe("the isolated test counter's run id (#347)", () => {
+  it("always matches the server's accepted shape, so the header is never silently ignored", () => {
+    // identify.ts accepts `<1–10>:<8–64 of [A-Za-z0-9-]>`; a mismatch would fall back to a bypass.
+    for (let i = 0; i < 50; i += 1) {
+      expect(`${TEST_LIMIT}:${testRunId()}`).toMatch(/^([1-9]|10):[A-Za-z0-9-]{8,64}$/);
+    }
+  });
+
+  it("differs per run, so each run starts a fresh counter", () => {
+    expect(testRunId()).not.toBe(testRunId());
   });
 });

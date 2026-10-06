@@ -6,6 +6,7 @@ import {
   OPERATOR_BYPASS_HEADER,
   type RequestHeaders,
   SOURCE_IP_HEADER,
+  TEST_LIMIT_HEADER,
 } from "./caller.js";
 
 /**
@@ -82,6 +83,19 @@ export function createIdentify(options: IdentifyOptions): Identify {
     const network = networkOf(address);
     const labels = labelsFrom(headers);
     const bypass = tokenMatches(headers[OPERATOR_BYPASS_HEADER], operatorToken);
+    // An operator smoke test (#347): a valid token plus a well-formed test-limit header is an
+    // isolated test caller with its own tiny limit. Its key cannot collide with a real one (hex
+    // HMACs, or the pool's "claude-ai"), and it is not a bypass: the limit must refuse.
+    const test = bypass ? parseTestLimit(headers[TEST_LIMIT_HEADER]) : undefined;
+    if (test !== undefined) {
+      return {
+        kind: "network",
+        key: `test:${test.runId}`,
+        labels,
+        bypass: false,
+        testLimit: test.limit,
+      };
+    }
 
     if (isClaudeAiPool(network)) {
       return { kind: "pool", key: CLAUDE_AI_POOL_KEY, labels, bypass };
@@ -194,4 +208,11 @@ function tokenMatches(presented: string | undefined, expected: string): boolean 
   const a = createHash("sha256").update(presented, "utf8").digest();
   const b = createHash("sha256").update(expected, "utf8").digest();
   return timingSafeEqual(a, b);
+}
+
+/** `<limit>:<runId>`, limit 1–10 and a run id of 8–64 letters, digits or hyphens; else undefined. */
+function parseTestLimit(value: string | undefined): { limit: number; runId: string } | undefined {
+  const match = /^([1-9]|10):([A-Za-z0-9-]{8,64})$/.exec(value?.trim() ?? "");
+  if (!match?.[1] || !match[2]) return undefined;
+  return { limit: Number(match[1]), runId: match[2] };
 }
