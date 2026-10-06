@@ -44,6 +44,11 @@ tagged release. This ADR records the M6 rulings (owner, 2026-09-17); build issue
    fixes** (`0.1.1`). `1.0.0` is reserved for the day the API is committed stable. Release notes
    summarize the six BLS programs + geography core and name the known limitations. `NOTICE`
    attributes any borrowed code.
+   *Amended 2026-10-06 (owner ruling, recorded on #327; ADR-020 §12):* **1.0.0 is cut.** The
+   family verbs and the provenance envelope, including the `limit` block with optional `limit` and
+   `used`, are committed stable. From here, standard semver applies: a breaking change to a verb's
+   contract or to the envelope needs a major version; new tools, indicators, pickers and agencies
+   are minor versions; fixes are patches.
 
 5. **Release-1 scope: BLS server + geography core.** Census and CDC PLACES servers, the composite
    endpoint, and the deferred sub-dimension work (below) are later. v0.1.0 ships the headline of each
