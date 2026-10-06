@@ -105,7 +105,7 @@ export function cacheBustingYear(now = new Date()) {
   // across ten recent years is enough to avoid colliding with the previous run in the same day.
   const base = 2015;
   const span = 10;
-  return String(base + (Math.floor(now.getTime() / 86_400_000) % span));
+  return base + (Math.floor(now.getTime() / 86_400_000) % span);
 }
 
 /** The test counter's limit: small, so the refusal costs four calls (#347). */

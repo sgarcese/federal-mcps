@@ -24,12 +24,11 @@ export FEDERAL_MCPS_INSTANCE="$INSTANCE"
 ROOT="terraform/instances/${INSTANCE}"
 [ -d "$ROOT" ] || { echo "::error:: unknown instance '${INSTANCE}' (no ${ROOT})"; exit 1; }
 
-if [ -z "${BLS_API_KEY:-}" ]; then
-  [ -f .env ] || { echo "::error:: BLS_API_KEY not set and no .env present"; exit 1; }
-  set -a; # shellcheck disable=SC1091
-  source .env; set +a
-fi
-[ -n "${BLS_API_KEY:-}" ] || { echo "::error:: BLS_API_KEY is empty"; exit 1; }
+# .env is always read when present, and a missing limiter secret is warned about (#349).
+# shellcheck source=scripts/load-dotenv.sh
+source scripts/load-dotenv.sh
+load_dotenv
+[ -n "${BLS_API_KEY:-}" ] || { echo "::error:: BLS_API_KEY is empty (set it in .env)"; exit 1; }
 export TF_VAR_bls_api_key="$BLS_API_KEY"
 # The Census Data API requires a key for every data query (ADR-014 §9); same pattern.
 [ -n "${CENSUS_API_KEY:-}" ] || { echo "::error:: CENSUS_API_KEY is empty (set it in .env)"; exit 1; }
