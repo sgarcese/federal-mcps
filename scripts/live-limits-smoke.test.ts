@@ -143,8 +143,9 @@ describe("isNetworkToolCallsRefusal", () => {
 });
 
 describe("cacheBustingYear", () => {
-  it("returns a 4-digit year string within the rotating window", () => {
-    const year = Number.parseInt(cacheBustingYear(new Date("2026-10-05T00:00:00.000Z")), 10);
+  it("returns a numeric year (bls_get_raw rejects strings) within the rotating window", () => {
+    const year = cacheBustingYear(new Date("2026-10-05T00:00:00.000Z"));
+    expect(typeof year).toBe("number");
     expect(year).toBeGreaterThanOrEqual(2015);
     expect(year).toBeLessThan(2025);
   });
