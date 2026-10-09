@@ -79,3 +79,6 @@ tmp/
 
 # Fleet record: real values are per-deployer; commit instances.example.json instead (ADR-004).
 /instances.json
+
+# --- local outreach drafts (shared as hosted pages, never committed) ---
+outreach/
