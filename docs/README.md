@@ -51,6 +51,10 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [adr/ADR-015-source-guides-for-portal-hosted-sources.md](adr/ADR-015-source-guides-for-portal-hosted-sources.md)
   — guide + generic portal connector is the default surface for portal-hosted sources; servers
   only where an API has a grammar or quota discipline (amends ADR-001 §2).
+- [spikes/occupation-task-layer.md](spikes/occupation-task-layer.md) — #360 occupation and task
+  layer, measured 2026-10-15: O*NET 31.0 (CC BY 4.0) and the Anthropic Economic Index (data CC-BY)
+  join cleanly (96.9% of Index tasks match O*NET task text; 755 of 756 exposure occupations are
+  published by OEWS); a core occupation catalog plus an `occupation` server recommended; 7 decisions.
 - [spikes/data-mirror.md](spikes/data-mirror.md) — #51 hosted data mirror, measured 2026-09-30: quota
   not shown to bind (and uninstrumented), QCEW history the heaviest upstream path, OEWS history the
   real gap; LABSTAT/QCEW/OEWS sizes in Parquet, Hugging Face vs S3 vs bundled, a structured push-down
