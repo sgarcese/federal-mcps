@@ -15,11 +15,11 @@
     "geo-bench": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.131.0",
+    "@anthropic-ai/sdk": "^0.133.0",
     "@federal-mcps/core": "1.0.0",
     "@federal-mcps/geography-build": "1.0.0",
     "@federal-mcps/server-geo": "1.0.0",
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "better-sqlite3": "13.0.3"
   },
   "devDependencies": {
