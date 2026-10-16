@@ -54,7 +54,7 @@ Current documents only. Superseded material moves to `archive/` with a banner.
 - [spikes/occupation-task-layer.md](spikes/occupation-task-layer.md) — #360 occupation and task
   layer, measured 2026-10-15: O*NET 31.0 (CC BY 4.0) and the Anthropic Economic Index (data CC-BY)
   join cleanly (96.9% of Index tasks match O*NET task text; 755 of 756 exposure occupations are
-  published by OEWS); a core occupation catalog plus an `occupation` server recommended; 7 decisions.
+  published by OEWS). **Deferred by the owner 2026-10-15**: outside the plan for now.
 - [spikes/data-mirror.md](spikes/data-mirror.md) — #51 hosted data mirror, measured 2026-09-30: quota
   not shown to bind (and uninstrumented), QCEW history the heaviest upstream path, OEWS history the
   real gap; LABSTAT/QCEW/OEWS sizes in Parquet, Hugging Face vs S3 vs bundled, a structured push-down
