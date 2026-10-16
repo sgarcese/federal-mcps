@@ -68,6 +68,7 @@ function dimensionArgumentSchema(
     industry: `An industry code from the indicator's vocabulary (${agency}_list_indicators).`,
     ownership: `An ownership code from the indicator's vocabulary (${agency}_list_indicators).`,
     occupation: `An occupation code from the indicator's vocabulary (${agency}_list_indicators).`,
+    statistic: `Which statistic to return, from the indicator's vocabulary (${agency}_list_indicators), e.g. mean vs. median vs. a percentile.`,
     product: `A data product from the indicator's vocabulary (${agency}_list_indicators), e.g. an ACS 1-year vs 5-year estimate.`,
     frequency: `A frequency from the indicator's vocabulary (${agency}_list_indicators), e.g. quarterly or annual.`,
     bedrooms: `A bedroom count from the indicator's vocabulary (${agency}_list_indicators), 0 (efficiency) to 4.`,

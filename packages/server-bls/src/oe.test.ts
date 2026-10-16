@@ -108,9 +108,7 @@ describe("buildOeSeriesId — statistic (data type) picker (#359)", () => {
 describe("buildOeSeriesId — detailed 6-digit SOC occupations, built from BLS's own list (#359)", () => {
   it("accepts a published detailed occupation code (carpenters, 472031)", () => {
     // Verified live 2026-10-15: carpenters, Indiana, annual mean wage = $64,950.
-    expect(buildOeSeriesId("S:18", { occupation: "472031" })).toBe(
-      "OEUS180000000000047203104",
-    );
+    expect(buildOeSeriesId("S:18", { occupation: "472031" })).toBe("OEUS180000000000047203104");
   });
 
   it("accepts a published detailed occupation code for a metro and a non-default statistic", () => {
