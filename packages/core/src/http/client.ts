@@ -6,6 +6,7 @@ import type { BudgetStore } from "./budget.js";
 import { type CacheEntry, type CacheStore, cacheKey } from "./cache-store.js";
 import {
   AgencyApiError,
+  DeadlineExceededError,
   HttpError,
   NetworkError,
   QuotaExceededError,
@@ -98,6 +99,15 @@ export interface RequestOptions {
    * every existing caller is unaffected.
    */
   readonly cacheBody?: string;
+  /**
+   * A caller-owned deadline (#351), purely additive — every existing caller is unaffected. When
+   * this aborts, the in-flight attempt stops (its own per-attempt timeout controller is combined
+   * with this one) and no further retry starts; the client throws `DeadlineExceededError`, never
+   * `TimeoutError` (that stays reserved for the client's own per-attempt timeout). An already
+   * aborted signal fails the call before any fetch, cache or fixture work: no upstream call is
+   * made, and no cache entry or fixture is ever written for an aborted request.
+   */
+  readonly signal?: AbortSignal;
 }
 
 export interface HttpResult<T> {
@@ -251,9 +261,17 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     timeoutMs: number,
     body: string | undefined,
     errorUrl: string = url,
+    callerSignal?: AbortSignal,
   ): Promise<RawResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    // The caller's own deadline (#351) is combined with this attempt's timeout controller: either
+    // one aborts the same fetch, and we tell them apart afterwards by checking which signal fired.
+    const onCallerAbort = () => controller.abort();
+    if (callerSignal) {
+      if (callerSignal.aborted) controller.abort();
+      else callerSignal.addEventListener("abort", onCallerAbort);
+    }
     try {
       const init: RequestInit = { signal: controller.signal };
       if (headers) {
@@ -271,12 +289,16 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       });
       return { status: response.status, headers: responseHeaders, body: bodyText };
     } catch (err) {
+      if (callerSignal?.aborted) {
+        throw new DeadlineExceededError({ source, url: errorUrl });
+      }
       if (controller.signal.aborted) {
         throw new TimeoutError({ source, url: errorUrl, timeoutMs });
       }
       throw err;
     } finally {
       clearTimeout(timer);
+      if (callerSignal) callerSignal.removeEventListener("abort", onCallerAbort);
     }
   }
 
@@ -297,20 +319,26 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     timeoutMs: number,
     body: string | undefined,
     queryAuth?: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<RawResponse> {
     const target = wireUrl(url, queryAuth);
     let attempt = 0;
     for (;;) {
       attempt++;
+      // The caller's deadline (#351) is checked before every attempt, retries included: once it
+      // has aborted, no further attempt starts, even one that would otherwise have been a retry.
+      if (signal?.aborted) {
+        throw new DeadlineExceededError({ source, url });
+      }
       // Checked before every attempt, retries included (#324 review): once a call has spent
       // this minute's error budget mid-retry, it stops immediately rather than burning through
       // the rest of its attempts against an agency that may already be counting them.
       checkErrorLimit();
       let raw: RawResponse;
       try {
-        raw = await doFetchOnce(target, headers, timeoutMs, body, url);
+        raw = await doFetchOnce(target, headers, timeoutMs, body, url, signal);
       } catch (err) {
-        if (err instanceof TimeoutError) {
+        if (err instanceof DeadlineExceededError || err instanceof TimeoutError) {
           throw err;
         }
         if (attempt >= DEFAULT_BACKOFF.maxAttempts) {
@@ -377,7 +405,14 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     body: string | undefined,
     queryAuth?: Record<string, string>,
     fixtureBody: string | undefined = body,
+    signal?: AbortSignal,
   ): Promise<RawResponse> {
+    // An already-aborted caller deadline (#351) fails before anything else: no fixture replay, no
+    // rate-limit wait, no budget consumption, no upstream fetch, and so no cache or fixture write.
+    if (signal?.aborted) {
+      throw new DeadlineExceededError({ source, url });
+    }
+
     if (fixtureMode === "replay") {
       const fixture = await readFixture(fixtureDir, source, url, fixtureBody);
       if (fixture.status >= 400) {
@@ -420,7 +455,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     // One real upstream fetch (#326, ADR-020 §5): never a cache hit, never a replayed fixture
     // (the "replay" branch above returns before this point).
     incrementUpstreamCalls();
-    const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth);
+    const response = await fetchWithRetry(url, headers, timeoutMs, body, queryAuth, signal);
     noteRateLimitHeaders(response.headers);
 
     if (fixtureMode === "record") {
@@ -462,6 +497,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     const staleTtlSeconds = options?.staleTtlSeconds;
     const queryAuth = options?.queryAuth;
     const identityBody = options?.cacheBody ?? body;
+    const signal = options?.signal;
     const key = cacheKey(method, url, headers, identityBody);
 
     let existing: CacheEntry | undefined;
@@ -489,6 +525,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
           body,
           queryAuth,
           identityBody,
+          signal,
         );
         const value = parse(response.body);
         await cache.set(key, { value, status: response.status, storedAt: now().getTime() });
@@ -508,7 +545,15 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       }
     }
 
-    const response = await performRequest(url, headers, timeoutMs, body, queryAuth, identityBody);
+    const response = await performRequest(
+      url,
+      headers,
+      timeoutMs,
+      body,
+      queryAuth,
+      identityBody,
+      signal,
+    );
     const value = parse(response.body);
     if (freshTtlSeconds !== undefined) {
       await cache.set(key, { value, status: response.status, storedAt: now().getTime() });

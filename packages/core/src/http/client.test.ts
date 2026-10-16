@@ -189,6 +189,9 @@ describe("caller signal (#351)", () => {
     );
 
     const promise = client.getJson("https://api.bls.gov/x", { signal: controller.signal });
+    // Let the in-flight fetch actually start before aborting, so this exercises the mid-flight
+    // path (as opposed to the already-aborted-before-fetch path the next test covers).
+    await vi.waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
     controller.abort();
     const err = await promise.catch((e) => e);
 

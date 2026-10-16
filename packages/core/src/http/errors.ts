@@ -48,6 +48,25 @@ export class TimeoutError extends HttpClientError {
   }
 }
 
+/**
+ * A request was stopped because the *caller's* own `RequestOptions.signal` aborted (#351) —
+ * distinct from `TimeoutError`, which is the client's own per-attempt timeout. A caller passes a
+ * signal to bound the whole call it is part of (e.g. QCEW's history fetch, under the Lambda
+ * timeout); once that signal aborts, the in-flight attempt stops and no further retry starts.
+ * `fetch` may or may not have been invoked for this particular request.
+ */
+export class DeadlineExceededError extends HttpClientError {
+  readonly url: string;
+
+  constructor(params: { source: string; url: string }) {
+    super(
+      `${params.source}: request to ${params.url} was aborted by the caller's deadline`,
+      params.source,
+    );
+    this.url = params.url;
+  }
+}
+
 /** The per-source daily budget is exhausted; `fetch` was never invoked. */
 export class QuotaExceededError extends HttpClientError {
   readonly resetsAt: string;
