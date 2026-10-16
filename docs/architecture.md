@@ -159,7 +159,12 @@ days; a request with no stale window gets none beyond its fresh TTL), batching h
 packs 50 series per call and Census packs variables per call. A BLS timeseries POST's own
 registration key never affects the cache or fixture identity (`cacheBody`, #325); a BLS
 daily-threshold refusal — HTTP 200 with `REQUEST_NOT_PROCESSED` — is never cached and surfaces
-as the shared `QuotaExceededError` (ADR-020 §8), same as the budget counter's own refusal.
+as the shared `QuotaExceededError` (ADR-020 §8), same as the budget counter's own refusal. The
+client also takes an optional caller `signal` (#351): QCEW's history fetch, which can issue up to
+23 CSV slices in parallel, shares one 20s deadline across them (well under the 29s Lambda
+timeout) with concurrency capped at 6 in flight, so one stalled slice returns the rows already
+fetched as a partial answer with the missing quarters named, rather than burning the full
+retry/timeout budget and killing the call with no envelope at all.
 **Stale first** (ADR-020 §4, #323): when a share or the service budget refuses an upstream
 query (`LimitExceededError` or `QuotaExceededError`) and the cache holds the request within
 its stale window, the client answers from cache instead of raising the refusal, and the
