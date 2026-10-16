@@ -186,3 +186,13 @@ export function buildOeSeriesId(areaSpec: string, options: OeSeriesOptions = {})
 export function isOeSeriesId(id: string): boolean {
   return /^OEU[MSN]\d{21}$/.test(id);
 }
+
+/**
+ * The occupation code packed into a built OE series id (chars 18–23 of 25: `OEU` + areaType(1) +
+ * area(7) + industry(6) precede it) — undefined for anything that is not a well-formed OE id
+ * (#359, so a fetch capability can add the "ask the state or nation" note without re-parsing the
+ * caller's original dimension args, which it never receives).
+ */
+export function occupationOfSeriesId(id: string): string | undefined {
+  return isOeSeriesId(id) ? id.slice(17, 23) : undefined;
+}

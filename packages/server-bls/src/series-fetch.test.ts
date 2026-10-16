@@ -140,6 +140,23 @@ describe("fetchSeriesObservations parsing and batching", () => {
     expect(s?.observations[1]?.footnotes).toEqual([]); // an empty footnote {} is dropped
   });
 
+  it("parses a BLS asterisk value as null, same as a dash (#359)", async () => {
+    // OEWS marks a non-released estimate as "-" (already covered above) or "*" — both mean the
+    // same thing: no number to report, never zero or a guess.
+    const { client } = scriptedClient(() =>
+      ok([
+        {
+          seriesID: "OEUS180000000000000000013",
+          data: [
+            { year: "2025", period: "A01", periodName: "Annual", value: "*", footnotes: [{}] },
+          ],
+        },
+      ]),
+    );
+    const [s] = await fetchSeriesObservations(client, ["OEUS180000000000000000013"]);
+    expect(s?.observations[0]?.value).toBeNull();
+  });
+
   it("batches more than 50 series into separate requests", async () => {
     const { client, fetchFn } = scriptedClient(() => ok([]));
     const ids = Array.from({ length: 120 }, (_, i) => `LAUCN${String(i).padStart(13, "0")}03`);

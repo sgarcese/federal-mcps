@@ -1,10 +1,10 @@
 import {
   AgencyApiError,
   CACHE_MISS,
-  QuotaExceededError,
   type CacheInfo,
   type HttpClient,
   type IndicatorFetch,
+  QuotaExceededError,
   type RequestOptions,
   type SeriesFetchOptions,
   type SeriesResult,
@@ -153,7 +153,10 @@ function parseSeries(res: BlsApiResponse): SeriesResult[] {
       year: d.year,
       period: d.period,
       periodName: d.periodName,
-      value: d.value === "" || d.value === "-" ? null : Number.parseFloat(d.value),
+      // "-" and "*" both mean "no estimate to report" (LAUS/CPI use "-"; OEWS also uses "*" for a
+      // non-released estimate, #359) — null, never zero or a guess.
+      value:
+        d.value === "" || d.value === "-" || d.value === "*" ? null : Number.parseFloat(d.value),
       footnotes: (d.footnotes ?? [])
         .filter((f) => f.code)
         .map((f) => ({ code: f.code as string, text: f.text ?? "" })),

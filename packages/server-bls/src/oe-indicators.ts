@@ -2,10 +2,13 @@ import type {
   BuildSeriesIdOptions,
   DimensionDefinition,
   IndicatorDefinition,
+  IndicatorFetch,
   PlaceCandidate,
+  SeriesResult,
 } from "@federal-mcps/core";
 import { isNation } from "./nation.js";
-import { buildOeSeriesId, OE_DATA_TYPES } from "./oe.js";
+import { buildOeSeriesId, OE_DATA_TYPES, occupationOfSeriesId } from "./oe.js";
+import { timeseriesFetch } from "./series-fetch.js";
 
 /**
  * OEWS (OE) registered as two indicator definitions (ADR-010 §1–§2, ADR-013 §1, §3; #359):
@@ -129,6 +132,34 @@ function buildOewsKey(
   });
 }
 
+/** `000000` is the all-occupations default (`OCCUPATION_DIMENSION.default`); never the subject of the empty-result note below. */
+const ALL_OCCUPATIONS = "000000";
+
+/**
+ * Wraps the default BLS timeseries fetch for OEWS (#359): a detailed occupation BLS does not
+ * survey for a given area comes back as an entirely empty series — not a suppressed value with a
+ * footnote — verified live 2026-10-15 (South Bend-Mishawaka metro × several detailed
+ * occupations: "Series does not exist", `data: []`). A bare empty answer would look like a bug;
+ * this adds the limitation CLAUDE.md's "numbers carry their caveats" calls for, suggesting the
+ * next place to try.
+ */
+const oewsFetch: IndicatorFetch = async (client, seriesIds, options) => {
+  const results = await timeseriesFetch(client, seriesIds, options);
+  return results.map((r): SeriesResult => {
+    const occupation = occupationOfSeriesId(r.seriesId);
+    if (r.observations.length > 0 || occupation === undefined || occupation === ALL_OCCUPATIONS) {
+      return r;
+    }
+    return {
+      ...r,
+      notes: [
+        ...(r.notes ?? []),
+        `OEWS has no estimate for occupation ${occupation} in this area; try the state or the nation instead.`,
+      ],
+    };
+  });
+};
+
 /**
  * OEWS wage and employment statistics by occupation, NSA by default (ADR-010 §5; #359: split
  * into two indicators — see the module comment for why).
@@ -143,6 +174,7 @@ export const oewsIndicatorDefinitions: IndicatorDefinition[] = [
     agencyCodeOf: oewsCodeOf,
     buildSeriesId: buildOewsKey,
     dimensions: [OCCUPATION_DIMENSION, WAGE_STATISTIC_DIMENSION],
+    fetch: oewsFetch,
     // The BLS API holds only the current OEWS year: a requested range is stated as not applied (#214).
     servesHistory: false,
   },
@@ -155,6 +187,7 @@ export const oewsIndicatorDefinitions: IndicatorDefinition[] = [
     agencyCodeOf: oewsCodeOf,
     buildSeriesId: buildOewsKey,
     dimensions: [OCCUPATION_DIMENSION, EMPLOYMENT_STATISTIC_DIMENSION],
+    fetch: oewsFetch,
     servesHistory: false,
   },
 ];
