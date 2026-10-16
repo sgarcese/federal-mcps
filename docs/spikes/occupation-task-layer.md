@@ -1,6 +1,6 @@
 # Spike: an occupation and task layer — O*NET and the Anthropic Economic Index (#360)
 
-**Status:** analysis complete, awaiting owner rulings. Nothing is built or filed beyond #359.
+**Status:** deferred by the owner on 2026-10-15. This is outside the plan for now, being less aligned with the family's purpose, federal statistics by place. The analysis stands for reference, and nothing is built or filed from it. #359 (OEWS percentiles and detailed occupations) is federal data and proceeds on its own.
 
 ## Why
 
