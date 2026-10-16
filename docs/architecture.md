@@ -238,7 +238,7 @@ each program is an *indicator* behind `get_indicator`, never a tool of its own.
 |---|---|---|
 | `bls_resolve_place` | available | core resolver with BLS area codes and coverage flags attached |
 | `bls_list_indicators` | available | the measures a program publishes, and whether it publishes at a place's level |
-| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` pickers validated per indicator (ADR-013); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place; the United States answers from each program's national series (#290), LAUS's from CPS, labelled CPS |
+| `bls_get_indicator` | available (LAUS, CES, OEWS, CPI, JOLTS, QCEW, PPI) | one indicator, one place, over time, plus optional `item` / `industry` / `ownership` / `occupation` / `statistic` pickers validated per indicator (ADR-013, #359); a place below a program's coverage falls back (LAUS→county, CPI→division→region→U.S.) with a caveat; a national-scope indicator (PPI) takes no place; the United States answers from each program's national series (#290), LAUS's from CPS, labelled CPS |
 | `bls_compare_places` | available | one indicator across ≤20 places, aligned on the latest shared period; a thin wrapper over `get_indicator` |
 | `bls_get_raw` | available | raw timeseries IDs from any program (LAUS, CES, OEWS, CPI, JOLTS, PPI), at most 200 per call (4 BLS queries of up to 50 series each, #324), sent to BLS in batches of 50; a missing `startYear` or `endYear` is filled and a span over BLS's 20-year limit is capped, each stated as a limitation (#292) |
 | `bls_describe_source` | available | coverage, cadence, caveats, citation format |
@@ -249,7 +249,7 @@ Program coverage behind these verbs (from `bls_describe_source`):
 |---|---|---|---|
 | LAUS | available (M3) | state, MSA, county, city ≥25k; no national figure — the nation reads CPS (`LNU0…`/`LNS1…`, #290) | unemployment rate, unemployment, employment, labor force |
 | CES State & Area | available (M4, metros completed M7) | state and metro (CBSA); a multi-state metro is filed under its first state with a caveat; the nation reads CES national (`CEU0000000001`, #290) | total nonfarm payroll employment |
-| OEWS | available (M4, M7) | nation, state and metro | mean annual wage, all occupations or one of 22 SOC major groups (`occupation`) |
+| OEWS | available (M4, M7, M18) | nation, state and metro | `occupational_wage` (annual/hourly mean or median, an annual 10th/25th/75th/90th percentile) and `occupational_employment` (head count, per-1,000, location quotient) — two indicators, by occupation (`occupation`: one of 22 SOC major groups, or any detailed 6-digit SOC code OEWS publishes, built from BLS's own list, #359), and `statistic` for which number |
 | CPI | available (M4, M7) | ~23 metros, census divisions and regions, U.S. city average | CPI-U by expenditure group (`item`); no local CPI → division → region → U.S., each flagged |
 | JOLTS | available (M4) | nation and state | openings, hires, quits, layoffs |
 | QCEW | available (M5, M7) | nation (US000), county, state and metro | covered employment, average weekly wage by NAICS sector (`industry`) and ownership; CSV client, not the timeseries API |
