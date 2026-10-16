@@ -1,8 +1,9 @@
-import type {
-  DimensionDefinition,
-  HttpClient,
-  IndicatorDefinition,
-  PlaceCandidate,
+import {
+  DeadlineExceededError,
+  type DimensionDefinition,
+  type HttpClient,
+  type IndicatorDefinition,
+  type PlaceCandidate,
 } from "@federal-mcps/core";
 import { QCEW_ENDPOINT } from "./describe-source.js";
 import { isNation } from "./nation.js";
@@ -45,6 +46,21 @@ const QCEW_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
 const QCEW_STALE_TTL_SECONDS = 60 * 60 * 24 * 90;
 /** How many quarters to walk back if the newest expected slice isn't published yet. */
 const QCEW_MAX_LOOKBACK = 3;
+/**
+ * The whole QCEW history fetch's deadline (#351): the Lambda timeout is 29s (just under API
+ * Gateway's 30s integration cap), so one stalled slice among up to 23 fetched in parallel could
+ * otherwise burn the core client's full ~47s retry/timeout budget alone and kill the call with no
+ * envelope at all. 20s leaves headroom for the server shell, the envelope and whatever work
+ * follows the fetch. Shared across every slice of one call (not per-slice): once it fires, no new
+ * slice starts and every slice still in flight is aborted, so the call always finishes near this
+ * budget, not near the per-slice retry ceiling.
+ */
+export const QCEW_CALL_DEADLINE_MS = 20_000;
+/** At most this many slice fetches in flight at once (#351): bounds memory/connections without a
+ * new dependency, while still keeping a cold, unbounded-history call fast. */
+export const QCEW_CONCURRENCY = 6;
+/** Marks a slice the deadline stopped before (or during) fetching — never "not yet published". */
+const TIMED_OUT = Symbol("qcew-slice-timed-out");
 /** Separates the area, ownership and industry codes in the opaque series key. */
 const KEY_SEPARATOR = "|";
 
@@ -234,8 +250,104 @@ function candidatePeriods(
 }
 
 /**
+ * Fetch one call's window of slices with at most `QCEW_CONCURRENCY` in flight at a time (#351): a
+ * small local worker pool, no new dependency. Each slot pulls the next period in order; once
+ * `signal` aborts, a slot in the middle of a fetch is stopped by the client (caught below as
+ * `TIMED_OUT`), and every period not yet started is marked `TIMED_OUT` without ever being fetched
+ * — "stop starting slices" per #351.
+ */
+async function fetchSlicesBounded(
+  client: HttpClient,
+  area: string,
+  window: readonly Period[],
+  signal: AbortSignal,
+): Promise<(string | undefined | typeof TIMED_OUT)[]> {
+  const results: (string | undefined | typeof TIMED_OUT)[] = new Array(window.length);
+  let cursor = 0;
+
+  async function worker(): Promise<void> {
+    for (;;) {
+      if (signal.aborted) {
+        while (cursor < window.length) {
+          results[cursor] = TIMED_OUT;
+          cursor++;
+        }
+        return;
+      }
+      const i = cursor;
+      cursor++;
+      if (i >= window.length) return;
+      try {
+        results[i] = await fetchQcewCsv(client, periodUrl(area, window[i] as Period), {
+          freshTtlSeconds: QCEW_CACHE_TTL_SECONDS,
+          staleTtlSeconds: QCEW_STALE_TTL_SECONDS,
+          signal,
+        });
+      } catch (err) {
+        if (err instanceof DeadlineExceededError) {
+          results[i] = TIMED_OUT;
+        } else {
+          throw err;
+        }
+      }
+    }
+  }
+
+  const workerCount = Math.min(QCEW_CONCURRENCY, window.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+const periodLabel = (r: QcewHeadline): string =>
+  r.annual
+    ? periodName({ year: r.year, annual: true })
+    : periodName({ year: r.year, quarter: r.quarter });
+
+/** A sort key putting quarterly/annual periods in chronological order (quarter 1–4 never collides
+ * with the ×10 year multiplier). */
+const periodSortKey = (p: Period): number =>
+  "annual" in p ? p.year * 10 : p.year * 10 + p.quarter;
+
+/**
+ * The limitation naming the quarters a deadline stopped before they were retrieved (#351), e.g.
+ * "QCEW 2024 Q1–Q2 were not retrieved within the time limit; ask again, and the quarters already
+ * fetched will come from cache." Consecutive quarters of the same year are grouped into one range;
+ * never a silent gap.
+ */
+function formatMissingPeriods(missing: readonly Period[]): string {
+  const sorted = [...missing].sort((a, b) => periodSortKey(a) - periodSortKey(b));
+  const groups: Period[][] = [];
+  for (const p of sorted) {
+    const last = groups.at(-1);
+    const prev = last?.at(-1);
+    const isNextQuarter =
+      prev !== undefined &&
+      !("annual" in p) &&
+      !("annual" in prev) &&
+      prev.year === p.year &&
+      prev.quarter === p.quarter - 1;
+    if (isNextQuarter && last) last.push(p);
+    else groups.push([p]);
+  }
+  const labels = groups.map((g) => {
+    const first = g[0] as Period;
+    if (g.length === 1) return periodName(first);
+    const last = g.at(-1) as Period;
+    return "annual" in first || "annual" in last
+      ? `${periodName(first)}–${periodName(last)}`
+      : `${first.year} Q${first.quarter}–Q${last.quarter}`;
+  });
+  const verb = missing.length > 1 ? "were" : "was";
+  return `QCEW ${labels.join(", ")} ${verb} not retrieved within the time limit; ask again, and the quarters already fetched will come from cache.`;
+}
+
+/**
  * Read the rows for one key across its periods, newest first: skips unpublished periods, stops at
  * QCEW_MAX_PERIODS published ones (noting the cap), and in latest-only mode stops at the first.
+ * Bounded by `signal` (#351, `QCEW_CALL_DEADLINE_MS`): a slice the deadline stopped is never a
+ * silent gap — it is named in a limitation, and the rows already fetched are returned as a partial
+ * answer. If nothing at all was retrieved before the deadline, throws rather than returning an
+ * empty, indistinguishable-from-"nothing published" answer.
  */
 async function fetchRows(
   client: HttpClient,
@@ -244,23 +356,25 @@ async function fetchRows(
   periods: readonly Period[],
   latestOnly: boolean,
   notes: string[],
+  signal: AbortSignal,
 ): Promise<{ rows: QcewHeadline[]; anyPublished: boolean }> {
   const want = latestOnly ? 1 : QCEW_MAX_PERIODS;
-  // Fetch in parallel, a little beyond the cap so unpublished leading periods do not starve it.
+  // Fetch bounded by concurrency (not fully parallel, #351), a little beyond the cap so
+  // unpublished leading periods do not starve it.
   const window = periods.slice(0, want + QCEW_MAX_LOOKBACK);
-  const csvs = await Promise.all(
-    window.map((p) =>
-      fetchQcewCsv(client, periodUrl(area, p), {
-        freshTtlSeconds: QCEW_CACHE_TTL_SECONDS,
-        staleTtlSeconds: QCEW_STALE_TTL_SECONDS,
-      }),
-    ),
-  );
+  const slices = await fetchSlicesBounded(client, area, window, signal);
+
   const rows: QcewHeadline[] = [];
+  const missing: Period[] = [];
   let anyPublished = false;
   let consumed = 0;
-  for (const csv of csvs) {
+  for (let i = 0; i < slices.length; i++) {
+    const csv = slices[i];
     consumed++;
+    if (csv === TIMED_OUT) {
+      missing.push(window[i] as Period);
+      continue;
+    }
     if (!csv) continue;
     anyPublished = true;
     const row = parseQcewRow(csv, selection);
@@ -274,13 +388,16 @@ async function fetchRows(
       `QCEW history is served at most 5 years (${QCEW_MAX_PERIODS} quarters) per call; returned ${newest ? periodLabel(newest) : ""} back to ${oldest ? periodLabel(oldest) : ""}. Ask for an earlier range separately.`,
     );
   }
+  if (missing.length > 0) {
+    notes.push(formatMissingPeriods(missing));
+  }
+  if (rows.length === 0 && !anyPublished && missing.length > 0) {
+    throw new Error(
+      `QCEW: no slice for area ${area} was retrieved within the ${Math.round(QCEW_CALL_DEADLINE_MS / 1000)}s time limit; try again, and any slices already fetched will come from cache.`,
+    );
+  }
   return { rows, anyPublished };
 }
-
-const periodLabel = (r: QcewHeadline): string =>
-  r.annual
-    ? periodName({ year: r.year, annual: true })
-    : periodName({ year: r.year, quarter: r.quarter });
 
 /** Turn a row into one observation for the requested measure (null value + footnote if suppressed). */
 function toObservation(row: QcewHeadline, measure: QcewMeasure): SeriesObservation {
@@ -301,34 +418,44 @@ function toObservation(row: QcewHeadline, measure: QcewMeasure): SeriesObservati
  * newest first. A code the area does not publish yields no observation and a note, never a guess.
  */
 function qcewFetch(measure: QcewMeasure): IndicatorFetch {
-  return async (client, keys, options): Promise<SeriesResult[]> =>
-    Promise.all(
-      keys.map(async (key): Promise<SeriesResult> => {
-        const parsed = parseQcewKey(key);
-        if (!parsed) return { seriesId: key, observations: [] };
-        const notes: string[] = [];
-        const latestOnly = !options.explicitYears;
-        const periods = candidatePeriods(parsed.annual, options, notes);
-        const { rows, anyPublished } = await fetchRows(
-          client,
-          parsed.area,
-          parsed.selection,
-          periods,
-          latestOnly,
-          notes,
-        );
-        if (rows.length === 0 && anyPublished && parsed.selection.industryCode !== INDUSTRY_ALL) {
-          notes.push(
-            `NAICS ${parsed.selection.industryCode} is not published for area ${parsed.area} in the period asked (the industry may not exist there, or QCEW does not publish that ownership/industry pair).`,
+  return async (client, keys, options): Promise<SeriesResult[]> => {
+    // One deadline shared across every key and every slice of this call (#351), not per-slice or
+    // per-key: however many areas/series this call fetches, the whole thing is bounded.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), QCEW_CALL_DEADLINE_MS);
+    try {
+      return await Promise.all(
+        keys.map(async (key): Promise<SeriesResult> => {
+          const parsed = parseQcewKey(key);
+          if (!parsed) return { seriesId: key, observations: [] };
+          const notes: string[] = [];
+          const latestOnly = !options.explicitYears;
+          const periods = candidatePeriods(parsed.annual, options, notes);
+          const { rows, anyPublished } = await fetchRows(
+            client,
+            parsed.area,
+            parsed.selection,
+            periods,
+            latestOnly,
+            notes,
+            controller.signal,
           );
-        }
-        return {
-          seriesId: key,
-          observations: rows.map((r) => toObservation(r, measure)),
-          ...(notes.length > 0 ? { notes } : {}),
-        };
-      }),
-    );
+          if (rows.length === 0 && anyPublished && parsed.selection.industryCode !== INDUSTRY_ALL) {
+            notes.push(
+              `NAICS ${parsed.selection.industryCode} is not published for area ${parsed.area} in the period asked (the industry may not exist there, or QCEW does not publish that ownership/industry pair).`,
+            );
+          }
+          return {
+            seriesId: key,
+            observations: rows.map((r) => toObservation(r, measure)),
+            ...(notes.length > 0 ? { notes } : {}),
+          };
+        }),
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  };
 }
 
 /** Where the QCEW open data slices live; a comparison across areas cites this (#212). */

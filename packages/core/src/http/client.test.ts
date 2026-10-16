@@ -7,6 +7,7 @@ import { MemoryCacheStore } from "./cache-store.js";
 import { createHttpClient } from "./client.js";
 import {
   AgencyApiError,
+  DeadlineExceededError,
   HttpError,
   MissingFixtureError,
   QuotaExceededError,
@@ -171,6 +172,69 @@ describe("timeout", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("caller signal (#351)", () => {
+  it("stops an in-flight attempt and throws DeadlineExceededError when the caller's signal aborts", async () => {
+    const { client, fetchFn } = makeClient();
+    const controller = new AbortController();
+    fetchFn.mockImplementation(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }),
+    );
+
+    const promise = client.getJson("https://api.bls.gov/x", { signal: controller.signal });
+    // Let the in-flight fetch actually start before aborting, so this exercises the mid-flight
+    // path (as opposed to the already-aborted-before-fetch path the next test covers).
+    await vi.waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(1));
+    controller.abort();
+    const err = await promise.catch((e) => e);
+
+    expect(err).toBeInstanceOf(DeadlineExceededError);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("never retries once the caller's signal has aborted", async () => {
+    const { client, fetchFn } = makeClient();
+    const controller = new AbortController();
+    controller.abort();
+    fetchFn.mockImplementation(async () => new Response("", { status: 503 }));
+
+    const err = await client
+      .getJson("https://api.bls.gov/x", { signal: controller.signal })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(DeadlineExceededError);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("writes no cache entry for an aborted fetch", async () => {
+    const cache = new MemoryCacheStore();
+    const setSpy = vi.spyOn(cache, "set");
+    const { client, fetchFn } = makeClient({ cache });
+    const controller = new AbortController();
+    fetchFn.mockImplementation(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        }),
+    );
+
+    const promise = client
+      .getJson("https://api.bls.gov/x", { signal: controller.signal, freshTtlSeconds: 60 })
+      .catch((e) => e);
+    controller.abort();
+    const err = await promise;
+
+    expect(err).toBeInstanceOf(DeadlineExceededError);
+    expect(setSpy).not.toHaveBeenCalled();
   });
 });
 

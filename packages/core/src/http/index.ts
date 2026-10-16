@@ -17,6 +17,7 @@ export type {
 export { createHttpClient, STALE_SERVED_NOTE_PREFIX } from "./client.js";
 export {
   AgencyApiError,
+  DeadlineExceededError,
   HttpClientError,
   HttpError,
   MissingFixtureError,
