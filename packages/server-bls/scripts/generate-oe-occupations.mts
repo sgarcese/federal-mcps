@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   const outDir = join(import.meta.dirname, "..", "src", "data");
   mkdirSync(outDir, { recursive: true });
   const outPath = join(outDir, "oe-occupations.json");
-  writeFileSync(outPath, JSON.stringify(vocabulary, null, 2));
+  writeFileSync(outPath, `${JSON.stringify(vocabulary, null, 2)}\n`);
   console.error(`wrote ${outPath}`);
 }
 
