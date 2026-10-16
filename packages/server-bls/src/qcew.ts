@@ -255,11 +255,12 @@ export async function fetchQcewRow(
 export async function fetchQcewCsv(
   client: HttpClient,
   url: string,
-  options: Pick<RequestOptions, "freshTtlSeconds" | "staleTtlSeconds"> = {},
+  options: Pick<RequestOptions, "freshTtlSeconds" | "staleTtlSeconds" | "signal"> = {},
 ): Promise<string | undefined> {
   const reqOptions: RequestOptions = {
     ...(options.freshTtlSeconds === undefined ? {} : { freshTtlSeconds: options.freshTtlSeconds }),
     ...(options.staleTtlSeconds === undefined ? {} : { staleTtlSeconds: options.staleTtlSeconds }),
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
   };
   let value: string;
   try {

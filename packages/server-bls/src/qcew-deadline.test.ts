@@ -19,7 +19,7 @@ const QH =
 
 function quarterCsv(year: number, q: number): string {
   const wage = 1500 + (year - 2014) * 20 + q;
-  return [QH, `"18141","0","10","70","0","${year}","${q}","",1,1,1,1,1,1,1,${wage}`].join("\n");
+  return [QH, `"18141","5","23","74","0","${year}","${q}","",1,1,1,1,1,1,1,${wage}`].join("\n");
 }
 
 const def = (name: string) => qcewIndicatorDefinitions.find((d) => d.name === name);
@@ -43,10 +43,7 @@ function makeStallingClient(stuckQuarters: ReadonlySet<string>) {
     postJson: () => {
       throw new Error("only getText");
     },
-    async getText(
-      url: string,
-      options?: { signal?: AbortSignal },
-    ): Promise<HttpResult<string>> {
+    async getText(url: string, options?: { signal?: AbortSignal }): Promise<HttpResult<string>> {
       inFlight++;
       maxInFlight = Math.max(maxInFlight, inFlight);
       const q = /\/api\/(\d{4})\/(\d)\/area\//.exec(url);
@@ -62,6 +59,10 @@ function makeStallingClient(stuckQuarters: ReadonlySet<string>) {
             });
           });
         }
+        // Yield to the microtask queue before resolving, so the worker pool's other slots get a
+        // chance to start (and increment `inFlight`) before this one finishes — otherwise every
+        // call would resolve fully synchronously and concurrency could never be observed.
+        await Promise.resolve();
         return { value: quarterCsv(year, quarter), status: 200, cache: { hit: false } };
       } finally {
         inFlight--;
