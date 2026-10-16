@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { blsIndicatorDefinitions } from "./indicators.js";
 import { oewsCodeOf, oewsIndicatorDefinitions } from "./oe-indicators.js";
+import { timeseriesFetch } from "./series-fetch.js";
+
+vi.mock("./series-fetch.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./series-fetch.js")>();
+  return { ...original, timeseriesFetch: vi.fn() };
+});
 
 // Minimal PlaceCandidate stand-ins: oewsCodeOf reads only kind.sumlevel, geoid and agencyCodes.
 // biome-ignore lint/suspicious/noExplicitAny: only the fields oewsCodeOf reads matter here.
@@ -156,5 +162,46 @@ describe("occupational_employment — split from wages for correct units (#359)"
 
   it("is included in the aggregate blsIndicatorDefinitions seam", () => {
     expect(blsIndicatorDefinitions.map((d) => d.name)).toContain("occupational_employment");
+  });
+});
+
+describe("the OEWS fetch capability's empty-detailed-occupation note (#359)", () => {
+  // Verified live 2026-10-15: an unsurveyed area × detailed occupation pair comes back with an
+  // entirely empty series (BLS: "Series does not exist"), not a suppressed value — so the fetch
+  // capability, not the parser, is what has to notice and add the caveat.
+  const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+  if (!def?.fetch) throw new Error("occupational_wage must declare a fetch capability");
+  const fetch = def.fetch;
+  // biome-ignore lint/suspicious/noExplicitAny: a stand-in HttpClient; the mocked timeseriesFetch never reads it.
+  const client = {} as any;
+
+  it("adds a 'try the state or the nation' note when a detailed occupation has no observations", async () => {
+    vi.mocked(timeseriesFetch).mockResolvedValueOnce([
+      { seriesId: "OEUM004378000000015201113", observations: [] },
+    ]);
+    const [result] = await fetch(client, ["OEUM004378000000015201113"], {});
+    expect(result?.observations).toHaveLength(0);
+    expect(result?.notes?.[0]).toMatch(/try the state or the nation/i);
+  });
+
+  it("adds no note for all-occupations even when it comes back empty", async () => {
+    vi.mocked(timeseriesFetch).mockResolvedValueOnce([
+      { seriesId: "OEUM004378000000000000013", observations: [] },
+    ]);
+    const [result] = await fetch(client, ["OEUM004378000000000000013"], {});
+    expect(result?.notes ?? []).toEqual([]);
+  });
+
+  it("adds no note when the series has observations", async () => {
+    vi.mocked(timeseriesFetch).mockResolvedValueOnce([
+      {
+        seriesId: "OEUS180000000000047203104",
+        observations: [
+          { year: "2025", period: "A01", periodName: "Annual", value: 64950, footnotes: [] },
+        ],
+      },
+    ]);
+    const [result] = await fetch(client, ["OEUS180000000000047203104"], {});
+    expect(result?.notes ?? []).toEqual([]);
   });
 });
