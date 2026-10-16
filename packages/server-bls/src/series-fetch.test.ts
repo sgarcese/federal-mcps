@@ -106,6 +106,53 @@ describe("the national benchmark series (recorded fixture, #290)", () => {
   });
 });
 
+describe("OEWS statistic and detailed-occupation series (recorded fixture, #359)", () => {
+  // Recorded live 2026-10-15, one registered-key query (14 series, no startYear/endYear — see
+  // oe.ts's header for every value cited individually).
+  const ids = [
+    "OEUS180000000000000000001",
+    "OEUS180000000000000000003",
+    "OEUS180000000000000000008",
+    "OEUS180000000000000000011",
+    "OEUS180000000000000000012",
+    "OEUS180000000000000000013",
+    "OEUS180000000000000000014",
+    "OEUS180000000000000000015",
+    "OEUS180000000000000000016",
+    "OEUS180000000000000000017",
+    "OEUS180000000000047203104",
+    "OEUM001974000000029114113",
+    "OEUM001974000000029114115",
+    "OEUM004378000000015201113",
+  ];
+
+  it("replays every new statistic code, a detailed occupation, and a metro, offline", async () => {
+    const out = await fetchSeriesObservations(replayClient(), ids);
+    const latest = Object.fromEntries(out.map((s) => [s.seriesId, s.observations[0]?.value]));
+    expect(latest).toMatchObject({
+      OEUS180000000000000000001: 3201220, // employment
+      OEUS180000000000000000003: 29.25, // hourly mean wage
+      OEUS180000000000000000008: 23.01, // hourly median wage
+      OEUS180000000000000000011: 29120, // annual 10th percentile
+      OEUS180000000000000000012: 36500, // annual 25th percentile
+      OEUS180000000000000000013: 47860, // annual median
+      OEUS180000000000000000014: 72000, // annual 75th percentile
+      OEUS180000000000000000015: 101160, // annual 90th percentile
+      OEUS180000000000000000016: 1000, // employment per 1,000 jobs
+      OEUS180000000000000000017: 1, // location quotient
+      OEUS180000000000047203104: 64950, // carpenters, annual mean
+      OEUM001974000000029114113: 101130, // Denver registered nurses, annual median
+      OEUM001974000000029114115: 125870, // Denver registered nurses, annual 90th percentile
+    });
+  });
+
+  it("an area/occupation pair BLS does not survey comes back with no observations (#359)", async () => {
+    const out = await fetchSeriesObservations(replayClient(), ids);
+    const southBendActuaries = out.find((s) => s.seriesId === "OEUM004378000000015201113");
+    expect(southBendActuaries?.observations).toEqual([]);
+  });
+});
+
 describe("fetchSeriesObservations parsing and batching", () => {
   const ok = (series: unknown[]) =>
     new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series } }), {

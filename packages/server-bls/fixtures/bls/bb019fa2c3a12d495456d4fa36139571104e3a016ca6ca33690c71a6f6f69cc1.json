@@ -1,0 +1,9 @@
+{
+  "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+  "status": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": "{\"status\":\"REQUEST_SUCCEEDED\",\"responseTime\":125,\"message\":[\"Series does not exist for Series OEUM002202000000015201113\",\"Series does not exist for Series OEUM004378000000019201113\",\"Series does not exist for Series OEUM004378000000019304113\",\"Series does not exist for Series OEUM004378000000029115113\",\"No Data Available for Series OEUM002202000000029114113 Year: 2023\",\"No Data Available for Series OEUM002202000000029114113 Year: 2024\",\"No Data Available for Series OEUM002202000000029114115 Year: 2023\",\"No Data Available for Series OEUM002202000000029114115 Year: 2024\",\"No Data Available for Series OEUM002202000000029115113 Year: 2023\",\"No Data Available for Series OEUM002202000000029115113 Year: 2024\"],\"Results\":{\n\"series\":\n[{\"seriesID\":\"OEUM004378000000029115113\",\"data\":[]},\n{\"seriesID\":\"OEUM004378000000019304113\",\"data\":[]},\n{\"seriesID\":\"OEUM004378000000019201113\",\"data\":[]},\n{\"seriesID\":\"OEUM002202000000029114115\",\"data\":[{\"year\":\"2025\",\"period\":\"A01\",\"periodName\":\"Annual\",\"latest\":\"true\",\"value\":\"103480\",\"footnotes\":[{}]}]},\n{\"seriesID\":\"OEUM002202000000029114113\",\"data\":[{\"year\":\"2025\",\"period\":\"A01\",\"periodName\":\"Annual\",\"latest\":\"true\",\"value\":\"82120\",\"footnotes\":[{}]}]},\n{\"seriesID\":\"OEUM002202000000015201113\",\"data\":[]},\n{\"seriesID\":\"OEUM002202000000029115113\",\"data\":[{\"year\":\"2025\",\"period\":\"A01\",\"periodName\":\"Annual\",\"latest\":\"true\",\"value\":\"241620\",\"footnotes\":[{}]}]}]\n}}",
+  "recordedAt": "2026-10-15T00:00:00.000Z"
+}
