@@ -46,6 +46,14 @@ import VENDORED_OE_OCCUPATIONS from "./data/oe-occupations.json" with { type: "j
  * carpenters annual mean wage = $64,950 (`OEUS180000000000047203104`); Denver registered nurses
  * (291141) annual median wage = $101,130 (`OEUM001974000000029114113`), annual 90th percentile =
  * $125,870 (`OEUM001974000000029114115`).
+ *
+ * Top-coding: older OEWS releases capped published wages (e.g. "$239,200 or more", shown as `#`
+ * in BLS's tables). The API's current release returns exact values with no marker or footnote,
+ * so no top-code caveat is added. Verified 2026-10-15 (#359), May 2025 data: anesthesiologists
+ * (291211), national: annual 90th percentile $557,130 (`OEUN000000000000029121115`), annual median
+ * $391,490 (`…13`), hourly 90th percentile $267.85 (`…10`); chief executives (111011) annual
+ * 90th percentile $507,730 (`OEUN000000000000011101115`). If a future release reintroduces a cap
+ * marker, it must be flagged, never reported as an exact value.
  */
 
 const OE_AREA_TYPE_NATION = "N";
