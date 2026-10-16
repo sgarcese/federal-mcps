@@ -75,9 +75,11 @@ describe("OEWS: detailed occupations and the one-year API horizon are documented
     expect(text).toMatch(/only the (current|latest) OEWS year/i);
   });
 
-  it("the OEWS program entry points to bls_get_raw for detailed occupations", () => {
+  it("the OEWS program entry names its two indicators and the detailed-occupation vocabulary (#359)", () => {
     const oews = d.programs.find((p) => p.code === "OEWS");
-    expect(oews?.granularity).toMatch(/bls_get_raw/);
+    expect(oews?.granularity).toMatch(/occupational_wage/);
+    expect(oews?.granularity).toMatch(/occupational_employment/);
+    expect(oews?.granularity).toMatch(/6-digit SOC code/);
   });
 });
 

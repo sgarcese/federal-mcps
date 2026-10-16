@@ -70,20 +70,26 @@ fallback. Resolve first, then read a number.
 
 \`bls_get_indicator\` returns a statistic for a resolved place across seven programs:
 unemployment, employment and labor force (LAUS); payroll employment (CES, state and metro);
-occupational wage (OEWS, state and metro); the consumer price index (CPI); job openings,
-hires, quits and layoffs (JOLTS, state); covered employment and average weekly wage (QCEW,
-county, state and metro, from its own CSV feed, since 2014); and the producer price
-index (PPI, national only). Coverage fallbacks are always flagged, never fabricated: a
-below-25,000 city reads its county; a place with no local CPI reads its census division,
-then region, then the U.S. city average; a multi-state metro's CES series is filed under
-its first state and the answer says so.
+OEWS occupational wage and occupational employment, state and metro — two separate
+indicators since a wage is dollars and an employment figure is not; the consumer price
+index (CPI); job openings, hires, quits and layoffs (JOLTS, state); covered employment and
+average weekly wage (QCEW, county, state and metro, from its own CSV feed, since 2014); and
+the producer price index (PPI, national only). Coverage fallbacks are always flagged, never
+fabricated: a below-25,000 city reads its county; a place with no local CPI reads its census
+division, then region, then the U.S. city average; a multi-state metro's CES series is filed
+under its first state and the answer says so.
 
-Five optional picker arguments narrow an indicator, each validated against a published
+Six optional picker arguments narrow an indicator, each validated against a published
 vocabulary: \`item\` (CPI expenditure groups such as food, housing, energy; PPI commodity
 indexes such as construction inputs, lumber, steel), \`industry\` and
 \`ownership\` (QCEW NAICS industry and ownership — construction is industry 23, and any 3- to
 6-digit code works, e.g. 236; detail is published only by ownership, e.g. private),
-\`frequency\` (QCEW quarterly or annual), and \`occupation\` (OEWS SOC major groups). \`bls_list_indicators\` names every indicator, its vocabularies, and whether its
+\`frequency\` (QCEW quarterly or annual), \`occupation\` (OEWS: one of the 22 SOC major groups,
+or any detailed 6-digit SOC code OEWS publishes, e.g. 472031 carpenters — an unpublished code
+is rejected naming its nearest major group), and \`statistic\` (OEWS: which number —
+occupational_wage takes annual/hourly mean or median or an annual percentile;
+occupational_employment takes a head count, employment per 1,000 jobs, or a location
+quotient). \`bls_list_indicators\` names every indicator, its vocabularies, and whether its
 program publishes at a place's level. \`producer_price_index\` is national only: given a
 local place, the answer is still the national series, flagged — never a local number.
 
