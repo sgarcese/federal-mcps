@@ -84,4 +84,77 @@ describe("oewsIndicatorDefinitions", () => {
   it("is included in the aggregate blsIndicatorDefinitions seam", () => {
     expect(blsIndicatorDefinitions.map((d) => d.name)).toContain("occupational_wage");
   });
+
+  it("declares a statistic dimension of wage-only codes, defaulting to annual mean wage (#359)", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+    const statistic = def?.dimensions?.find((d) => d.argument === "statistic");
+    expect(statistic?.default).toBe("04");
+    expect(statistic?.vocabulary.map((v) => v.code).sort()).toEqual(
+      ["03", "04", "08", "11", "12", "13", "14", "15"].sort(),
+    );
+  });
+
+  it("builds a series id for a non-default statistic (annual median wage)", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+    expect(
+      def?.buildSeriesId("S:18", {
+        seasonallyAdjusted: false,
+        dimensions: { occupation: "000000", statistic: "13" },
+      }),
+    ).toBe("OEUS180000000000000000013");
+  });
+
+  it("accepts a detailed 6-digit SOC occupation code beyond the curated major-group vocabulary", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+    const occupation = def?.dimensions?.find((d) => d.argument === "occupation");
+    expect(occupation?.acceptsCode?.("472031")).toBe(true);
+    expect(
+      def?.buildSeriesId("S:18", {
+        seasonallyAdjusted: false,
+        dimensions: { occupation: "472031", statistic: "04" },
+      }),
+    ).toBe("OEUS180000000000047203104");
+  });
+
+  it("names BLS's detailed occupation list in openCodes rather than enumerating ~830 codes", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_wage");
+    const occupation = def?.dimensions?.find((d) => d.argument === "occupation");
+    expect(occupation?.vocabulary).toHaveLength(23); // unchanged: the 22 major groups + all-occ
+    expect(occupation?.openCodes).toMatch(/6-digit/);
+  });
+});
+
+describe("occupational_employment — split from wages for correct units (#359)", () => {
+  it("is registered, over the same OEWS program, with a count/ratio statistic dimension", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_employment");
+    expect(def).toBeDefined();
+    expect(def?.program).toBe("OEWS");
+    const statistic = def?.dimensions?.find((d) => d.argument === "statistic");
+    expect(statistic?.default).toBe("01");
+    expect(statistic?.vocabulary.map((v) => v.code).sort()).toEqual(["01", "16", "17"]);
+  });
+
+  it("builds the default employment series id", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_employment");
+    expect(
+      def?.buildSeriesId("S:18", {
+        seasonallyAdjusted: false,
+        dimensions: { occupation: "000000", statistic: "01" },
+      }),
+    ).toBe("OEUS180000000000000000001");
+  });
+
+  it("builds the location-quotient series id for a metro and a detailed occupation", () => {
+    const def = oewsIndicatorDefinitions.find((d) => d.name === "occupational_employment");
+    expect(
+      def?.buildSeriesId("M:0019740", {
+        seasonallyAdjusted: false,
+        dimensions: { occupation: "291141", statistic: "17" },
+      }),
+    ).toBe("OEUM001974000000029114117");
+  });
+
+  it("is included in the aggregate blsIndicatorDefinitions seam", () => {
+    expect(blsIndicatorDefinitions.map((d) => d.name)).toContain("occupational_employment");
+  });
 });
