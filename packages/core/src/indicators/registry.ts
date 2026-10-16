@@ -47,6 +47,7 @@ export const DIMENSION_ARGUMENTS = [
   "industry",
   "ownership",
   "occupation",
+  "statistic",
   "product",
   "frequency",
   // HUD User (ADR-018 §3): FMR bedrooms, income-limit level and household size, Picture program.

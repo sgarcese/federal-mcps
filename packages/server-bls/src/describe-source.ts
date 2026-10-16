@@ -59,7 +59,7 @@ const PROGRAMS: readonly ProgramDescription[] = [
     code: "OEWS",
     name: "Occupational Employment and Wage Statistics",
     granularity:
-      "nation, state and metro (CBSA); mean annual wage by SOC major group (occupation), default all occupations; detailed 6-digit occupations, medians and percentiles through bls_get_raw",
+      "nation, state and metro (CBSA); occupational_wage (annual/hourly mean or median, an annual percentile) and occupational_employment (head count, per-1,000, location quotient), by occupation (one of the 22 SOC major groups or any detailed 6-digit SOC code OEWS publishes, about 830; an unpublished code is rejected naming its major group), default all occupations",
     cadence: "annual",
     status: "available",
   },
@@ -92,8 +92,9 @@ const PROGRAMS: readonly ProgramDescription[] = [
 const CAVEATS: readonly string[] = [
   "bls_get_indicator returns a statistic for a resolved place across the timeseries programs: LAUS " +
     "(unemployment rate, unemployment, employment, labor force), CES State & Area (payroll " +
-    "employment), OEWS (occupational wage), CPI (all items) and JOLTS (job openings, hires, quits, " +
-    "layoffs). bls_list_indicators lists the vocabulary and which programs publish at a place's level; " +
+    "employment), OEWS (occupational_wage and occupational_employment — two indicators, since a " +
+    "wage is dollars and an employment figure is not), CPI (all items) and JOLTS (job openings, " +
+    "hires, quits, layoffs). bls_list_indicators lists the vocabulary and which programs publish at a place's level; " +
     "bls_compare_places compares one indicator across places; bls_get_raw returns the unprocessed BLS " +
     "response. Place resolution (bls_resolve_place) maps a name to candidates with identifiers, BLS " +
     "area codes and structured flags (e.g. below_threshold with the county fallback). All seven BLS " +
@@ -114,13 +115,21 @@ const CAVEATS: readonly string[] = [
     "city series and must fall back to their county.",
   "Most cities have no local CPI: CPI publishes for the U.S. city average, census regions and " +
     "divisions, and roughly 23 named metro areas, not for most municipalities or counties.",
-  "OEWS through bls_get_raw: a series id is OEU + area type (S state, M metro, N national) + a " +
-    "7-digit area (state FIPS + 00000, or 00 + the CBSA) + a 6-digit industry (000000 = all) + a " +
-    "6-digit SOC occupation (any detailed code, e.g. 472031 carpenters) + a 2-digit data type (01 " +
-    "employment, 03 hourly mean, 04 annual mean, 08 hourly median, 13 annual median, 11/12/14/15 " +
-    "annual percentiles). Example: OEUM004378000000047203113 is carpenters' annual median wage in " +
-    "the South Bend-Mishawaka metro. The BLS API holds only the current OEWS year; earlier years " +
-    "are in BLS's annual OEWS files, not the API, so a year range returns the current year only.",
+  "OEWS: occupational_wage and occupational_employment take an occupation picker (one of the 22 " +
+    "SOC major groups, or any detailed 6-digit SOC code OEWS publishes — about 830, built from " +
+    "BLS's own oe.occupation list, never a hand-typed table — e.g. 472031 carpenters; an " +
+    "unpublished code is rejected naming its nearest major group) and a statistic picker " +
+    "(occupational_wage: 04 annual mean [default], 13 annual median, 11/12/14/15 annual " +
+    "10th/25th/75th/90th percentile, 03 hourly mean, 08 hourly median; occupational_employment: " +
+    "01 employment [default], 16 employment per 1,000 jobs, 17 location quotient). A non-released " +
+    "estimate (BLS's '-'/'*') returns null with that meaning; an area/occupation pair OEWS does " +
+    "not survey comes back with no observation and a note suggesting the state or the nation. " +
+    "The same axis is also reachable through bls_get_raw as a series id: OEU + area type (S state, " +
+    "M metro, N national) + a 7-digit area (state FIPS + 00000, or 00 + the CBSA) + a 6-digit " +
+    "industry (000000 = all) + the 6-digit occupation + the 2-digit statistic code. Example: " +
+    "OEUM004378000000047203113 is carpenters' annual median wage in the South Bend-Mishawaka " +
+    "metro. The BLS API holds only the current OEWS year; earlier years are in BLS's annual OEWS " +
+    "files, not the API, so a year range returns the current year only.",
   "QCEW is distributed as CSV data slices (data.bls.gov/cew/data/api), not the standard BLS timeseries " +
     "API used by the other programs here; it has its own parsing, suppression codes and update cadence. " +
     "Without startYear/endYear an answer is the latest published quarter; with them, every published " +

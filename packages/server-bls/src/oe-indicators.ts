@@ -1,14 +1,32 @@
-import type { PlaceCandidate } from "@federal-mcps/core";
+import type {
+  BuildSeriesIdOptions,
+  DimensionDefinition,
+  IndicatorDefinition,
+  IndicatorFetch,
+  PlaceCandidate,
+  SeriesResult,
+} from "@federal-mcps/core";
 import { isNation } from "./nation.js";
-import { buildOeSeriesId } from "./oe.js";
-import type { DimensionDefinition, IndicatorDefinition } from "@federal-mcps/core";
+import { buildOeSeriesId, OE_DATA_TYPES, occupationOfSeriesId } from "./oe.js";
+import { timeseriesFetch } from "./series-fetch.js";
 
 /**
- * OEWS (OE) registered as an indicator definition (ADR-010 §1–§2, ADR-013 §1, §3). The headline
- * is mean annual wage across all industries and occupations; a state resolves to its own FIPS
+ * OEWS (OE) registered as two indicator definitions (ADR-010 §1–§2, ADR-013 §1, §3; #359):
+ * `occupational_wage` (dollars: mean/median/percentile, annual or hourly) and
+ * `occupational_employment` (not wages: a head count, a per-1,000 ratio, or a location
+ * quotient). BLS packs both kinds of number onto the same `oe.datatype` axis of the series id,
+ * but a picker that let "employment" sit beside "annual mean wage" in one `statistic`
+ * vocabulary would let a caller ask occupational_wage's question and get a head count back — so
+ * they are two indicators, sharing the same series builder and occupation vocabulary, each with
+ * its own `statistic` vocabulary restricted to the kind of number its name promises (CLAUDE.md:
+ * "numbers carry their caveats" — including their unit). A state resolves to its own FIPS
  * geoid, a metro (CBSA) to the OEWS metro code the geography catalog already carries (`oe.area`,
- * sumlevel 310) — no server-side FIPS or CBSA table. `occupation` is a named dimension over the
- * 22 SOC major groups (ADR-013 §2).
+ * sumlevel 310) — no server-side FIPS or CBSA table. `occupation` is a named dimension: the 22
+ * SOC major groups are curated vocabulary (ADR-013 §2); any detailed 6-digit SOC code BLS's OE
+ * survey publishes also works (#359, `acceptsCode`, vendored in `data/oe-occupations.json` —
+ * built, not typed) — an unpublished code is rejected by `buildOeSeriesId` naming its nearest
+ * major group, so the readable 23-entry vocabulary below never has to enumerate the ~830
+ * detailed codes.
  */
 const OEWS_PROGRAM = "OEWS";
 const STATE_SUMLEVEL = "040";
@@ -36,12 +54,20 @@ export function oewsCodeOf(place: PlaceCandidate): string | undefined {
 /**
  * The 22 SOC major groups, as 6-char OEWS occupation codes (2-digit major group + "0000"), plus
  * the "000000" all-occupations code, which is also the default (ADR-013 §2). Every code verified
- * against the live BLS API on 2026-09-17 (Colorado, 2025 data) — see oe.ts's header.
+ * against the live BLS API on 2026-09-17 (Colorado, 2025 data) — see oe.ts's header. `acceptsCode`
+ * additionally admits any 6-digit code (#359); `buildOeSeriesId` is what actually validates it
+ * against BLS's own detailed-occupation list and rejects an unpublished one naming its nearest
+ * major group — this dimension's job is only the readable vocabulary, not the real check,
+ * exactly as QCEW's `INDUSTRY_DIMENSION` (qcew-indicators.ts) separates the two.
  */
 const OCCUPATION_DIMENSION: DimensionDefinition = {
   argument: "occupation",
-  description: "SOC major occupation group.",
+  description:
+    "SOC major occupation group, or any detailed 6-digit SOC occupation code BLS's OEWS publishes (e.g. 472031 carpenters); an unpublished code is rejected naming its major group.",
   default: "000000",
+  acceptsCode: (code) => /^\d{6}$/.test(code),
+  openCodes:
+    "any published 6-digit SOC detailed occupation code (BLS's OE survey publishes about 830; bls_describe_source names the list)",
   vocabulary: [
     { code: "000000", label: "all occupations" },
     { code: "110000", label: "management" },
@@ -69,22 +95,99 @@ const OCCUPATION_DIMENSION: DimensionDefinition = {
   ],
 };
 
-/** OEWS occupational mean annual wage (all industries), NSA by default (ADR-010 §5). */
+/** `oe.datatype` codes restricted to `kind: "wage"` — dollars, never a count or ratio (#359). */
+const WAGE_STATISTIC_CODES = Object.entries(OE_DATA_TYPES)
+  .filter(([, v]) => v.kind === "wage")
+  .map(([code, v]) => ({ code, label: v.label }));
+
+/** `oe.datatype` codes restricted to `kind` other than wage — never dollars (#359). */
+const EMPLOYMENT_STATISTIC_CODES = Object.entries(OE_DATA_TYPES)
+  .filter(([, v]) => v.kind !== "wage")
+  .map(([code, v]) => ({ code, label: v.label }));
+
+const WAGE_STATISTIC_DIMENSION: DimensionDefinition = {
+  argument: "statistic",
+  description:
+    "Which wage statistic: annual or hourly mean/median, or an annual 10th/25th/75th/90th percentile. Defaults to annual mean wage.",
+  default: "04",
+  vocabulary: WAGE_STATISTIC_CODES,
+};
+
+const EMPLOYMENT_STATISTIC_DIMENSION: DimensionDefinition = {
+  argument: "statistic",
+  description:
+    "Which employment statistic: a head count, employment per 1,000 jobs, or a location quotient (the area's concentration of the occupation relative to the nation; 1.00 = the same). Defaults to employment.",
+  default: "01",
+  vocabulary: EMPLOYMENT_STATISTIC_CODES,
+};
+
+function buildOewsKey(
+  code: string,
+  { seasonallyAdjusted, dimensions }: BuildSeriesIdOptions,
+): string {
+  return buildOeSeriesId(code, {
+    seasonallyAdjusted,
+    ...(dimensions.occupation === undefined ? {} : { occupation: dimensions.occupation }),
+    ...(dimensions.statistic === undefined ? {} : { statistic: dimensions.statistic }),
+  });
+}
+
+/** `000000` is the all-occupations default (`OCCUPATION_DIMENSION.default`); never the subject of the empty-result note below. */
+const ALL_OCCUPATIONS = "000000";
+
+/**
+ * Wraps the default BLS timeseries fetch for OEWS (#359): a detailed occupation BLS does not
+ * survey for a given area comes back as an entirely empty series — not a suppressed value with a
+ * footnote — verified live 2026-10-15 (South Bend-Mishawaka metro × several detailed
+ * occupations: "Series does not exist", `data: []`). A bare empty answer would look like a bug;
+ * this adds the limitation CLAUDE.md's "numbers carry their caveats" calls for, suggesting the
+ * next place to try.
+ */
+const oewsFetch: IndicatorFetch = async (client, seriesIds, options) => {
+  const results = await timeseriesFetch(client, seriesIds, options);
+  return results.map((r): SeriesResult => {
+    const occupation = occupationOfSeriesId(r.seriesId);
+    if (r.observations.length > 0 || occupation === undefined || occupation === ALL_OCCUPATIONS) {
+      return r;
+    }
+    return {
+      ...r,
+      notes: [
+        ...(r.notes ?? []),
+        `OEWS has no estimate for occupation ${occupation} in this area; try the state or the nation instead.`,
+      ],
+    };
+  });
+};
+
+/**
+ * OEWS wage and employment statistics by occupation, NSA by default (ADR-010 §5; #359: split
+ * into two indicators — see the module comment for why).
+ */
 export const oewsIndicatorDefinitions: IndicatorDefinition[] = [
   {
     name: "occupational_wage",
     program: OEWS_PROGRAM,
     description:
-      "Mean annual wage across industries, by occupation (Occupational Employment and Wage Statistics). Defaults to all occupations.",
+      "Wage by occupation (Occupational Employment and Wage Statistics): annual mean (default), annual median, an annual percentile, or hourly mean/median. Defaults to all occupations.",
     defaultSeasonallyAdjusted: false,
     agencyCodeOf: oewsCodeOf,
-    buildSeriesId: (code, { seasonallyAdjusted, dimensions }) =>
-      buildOeSeriesId(code, {
-        seasonallyAdjusted,
-        ...(dimensions.occupation === undefined ? {} : { occupation: dimensions.occupation }),
-      }),
-    dimensions: [OCCUPATION_DIMENSION],
+    buildSeriesId: buildOewsKey,
+    dimensions: [OCCUPATION_DIMENSION, WAGE_STATISTIC_DIMENSION],
+    fetch: oewsFetch,
     // The BLS API holds only the current OEWS year: a requested range is stated as not applied (#214).
+    servesHistory: false,
+  },
+  {
+    name: "occupational_employment",
+    program: OEWS_PROGRAM,
+    description:
+      "Employment by occupation (Occupational Employment and Wage Statistics): a head count (default), employment per 1,000 jobs, or a location quotient. Not a wage — see occupational_wage for pay. Defaults to all occupations.",
+    defaultSeasonallyAdjusted: false,
+    agencyCodeOf: oewsCodeOf,
+    buildSeriesId: buildOewsKey,
+    dimensions: [OCCUPATION_DIMENSION, EMPLOYMENT_STATISTIC_DIMENSION],
+    fetch: oewsFetch,
     servesHistory: false,
   },
 ];

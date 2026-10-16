@@ -1,0 +1,3420 @@
+{
+  "sourceUrl": "https://download.bls.gov/pub/time.series/oe/oe.occupation",
+  "retrievedAt": "2026-10-15",
+  "majorGroups": [
+    {
+      "code": "000000",
+      "name": "All Occupations"
+    },
+    {
+      "code": "110000",
+      "name": "Management Occupations"
+    },
+    {
+      "code": "130000",
+      "name": "Business and Financial Operations Occupations"
+    },
+    {
+      "code": "150000",
+      "name": "Computer and Mathematical Occupations"
+    },
+    {
+      "code": "170000",
+      "name": "Architecture and Engineering Occupations"
+    },
+    {
+      "code": "190000",
+      "name": "Life, Physical, and Social Science Occupations"
+    },
+    {
+      "code": "210000",
+      "name": "Community and Social Service Occupations"
+    },
+    {
+      "code": "230000",
+      "name": "Legal Occupations"
+    },
+    {
+      "code": "250000",
+      "name": "Educational Instruction and Library Occupations"
+    },
+    {
+      "code": "270000",
+      "name": "Arts, Design, Entertainment, Sports, and Media Occupations"
+    },
+    {
+      "code": "290000",
+      "name": "Healthcare Practitioners and Technical Occupations"
+    },
+    {
+      "code": "310000",
+      "name": "Healthcare Support Occupations"
+    },
+    {
+      "code": "330000",
+      "name": "Protective Service Occupations"
+    },
+    {
+      "code": "350000",
+      "name": "Food Preparation and Serving Related Occupations"
+    },
+    {
+      "code": "370000",
+      "name": "Building and Grounds Cleaning and Maintenance Occupations"
+    },
+    {
+      "code": "390000",
+      "name": "Personal Care and Service Occupations"
+    },
+    {
+      "code": "410000",
+      "name": "Sales and Related Occupations"
+    },
+    {
+      "code": "430000",
+      "name": "Office and Administrative Support Occupations"
+    },
+    {
+      "code": "450000",
+      "name": "Farming, Fishing, and Forestry Occupations"
+    },
+    {
+      "code": "470000",
+      "name": "Construction and Extraction Occupations"
+    },
+    {
+      "code": "490000",
+      "name": "Installation, Maintenance, and Repair Occupations"
+    },
+    {
+      "code": "510000",
+      "name": "Production Occupations"
+    },
+    {
+      "code": "530000",
+      "name": "Transportation and Material Moving Occupations"
+    }
+  ],
+  "detailed": [
+    {
+      "code": "111011",
+      "name": "Chief Executives"
+    },
+    {
+      "code": "111021",
+      "name": "General and Operations Managers"
+    },
+    {
+      "code": "112011",
+      "name": "Advertising and Promotions Managers"
+    },
+    {
+      "code": "112021",
+      "name": "Marketing Managers"
+    },
+    {
+      "code": "112022",
+      "name": "Sales Managers"
+    },
+    {
+      "code": "112032",
+      "name": "Public Relations Managers"
+    },
+    {
+      "code": "112033",
+      "name": "Fundraising Managers"
+    },
+    {
+      "code": "113012",
+      "name": "Administrative Services Managers"
+    },
+    {
+      "code": "113013",
+      "name": "Facilities Managers"
+    },
+    {
+      "code": "113021",
+      "name": "Computer and Information Systems Managers"
+    },
+    {
+      "code": "113031",
+      "name": "Financial Managers"
+    },
+    {
+      "code": "113051",
+      "name": "Industrial Production Managers"
+    },
+    {
+      "code": "113061",
+      "name": "Purchasing Managers"
+    },
+    {
+      "code": "113071",
+      "name": "Transportation, Storage, and Distribution Managers"
+    },
+    {
+      "code": "113111",
+      "name": "Compensation and Benefits Managers"
+    },
+    {
+      "code": "113121",
+      "name": "Human Resources Managers"
+    },
+    {
+      "code": "113131",
+      "name": "Training and Development Managers"
+    },
+    {
+      "code": "119013",
+      "name": "Farmers, Ranchers, and Other Agricultural Managers"
+    },
+    {
+      "code": "119021",
+      "name": "Construction Managers"
+    },
+    {
+      "code": "119031",
+      "name": "Education and Childcare Administrators, Preschool and Daycare"
+    },
+    {
+      "code": "119032",
+      "name": "Education Administrators, Kindergarten through Secondary"
+    },
+    {
+      "code": "119033",
+      "name": "Education Administrators, Postsecondary"
+    },
+    {
+      "code": "119039",
+      "name": "Education Administrators, All Other"
+    },
+    {
+      "code": "119041",
+      "name": "Architectural and Engineering Managers"
+    },
+    {
+      "code": "119051",
+      "name": "Food Service Managers"
+    },
+    {
+      "code": "119071",
+      "name": "Gambling Managers"
+    },
+    {
+      "code": "119072",
+      "name": "Entertainment and Recreation Managers, Except Gambling"
+    },
+    {
+      "code": "119081",
+      "name": "Lodging Managers"
+    },
+    {
+      "code": "119111",
+      "name": "Medical and Health Services Managers"
+    },
+    {
+      "code": "119121",
+      "name": "Natural Sciences Managers"
+    },
+    {
+      "code": "119131",
+      "name": "Postmasters and Mail Superintendents"
+    },
+    {
+      "code": "119141",
+      "name": "Property, Real Estate, and Community Association Managers"
+    },
+    {
+      "code": "119151",
+      "name": "Social and Community Service Managers"
+    },
+    {
+      "code": "119161",
+      "name": "Emergency Management Directors"
+    },
+    {
+      "code": "119171",
+      "name": "Funeral Home Managers"
+    },
+    {
+      "code": "119179",
+      "name": "Personal Service Managers, All Other"
+    },
+    {
+      "code": "119199",
+      "name": "Managers, All Other"
+    },
+    {
+      "code": "131011",
+      "name": "Agents and Business Managers of Artists, Performers, and Athletes"
+    },
+    {
+      "code": "131020",
+      "name": "Buyers and Purchasing Agents"
+    },
+    {
+      "code": "131031",
+      "name": "Claims Adjusters, Examiners, and Investigators"
+    },
+    {
+      "code": "131032",
+      "name": "Insurance Appraisers, Auto Damage"
+    },
+    {
+      "code": "131041",
+      "name": "Compliance Officers"
+    },
+    {
+      "code": "131051",
+      "name": "Cost Estimators"
+    },
+    {
+      "code": "131071",
+      "name": "Human Resources Specialists"
+    },
+    {
+      "code": "131074",
+      "name": "Farm Labor Contractors"
+    },
+    {
+      "code": "131075",
+      "name": "Labor Relations Specialists"
+    },
+    {
+      "code": "131081",
+      "name": "Logisticians"
+    },
+    {
+      "code": "131082",
+      "name": "Project Management Specialists"
+    },
+    {
+      "code": "131111",
+      "name": "Management Analysts"
+    },
+    {
+      "code": "131121",
+      "name": "Meeting, Convention, and Event Planners"
+    },
+    {
+      "code": "131131",
+      "name": "Fundraisers"
+    },
+    {
+      "code": "131141",
+      "name": "Compensation, Benefits, and Job Analysis Specialists"
+    },
+    {
+      "code": "131151",
+      "name": "Training and Development Specialists"
+    },
+    {
+      "code": "131161",
+      "name": "Market Research Analysts and Marketing Specialists"
+    },
+    {
+      "code": "131199",
+      "name": "Business Operations Specialists, All Other"
+    },
+    {
+      "code": "132011",
+      "name": "Accountants and Auditors"
+    },
+    {
+      "code": "132020",
+      "name": "Property Appraisers and Assessors"
+    },
+    {
+      "code": "132031",
+      "name": "Budget Analysts"
+    },
+    {
+      "code": "132041",
+      "name": "Credit Analysts"
+    },
+    {
+      "code": "132051",
+      "name": "Financial and Investment Analysts"
+    },
+    {
+      "code": "132052",
+      "name": "Personal Financial Advisors"
+    },
+    {
+      "code": "132053",
+      "name": "Insurance Underwriters"
+    },
+    {
+      "code": "132054",
+      "name": "Financial Risk Specialists"
+    },
+    {
+      "code": "132061",
+      "name": "Financial Examiners"
+    },
+    {
+      "code": "132071",
+      "name": "Credit Counselors"
+    },
+    {
+      "code": "132072",
+      "name": "Loan Officers"
+    },
+    {
+      "code": "132081",
+      "name": "Tax Examiners and Collectors, and Revenue Agents"
+    },
+    {
+      "code": "132082",
+      "name": "Tax Preparers"
+    },
+    {
+      "code": "132099",
+      "name": "Financial Specialists, All Other"
+    },
+    {
+      "code": "151211",
+      "name": "Computer Systems Analysts"
+    },
+    {
+      "code": "151212",
+      "name": "Information Security Analysts"
+    },
+    {
+      "code": "151221",
+      "name": "Computer and Information Research Scientists"
+    },
+    {
+      "code": "151231",
+      "name": "Computer Network Support Specialists"
+    },
+    {
+      "code": "151232",
+      "name": "Computer User Support Specialists"
+    },
+    {
+      "code": "151241",
+      "name": "Computer Network Architects"
+    },
+    {
+      "code": "151242",
+      "name": "Database Administrators"
+    },
+    {
+      "code": "151243",
+      "name": "Database Architects"
+    },
+    {
+      "code": "151244",
+      "name": "Network and Computer Systems Administrators"
+    },
+    {
+      "code": "151251",
+      "name": "Computer Programmers"
+    },
+    {
+      "code": "151252",
+      "name": "Software Developers"
+    },
+    {
+      "code": "151253",
+      "name": "Software Quality Assurance Analysts and Testers"
+    },
+    {
+      "code": "151254",
+      "name": "Web Developers"
+    },
+    {
+      "code": "151255",
+      "name": "Web and Digital Interface Designers"
+    },
+    {
+      "code": "151299",
+      "name": "Computer Occupations, All Other"
+    },
+    {
+      "code": "152011",
+      "name": "Actuaries"
+    },
+    {
+      "code": "152021",
+      "name": "Mathematicians"
+    },
+    {
+      "code": "152031",
+      "name": "Operations Research Analysts"
+    },
+    {
+      "code": "152041",
+      "name": "Statisticians"
+    },
+    {
+      "code": "152051",
+      "name": "Data Scientists"
+    },
+    {
+      "code": "152099",
+      "name": "Mathematical Science Occupations, All Other"
+    },
+    {
+      "code": "171011",
+      "name": "Architects, Except Landscape and Naval"
+    },
+    {
+      "code": "171012",
+      "name": "Landscape Architects"
+    },
+    {
+      "code": "171021",
+      "name": "Cartographers and Photogrammetrists"
+    },
+    {
+      "code": "171022",
+      "name": "Surveyors"
+    },
+    {
+      "code": "172011",
+      "name": "Aerospace Engineers"
+    },
+    {
+      "code": "172021",
+      "name": "Agricultural Engineers"
+    },
+    {
+      "code": "172031",
+      "name": "Bioengineers and Biomedical Engineers"
+    },
+    {
+      "code": "172041",
+      "name": "Chemical Engineers"
+    },
+    {
+      "code": "172051",
+      "name": "Civil Engineers"
+    },
+    {
+      "code": "172061",
+      "name": "Computer Hardware Engineers"
+    },
+    {
+      "code": "172071",
+      "name": "Electrical Engineers"
+    },
+    {
+      "code": "172072",
+      "name": "Electronics Engineers, Except Computer"
+    },
+    {
+      "code": "172081",
+      "name": "Environmental Engineers"
+    },
+    {
+      "code": "172111",
+      "name": "Health and Safety Engineers, Except Mining Safety Engineers and Inspectors"
+    },
+    {
+      "code": "172112",
+      "name": "Industrial Engineers"
+    },
+    {
+      "code": "172121",
+      "name": "Marine Engineers and Naval Architects"
+    },
+    {
+      "code": "172131",
+      "name": "Materials Engineers"
+    },
+    {
+      "code": "172141",
+      "name": "Mechanical Engineers"
+    },
+    {
+      "code": "172151",
+      "name": "Mining and Geological Engineers, Including Mining Safety Engineers"
+    },
+    {
+      "code": "172161",
+      "name": "Nuclear Engineers"
+    },
+    {
+      "code": "172171",
+      "name": "Petroleum Engineers"
+    },
+    {
+      "code": "172199",
+      "name": "Engineers, All Other"
+    },
+    {
+      "code": "173011",
+      "name": "Architectural and Civil Drafters"
+    },
+    {
+      "code": "173012",
+      "name": "Electrical and Electronics Drafters"
+    },
+    {
+      "code": "173013",
+      "name": "Mechanical Drafters"
+    },
+    {
+      "code": "173019",
+      "name": "Drafters, All Other"
+    },
+    {
+      "code": "173021",
+      "name": "Aerospace Engineering and Operations Technologists and Technicians"
+    },
+    {
+      "code": "173022",
+      "name": "Civil Engineering Technologists and Technicians"
+    },
+    {
+      "code": "173023",
+      "name": "Electrical and Electronic Engineering Technologists and Technicians"
+    },
+    {
+      "code": "173024",
+      "name": "Electro-Mechanical and Mechatronics Technologists and Technicians"
+    },
+    {
+      "code": "173025",
+      "name": "Environmental Engineering Technologists and Technicians"
+    },
+    {
+      "code": "173026",
+      "name": "Industrial Engineering Technologists and Technicians"
+    },
+    {
+      "code": "173027",
+      "name": "Mechanical Engineering Technologists and Technicians"
+    },
+    {
+      "code": "173028",
+      "name": "Calibration Technologists and Technicians"
+    },
+    {
+      "code": "173029",
+      "name": "Engineering Technologists and Technicians, Except Drafters, All Other"
+    },
+    {
+      "code": "173031",
+      "name": "Surveying and Mapping Technicians"
+    },
+    {
+      "code": "191011",
+      "name": "Animal Scientists"
+    },
+    {
+      "code": "191012",
+      "name": "Food Scientists and Technologists"
+    },
+    {
+      "code": "191013",
+      "name": "Soil and Plant Scientists"
+    },
+    {
+      "code": "191021",
+      "name": "Biochemists and Biophysicists"
+    },
+    {
+      "code": "191022",
+      "name": "Microbiologists"
+    },
+    {
+      "code": "191023",
+      "name": "Zoologists and Wildlife Biologists"
+    },
+    {
+      "code": "191029",
+      "name": "Biological Scientists, All Other"
+    },
+    {
+      "code": "191031",
+      "name": "Conservation Scientists"
+    },
+    {
+      "code": "191032",
+      "name": "Foresters"
+    },
+    {
+      "code": "191041",
+      "name": "Epidemiologists"
+    },
+    {
+      "code": "191042",
+      "name": "Medical Scientists, Except Epidemiologists"
+    },
+    {
+      "code": "191099",
+      "name": "Life Scientists, All Other"
+    },
+    {
+      "code": "192011",
+      "name": "Astronomers"
+    },
+    {
+      "code": "192012",
+      "name": "Physicists"
+    },
+    {
+      "code": "192021",
+      "name": "Atmospheric and Space Scientists"
+    },
+    {
+      "code": "192031",
+      "name": "Chemists"
+    },
+    {
+      "code": "192032",
+      "name": "Materials Scientists"
+    },
+    {
+      "code": "192041",
+      "name": "Environmental Scientists and Specialists, Including Health"
+    },
+    {
+      "code": "192042",
+      "name": "Geoscientists, Except Hydrologists and Geographers"
+    },
+    {
+      "code": "192043",
+      "name": "Hydrologists"
+    },
+    {
+      "code": "192099",
+      "name": "Physical Scientists, All Other"
+    },
+    {
+      "code": "193011",
+      "name": "Economists"
+    },
+    {
+      "code": "193022",
+      "name": "Survey Researchers"
+    },
+    {
+      "code": "193032",
+      "name": "Industrial-Organizational Psychologists"
+    },
+    {
+      "code": "193033",
+      "name": "Clinical and Counseling Psychologists"
+    },
+    {
+      "code": "193034",
+      "name": "School Psychologists"
+    },
+    {
+      "code": "193039",
+      "name": "Psychologists, All Other"
+    },
+    {
+      "code": "193041",
+      "name": "Sociologists"
+    },
+    {
+      "code": "193051",
+      "name": "Urban and Regional Planners"
+    },
+    {
+      "code": "193091",
+      "name": "Anthropologists and Archeologists"
+    },
+    {
+      "code": "193092",
+      "name": "Geographers"
+    },
+    {
+      "code": "193093",
+      "name": "Historians"
+    },
+    {
+      "code": "193094",
+      "name": "Political Scientists"
+    },
+    {
+      "code": "193099",
+      "name": "Social Scientists and Related Workers, All Other"
+    },
+    {
+      "code": "194012",
+      "name": "Agricultural Technicians"
+    },
+    {
+      "code": "194013",
+      "name": "Food Science Technicians"
+    },
+    {
+      "code": "194021",
+      "name": "Biological Technicians"
+    },
+    {
+      "code": "194031",
+      "name": "Chemical Technicians"
+    },
+    {
+      "code": "194042",
+      "name": "Environmental Science and Protection Technicians, Including Health"
+    },
+    {
+      "code": "194043",
+      "name": "Geological Technicians, Except Hydrologic Technicians"
+    },
+    {
+      "code": "194044",
+      "name": "Hydrologic Technicians"
+    },
+    {
+      "code": "194051",
+      "name": "Nuclear Technicians"
+    },
+    {
+      "code": "194061",
+      "name": "Social Science Research Assistants"
+    },
+    {
+      "code": "194071",
+      "name": "Forest and Conservation Technicians"
+    },
+    {
+      "code": "194092",
+      "name": "Forensic Science Technicians"
+    },
+    {
+      "code": "194099",
+      "name": "Life, Physical, and Social Science Technicians, All Other"
+    },
+    {
+      "code": "195011",
+      "name": "Occupational Health and Safety Specialists"
+    },
+    {
+      "code": "195012",
+      "name": "Occupational Health and Safety Technicians"
+    },
+    {
+      "code": "211012",
+      "name": "Educational, Guidance, and Career Counselors and Advisors"
+    },
+    {
+      "code": "211013",
+      "name": "Marriage and Family Therapists"
+    },
+    {
+      "code": "211015",
+      "name": "Rehabilitation Counselors"
+    },
+    {
+      "code": "211018",
+      "name": "Substance Abuse, Behavioral Disorder, and Mental Health Counselors"
+    },
+    {
+      "code": "211019",
+      "name": "Counselors, All Other"
+    },
+    {
+      "code": "211021",
+      "name": "Child, Family, and School Social Workers"
+    },
+    {
+      "code": "211022",
+      "name": "Healthcare Social Workers"
+    },
+    {
+      "code": "211023",
+      "name": "Mental Health and Substance Abuse Social Workers"
+    },
+    {
+      "code": "211029",
+      "name": "Social Workers, All Other"
+    },
+    {
+      "code": "211091",
+      "name": "Health Education Specialists"
+    },
+    {
+      "code": "211092",
+      "name": "Probation Officers and Correctional Treatment Specialists"
+    },
+    {
+      "code": "211093",
+      "name": "Social and Human Service Assistants"
+    },
+    {
+      "code": "211094",
+      "name": "Community Health Workers"
+    },
+    {
+      "code": "211099",
+      "name": "Community and Social Service Specialists, All Other"
+    },
+    {
+      "code": "212011",
+      "name": "Clergy"
+    },
+    {
+      "code": "212021",
+      "name": "Directors, Religious Activities and Education"
+    },
+    {
+      "code": "212099",
+      "name": "Religious Workers, All Other"
+    },
+    {
+      "code": "231011",
+      "name": "Lawyers"
+    },
+    {
+      "code": "231012",
+      "name": "Judicial Law Clerks"
+    },
+    {
+      "code": "231021",
+      "name": "Administrative Law Judges, Adjudicators, and Hearing Officers"
+    },
+    {
+      "code": "231022",
+      "name": "Arbitrators, Mediators, and Conciliators"
+    },
+    {
+      "code": "231023",
+      "name": "Judges, Magistrate Judges, and Magistrates"
+    },
+    {
+      "code": "232011",
+      "name": "Paralegals and Legal Assistants"
+    },
+    {
+      "code": "232093",
+      "name": "Title Examiners, Abstractors, and Searchers"
+    },
+    {
+      "code": "232099",
+      "name": "Legal Support Workers, All Other"
+    },
+    {
+      "code": "251011",
+      "name": "Business Teachers, Postsecondary"
+    },
+    {
+      "code": "251021",
+      "name": "Computer Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251022",
+      "name": "Mathematical Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251031",
+      "name": "Architecture Teachers, Postsecondary"
+    },
+    {
+      "code": "251032",
+      "name": "Engineering Teachers, Postsecondary"
+    },
+    {
+      "code": "251041",
+      "name": "Agricultural Sciences Teachers, Postsecondary"
+    },
+    {
+      "code": "251042",
+      "name": "Biological Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251043",
+      "name": "Forestry and Conservation Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251051",
+      "name": "Atmospheric, Earth, Marine, and Space Sciences Teachers, Postsecondary"
+    },
+    {
+      "code": "251052",
+      "name": "Chemistry Teachers, Postsecondary"
+    },
+    {
+      "code": "251053",
+      "name": "Environmental Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251054",
+      "name": "Physics Teachers, Postsecondary"
+    },
+    {
+      "code": "251061",
+      "name": "Anthropology and Archeology Teachers, Postsecondary"
+    },
+    {
+      "code": "251062",
+      "name": "Area, Ethnic, and Cultural Studies Teachers, Postsecondary"
+    },
+    {
+      "code": "251063",
+      "name": "Economics Teachers, Postsecondary"
+    },
+    {
+      "code": "251064",
+      "name": "Geography Teachers, Postsecondary"
+    },
+    {
+      "code": "251065",
+      "name": "Political Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251066",
+      "name": "Psychology Teachers, Postsecondary"
+    },
+    {
+      "code": "251067",
+      "name": "Sociology Teachers, Postsecondary"
+    },
+    {
+      "code": "251069",
+      "name": "Social Sciences Teachers, Postsecondary, All Other"
+    },
+    {
+      "code": "251071",
+      "name": "Health Specialties Teachers, Postsecondary"
+    },
+    {
+      "code": "251072",
+      "name": "Nursing Instructors and Teachers, Postsecondary"
+    },
+    {
+      "code": "251081",
+      "name": "Education Teachers, Postsecondary"
+    },
+    {
+      "code": "251082",
+      "name": "Library Science Teachers, Postsecondary"
+    },
+    {
+      "code": "251111",
+      "name": "Criminal Justice and Law Enforcement Teachers, Postsecondary"
+    },
+    {
+      "code": "251112",
+      "name": "Law Teachers, Postsecondary"
+    },
+    {
+      "code": "251113",
+      "name": "Social Work Teachers, Postsecondary"
+    },
+    {
+      "code": "251121",
+      "name": "Art, Drama, and Music Teachers, Postsecondary"
+    },
+    {
+      "code": "251122",
+      "name": "Communications Teachers, Postsecondary"
+    },
+    {
+      "code": "251123",
+      "name": "English Language and Literature Teachers, Postsecondary"
+    },
+    {
+      "code": "251124",
+      "name": "Foreign Language and Literature Teachers, Postsecondary"
+    },
+    {
+      "code": "251125",
+      "name": "History Teachers, Postsecondary"
+    },
+    {
+      "code": "251126",
+      "name": "Philosophy and Religion Teachers, Postsecondary"
+    },
+    {
+      "code": "251192",
+      "name": "Family and Consumer Sciences Teachers, Postsecondary"
+    },
+    {
+      "code": "251193",
+      "name": "Recreation and Fitness Studies Teachers, Postsecondary"
+    },
+    {
+      "code": "251194",
+      "name": "Career/Technical Education Teachers, Postsecondary"
+    },
+    {
+      "code": "251199",
+      "name": "Postsecondary Teachers, All Other"
+    },
+    {
+      "code": "252011",
+      "name": "Preschool Teachers, Except Special Education"
+    },
+    {
+      "code": "252012",
+      "name": "Kindergarten Teachers, Except Special Education"
+    },
+    {
+      "code": "252021",
+      "name": "Elementary School Teachers, Except Special Education"
+    },
+    {
+      "code": "252022",
+      "name": "Middle School Teachers, Except Special and Career/Technical Education"
+    },
+    {
+      "code": "252023",
+      "name": "Career/Technical Education Teachers, Middle School"
+    },
+    {
+      "code": "252031",
+      "name": "Secondary School Teachers, Except Special and Career/Technical Education"
+    },
+    {
+      "code": "252032",
+      "name": "Career/Technical Education Teachers, Secondary School"
+    },
+    {
+      "code": "252051",
+      "name": "Special Education Teachers, Preschool"
+    },
+    {
+      "code": "252052",
+      "name": "Special Education Teachers, Kindergarten and Elementary School"
+    },
+    {
+      "code": "252057",
+      "name": "Special Education Teachers, Middle School"
+    },
+    {
+      "code": "252058",
+      "name": "Special Education Teachers, Secondary School"
+    },
+    {
+      "code": "252059",
+      "name": "Special Education Teachers, All Other"
+    },
+    {
+      "code": "253011",
+      "name": "Adult Basic Education, Adult Secondary Education, and English as a Second Language Instructors"
+    },
+    {
+      "code": "253021",
+      "name": "Self-Enrichment Teachers"
+    },
+    {
+      "code": "253031",
+      "name": "Substitute Teachers, Short-Term"
+    },
+    {
+      "code": "253041",
+      "name": "Tutors"
+    },
+    {
+      "code": "253099",
+      "name": "Teachers and Instructors, All Other"
+    },
+    {
+      "code": "254011",
+      "name": "Archivists"
+    },
+    {
+      "code": "254012",
+      "name": "Curators"
+    },
+    {
+      "code": "254013",
+      "name": "Museum Technicians and Conservators"
+    },
+    {
+      "code": "254022",
+      "name": "Librarians and Media Collections Specialists"
+    },
+    {
+      "code": "254031",
+      "name": "Library Technicians"
+    },
+    {
+      "code": "259021",
+      "name": "Farm and Home Management Educators"
+    },
+    {
+      "code": "259031",
+      "name": "Instructional Coordinators"
+    },
+    {
+      "code": "259044",
+      "name": "Teaching Assistants, Postsecondary"
+    },
+    {
+      "code": "259045",
+      "name": "Teaching Assistants, Except Postsecondary"
+    },
+    {
+      "code": "259099",
+      "name": "Educational Instruction and Library Workers, All Other"
+    },
+    {
+      "code": "271011",
+      "name": "Art Directors"
+    },
+    {
+      "code": "271012",
+      "name": "Craft Artists"
+    },
+    {
+      "code": "271013",
+      "name": "Fine Artists, Including Painters, Sculptors, and Illustrators"
+    },
+    {
+      "code": "271014",
+      "name": "Special Effects Artists and Animators"
+    },
+    {
+      "code": "271019",
+      "name": "Artists and Related Workers, All Other"
+    },
+    {
+      "code": "271021",
+      "name": "Commercial and Industrial Designers"
+    },
+    {
+      "code": "271022",
+      "name": "Fashion Designers"
+    },
+    {
+      "code": "271023",
+      "name": "Floral Designers"
+    },
+    {
+      "code": "271024",
+      "name": "Graphic Designers"
+    },
+    {
+      "code": "271025",
+      "name": "Interior Designers"
+    },
+    {
+      "code": "271026",
+      "name": "Merchandise Displayers and Window Trimmers"
+    },
+    {
+      "code": "271027",
+      "name": "Set and Exhibit Designers"
+    },
+    {
+      "code": "271029",
+      "name": "Designers, All Other"
+    },
+    {
+      "code": "272011",
+      "name": "Actors"
+    },
+    {
+      "code": "272012",
+      "name": "Producers and Directors"
+    },
+    {
+      "code": "272021",
+      "name": "Athletes and Sports Competitors"
+    },
+    {
+      "code": "272022",
+      "name": "Coaches and Scouts"
+    },
+    {
+      "code": "272023",
+      "name": "Umpires, Referees, and Other Sports Officials"
+    },
+    {
+      "code": "272031",
+      "name": "Dancers"
+    },
+    {
+      "code": "272032",
+      "name": "Choreographers"
+    },
+    {
+      "code": "272041",
+      "name": "Music Directors and Composers"
+    },
+    {
+      "code": "272042",
+      "name": "Musicians and Singers"
+    },
+    {
+      "code": "272091",
+      "name": "Disc Jockeys, Except Radio"
+    },
+    {
+      "code": "272099",
+      "name": "Entertainers and Performers, Sports and Related Workers, All Other"
+    },
+    {
+      "code": "273011",
+      "name": "Broadcast Announcers and Radio Disc Jockeys"
+    },
+    {
+      "code": "273023",
+      "name": "News Analysts, Reporters, and Journalists"
+    },
+    {
+      "code": "273031",
+      "name": "Public Relations Specialists"
+    },
+    {
+      "code": "273041",
+      "name": "Editors"
+    },
+    {
+      "code": "273042",
+      "name": "Technical Writers"
+    },
+    {
+      "code": "273043",
+      "name": "Writers and Authors"
+    },
+    {
+      "code": "273091",
+      "name": "Interpreters and Translators"
+    },
+    {
+      "code": "273092",
+      "name": "Court Reporters and Simultaneous Captioners"
+    },
+    {
+      "code": "273099",
+      "name": "Media and Communication Workers, All Other"
+    },
+    {
+      "code": "274011",
+      "name": "Audio and Video Technicians"
+    },
+    {
+      "code": "274012",
+      "name": "Broadcast Technicians"
+    },
+    {
+      "code": "274014",
+      "name": "Sound Engineering Technicians"
+    },
+    {
+      "code": "274015",
+      "name": "Lighting Technicians"
+    },
+    {
+      "code": "274021",
+      "name": "Photographers"
+    },
+    {
+      "code": "274031",
+      "name": "Camera Operators, Television, Video, and Film"
+    },
+    {
+      "code": "274032",
+      "name": "Film and Video Editors"
+    },
+    {
+      "code": "274099",
+      "name": "Media and Communication Equipment Workers, All Other"
+    },
+    {
+      "code": "291011",
+      "name": "Chiropractors"
+    },
+    {
+      "code": "291021",
+      "name": "Dentists, General"
+    },
+    {
+      "code": "291022",
+      "name": "Oral and Maxillofacial Surgeons"
+    },
+    {
+      "code": "291023",
+      "name": "Orthodontists"
+    },
+    {
+      "code": "291024",
+      "name": "Prosthodontists"
+    },
+    {
+      "code": "291029",
+      "name": "Dentists, All Other Specialists"
+    },
+    {
+      "code": "291031",
+      "name": "Dietitians and Nutritionists"
+    },
+    {
+      "code": "291041",
+      "name": "Optometrists"
+    },
+    {
+      "code": "291051",
+      "name": "Pharmacists"
+    },
+    {
+      "code": "291071",
+      "name": "Physician Assistants"
+    },
+    {
+      "code": "291081",
+      "name": "Podiatrists"
+    },
+    {
+      "code": "291122",
+      "name": "Occupational Therapists"
+    },
+    {
+      "code": "291123",
+      "name": "Physical Therapists"
+    },
+    {
+      "code": "291124",
+      "name": "Radiation Therapists"
+    },
+    {
+      "code": "291125",
+      "name": "Recreational Therapists"
+    },
+    {
+      "code": "291126",
+      "name": "Respiratory Therapists"
+    },
+    {
+      "code": "291127",
+      "name": "Speech-Language Pathologists"
+    },
+    {
+      "code": "291128",
+      "name": "Exercise Physiologists"
+    },
+    {
+      "code": "291129",
+      "name": "Therapists, All Other"
+    },
+    {
+      "code": "291131",
+      "name": "Veterinarians"
+    },
+    {
+      "code": "291141",
+      "name": "Registered Nurses"
+    },
+    {
+      "code": "291151",
+      "name": "Nurse Anesthetists"
+    },
+    {
+      "code": "291161",
+      "name": "Nurse Midwives"
+    },
+    {
+      "code": "291171",
+      "name": "Nurse Practitioners"
+    },
+    {
+      "code": "291181",
+      "name": "Audiologists"
+    },
+    {
+      "code": "291211",
+      "name": "Anesthesiologists"
+    },
+    {
+      "code": "291212",
+      "name": "Cardiologists"
+    },
+    {
+      "code": "291213",
+      "name": "Dermatologists"
+    },
+    {
+      "code": "291214",
+      "name": "Emergency Medicine Physicians"
+    },
+    {
+      "code": "291215",
+      "name": "Family Medicine Physicians"
+    },
+    {
+      "code": "291216",
+      "name": "General Internal Medicine Physicians"
+    },
+    {
+      "code": "291217",
+      "name": "Neurologists"
+    },
+    {
+      "code": "291218",
+      "name": "Obstetricians and Gynecologists"
+    },
+    {
+      "code": "291221",
+      "name": "Pediatricians, General"
+    },
+    {
+      "code": "291222",
+      "name": "Physicians, Pathologists"
+    },
+    {
+      "code": "291223",
+      "name": "Psychiatrists"
+    },
+    {
+      "code": "291224",
+      "name": "Radiologists"
+    },
+    {
+      "code": "291229",
+      "name": "Physicians, All Other"
+    },
+    {
+      "code": "291241",
+      "name": "Ophthalmologists, Except Pediatric"
+    },
+    {
+      "code": "291242",
+      "name": "Orthopedic Surgeons, Except Pediatric"
+    },
+    {
+      "code": "291243",
+      "name": "Pediatric Surgeons"
+    },
+    {
+      "code": "291249",
+      "name": "Surgeons, All Other"
+    },
+    {
+      "code": "291291",
+      "name": "Acupuncturists"
+    },
+    {
+      "code": "291292",
+      "name": "Dental Hygienists"
+    },
+    {
+      "code": "291299",
+      "name": "Healthcare Diagnosing or Treating Practitioners, All Other"
+    },
+    {
+      "code": "292010",
+      "name": "Clinical Laboratory Technologists and Technicians"
+    },
+    {
+      "code": "292031",
+      "name": "Cardiovascular Technologists and Technicians"
+    },
+    {
+      "code": "292032",
+      "name": "Diagnostic Medical Sonographers"
+    },
+    {
+      "code": "292033",
+      "name": "Nuclear Medicine Technologists"
+    },
+    {
+      "code": "292034",
+      "name": "Radiologic Technologists and Technicians"
+    },
+    {
+      "code": "292035",
+      "name": "Magnetic Resonance Imaging Technologists"
+    },
+    {
+      "code": "292036",
+      "name": "Medical Dosimetrists"
+    },
+    {
+      "code": "292042",
+      "name": "Emergency Medical Technicians"
+    },
+    {
+      "code": "292043",
+      "name": "Paramedics"
+    },
+    {
+      "code": "292051",
+      "name": "Dietetic Technicians"
+    },
+    {
+      "code": "292052",
+      "name": "Pharmacy Technicians"
+    },
+    {
+      "code": "292053",
+      "name": "Psychiatric Technicians"
+    },
+    {
+      "code": "292055",
+      "name": "Surgical Technologists"
+    },
+    {
+      "code": "292056",
+      "name": "Veterinary Technologists and Technicians"
+    },
+    {
+      "code": "292057",
+      "name": "Ophthalmic Medical Technicians"
+    },
+    {
+      "code": "292061",
+      "name": "Licensed Practical and Licensed Vocational Nurses"
+    },
+    {
+      "code": "292072",
+      "name": "Medical Records Specialists"
+    },
+    {
+      "code": "292081",
+      "name": "Opticians, Dispensing"
+    },
+    {
+      "code": "292091",
+      "name": "Orthotists and Prosthetists"
+    },
+    {
+      "code": "292092",
+      "name": "Hearing Aid Specialists"
+    },
+    {
+      "code": "292099",
+      "name": "Health Technologists and Technicians, All Other"
+    },
+    {
+      "code": "299021",
+      "name": "Health Information Technologists and Medical Registrars"
+    },
+    {
+      "code": "299091",
+      "name": "Athletic Trainers"
+    },
+    {
+      "code": "299092",
+      "name": "Genetic Counselors"
+    },
+    {
+      "code": "299093",
+      "name": "Surgical Assistants"
+    },
+    {
+      "code": "299099",
+      "name": "Healthcare Practitioners and Technical Workers, All Other"
+    },
+    {
+      "code": "311120",
+      "name": "Home Health and Personal Care Aides"
+    },
+    {
+      "code": "311131",
+      "name": "Nursing Assistants"
+    },
+    {
+      "code": "311132",
+      "name": "Orderlies"
+    },
+    {
+      "code": "311133",
+      "name": "Psychiatric Aides"
+    },
+    {
+      "code": "312011",
+      "name": "Occupational Therapy Assistants"
+    },
+    {
+      "code": "312012",
+      "name": "Occupational Therapy Aides"
+    },
+    {
+      "code": "312021",
+      "name": "Physical Therapist Assistants"
+    },
+    {
+      "code": "312022",
+      "name": "Physical Therapist Aides"
+    },
+    {
+      "code": "319011",
+      "name": "Massage Therapists"
+    },
+    {
+      "code": "319091",
+      "name": "Dental Assistants"
+    },
+    {
+      "code": "319092",
+      "name": "Medical Assistants"
+    },
+    {
+      "code": "319093",
+      "name": "Medical Equipment Preparers"
+    },
+    {
+      "code": "319094",
+      "name": "Medical Transcriptionists"
+    },
+    {
+      "code": "319095",
+      "name": "Pharmacy Aides"
+    },
+    {
+      "code": "319096",
+      "name": "Veterinary Assistants and Laboratory Animal Caretakers"
+    },
+    {
+      "code": "319097",
+      "name": "Phlebotomists"
+    },
+    {
+      "code": "319099",
+      "name": "Healthcare Support Workers, All Other"
+    },
+    {
+      "code": "331011",
+      "name": "First-Line Supervisors of Correctional Officers"
+    },
+    {
+      "code": "331012",
+      "name": "First-Line Supervisors of Police and Detectives"
+    },
+    {
+      "code": "331021",
+      "name": "First-Line Supervisors of Firefighting and Prevention Workers"
+    },
+    {
+      "code": "331091",
+      "name": "First-Line Supervisors of Security Workers"
+    },
+    {
+      "code": "331099",
+      "name": "First-Line Supervisors of Protective Service Workers, All Other"
+    },
+    {
+      "code": "332011",
+      "name": "Firefighters"
+    },
+    {
+      "code": "332021",
+      "name": "Fire Inspectors and Investigators"
+    },
+    {
+      "code": "332022",
+      "name": "Forest Fire Inspectors and Prevention Specialists"
+    },
+    {
+      "code": "333011",
+      "name": "Bailiffs"
+    },
+    {
+      "code": "333012",
+      "name": "Correctional Officers and Jailers"
+    },
+    {
+      "code": "333021",
+      "name": "Detectives and Criminal Investigators"
+    },
+    {
+      "code": "333031",
+      "name": "Fish and Game Wardens"
+    },
+    {
+      "code": "333041",
+      "name": "Parking Enforcement Workers"
+    },
+    {
+      "code": "333051",
+      "name": "Police and Sheriff's Patrol Officers"
+    },
+    {
+      "code": "333052",
+      "name": "Transit and Railroad Police"
+    },
+    {
+      "code": "339011",
+      "name": "Animal Control Workers"
+    },
+    {
+      "code": "339021",
+      "name": "Private Detectives and Investigators"
+    },
+    {
+      "code": "339031",
+      "name": "Gambling Surveillance Officers and Gambling Investigators"
+    },
+    {
+      "code": "339032",
+      "name": "Security Guards"
+    },
+    {
+      "code": "339091",
+      "name": "Crossing Guards and Flaggers"
+    },
+    {
+      "code": "339092",
+      "name": "Lifeguards, Ski Patrol, and Other Recreational Protective Service Workers"
+    },
+    {
+      "code": "339093",
+      "name": "Transportation Security Screeners"
+    },
+    {
+      "code": "339094",
+      "name": "School Bus Monitors"
+    },
+    {
+      "code": "339099",
+      "name": "Protective Service Workers, All Other"
+    },
+    {
+      "code": "351011",
+      "name": "Chefs and Head Cooks"
+    },
+    {
+      "code": "351012",
+      "name": "First-Line Supervisors of Food Preparation and Serving Workers"
+    },
+    {
+      "code": "352011",
+      "name": "Cooks, Fast Food"
+    },
+    {
+      "code": "352012",
+      "name": "Cooks, Institution and Cafeteria"
+    },
+    {
+      "code": "352013",
+      "name": "Cooks, Private Household"
+    },
+    {
+      "code": "352014",
+      "name": "Cooks, Restaurant"
+    },
+    {
+      "code": "352015",
+      "name": "Cooks, Short Order"
+    },
+    {
+      "code": "352019",
+      "name": "Cooks, All Other"
+    },
+    {
+      "code": "352021",
+      "name": "Food Preparation Workers"
+    },
+    {
+      "code": "353011",
+      "name": "Bartenders"
+    },
+    {
+      "code": "353023",
+      "name": "Fast Food and Counter Workers"
+    },
+    {
+      "code": "353031",
+      "name": "Waiters and Waitresses"
+    },
+    {
+      "code": "353041",
+      "name": "Food Servers, Nonrestaurant"
+    },
+    {
+      "code": "359011",
+      "name": "Dining Room and Cafeteria Attendants and Bartender Helpers"
+    },
+    {
+      "code": "359021",
+      "name": "Dishwashers"
+    },
+    {
+      "code": "359031",
+      "name": "Hosts and Hostesses, Restaurant, Lounge, and Coffee Shop"
+    },
+    {
+      "code": "359099",
+      "name": "Food Preparation and Serving Related Workers, All Other"
+    },
+    {
+      "code": "371011",
+      "name": "First-Line Supervisors of Housekeeping and Janitorial Workers"
+    },
+    {
+      "code": "371012",
+      "name": "First-Line Supervisors of Landscaping, Lawn Service, and Groundskeeping Workers"
+    },
+    {
+      "code": "372011",
+      "name": "Janitors and Cleaners, Except Maids and Housekeeping Cleaners"
+    },
+    {
+      "code": "372012",
+      "name": "Maids and Housekeeping Cleaners"
+    },
+    {
+      "code": "372019",
+      "name": "Building Cleaning Workers, All Other"
+    },
+    {
+      "code": "372021",
+      "name": "Pest Control Workers"
+    },
+    {
+      "code": "373011",
+      "name": "Landscaping and Groundskeeping Workers"
+    },
+    {
+      "code": "373012",
+      "name": "Pesticide Handlers, Sprayers, and Applicators, Vegetation"
+    },
+    {
+      "code": "373013",
+      "name": "Tree Trimmers and Pruners"
+    },
+    {
+      "code": "373019",
+      "name": "Grounds Maintenance Workers, All Other"
+    },
+    {
+      "code": "391013",
+      "name": "First-Line Supervisors of Gambling Services Workers"
+    },
+    {
+      "code": "391014",
+      "name": "First-Line Supervisors of Entertainment and Recreation Workers, Except Gambling Services"
+    },
+    {
+      "code": "391022",
+      "name": "First-Line Supervisors of Personal Service Workers"
+    },
+    {
+      "code": "392011",
+      "name": "Animal Trainers"
+    },
+    {
+      "code": "392021",
+      "name": "Animal Caretakers"
+    },
+    {
+      "code": "393011",
+      "name": "Gambling Dealers"
+    },
+    {
+      "code": "393012",
+      "name": "Gambling and Sports Book Writers and Runners"
+    },
+    {
+      "code": "393019",
+      "name": "Gambling Service Workers, All Other"
+    },
+    {
+      "code": "393021",
+      "name": "Motion Picture Projectionists"
+    },
+    {
+      "code": "393031",
+      "name": "Ushers, Lobby Attendants, and Ticket Takers"
+    },
+    {
+      "code": "393091",
+      "name": "Amusement and Recreation Attendants"
+    },
+    {
+      "code": "393092",
+      "name": "Costume Attendants"
+    },
+    {
+      "code": "393093",
+      "name": "Locker Room, Coatroom, and Dressing Room Attendants"
+    },
+    {
+      "code": "393099",
+      "name": "Entertainment Attendants and Related Workers, All Other"
+    },
+    {
+      "code": "394011",
+      "name": "Embalmers"
+    },
+    {
+      "code": "394012",
+      "name": "Crematory Operators"
+    },
+    {
+      "code": "394021",
+      "name": "Funeral Attendants"
+    },
+    {
+      "code": "394031",
+      "name": "Morticians, Undertakers, and Funeral Arrangers"
+    },
+    {
+      "code": "395011",
+      "name": "Barbers"
+    },
+    {
+      "code": "395012",
+      "name": "Hairdressers, Hairstylists, and Cosmetologists"
+    },
+    {
+      "code": "395091",
+      "name": "Makeup Artists, Theatrical and Performance"
+    },
+    {
+      "code": "395092",
+      "name": "Manicurists and Pedicurists"
+    },
+    {
+      "code": "395093",
+      "name": "Shampooers"
+    },
+    {
+      "code": "395094",
+      "name": "Skincare Specialists"
+    },
+    {
+      "code": "396011",
+      "name": "Baggage Porters and Bellhops"
+    },
+    {
+      "code": "396012",
+      "name": "Concierges"
+    },
+    {
+      "code": "397010",
+      "name": "Tour and Travel Guides"
+    },
+    {
+      "code": "399011",
+      "name": "Childcare Workers"
+    },
+    {
+      "code": "399031",
+      "name": "Exercise Trainers and Group Fitness Instructors"
+    },
+    {
+      "code": "399032",
+      "name": "Recreation Workers"
+    },
+    {
+      "code": "399041",
+      "name": "Residential Advisors"
+    },
+    {
+      "code": "399099",
+      "name": "Personal Care and Service Workers, All Other"
+    },
+    {
+      "code": "411011",
+      "name": "First-Line Supervisors of Retail Sales Workers"
+    },
+    {
+      "code": "411012",
+      "name": "First-Line Supervisors of Non-Retail Sales Workers"
+    },
+    {
+      "code": "412011",
+      "name": "Cashiers"
+    },
+    {
+      "code": "412012",
+      "name": "Gambling Change Persons and Booth Cashiers"
+    },
+    {
+      "code": "412021",
+      "name": "Counter and Rental Clerks"
+    },
+    {
+      "code": "412022",
+      "name": "Parts Salespersons"
+    },
+    {
+      "code": "412031",
+      "name": "Retail Salespersons"
+    },
+    {
+      "code": "413011",
+      "name": "Advertising Sales Agents"
+    },
+    {
+      "code": "413021",
+      "name": "Insurance Sales Agents"
+    },
+    {
+      "code": "413031",
+      "name": "Securities, Commodities, and Financial Services Sales Agents"
+    },
+    {
+      "code": "413041",
+      "name": "Travel Agents"
+    },
+    {
+      "code": "413091",
+      "name": "Sales Representatives of Services, Except Advertising, Insurance, Financial Services, and Travel"
+    },
+    {
+      "code": "414011",
+      "name": "Sales Representatives, Wholesale and Manufacturing, Technical and Scientific Products"
+    },
+    {
+      "code": "414012",
+      "name": "Sales Representatives, Wholesale and Manufacturing, Except Technical and Scientific Products"
+    },
+    {
+      "code": "419011",
+      "name": "Demonstrators and Product Promoters"
+    },
+    {
+      "code": "419012",
+      "name": "Models"
+    },
+    {
+      "code": "419021",
+      "name": "Real Estate Brokers"
+    },
+    {
+      "code": "419022",
+      "name": "Real Estate Sales Agents"
+    },
+    {
+      "code": "419031",
+      "name": "Sales Engineers"
+    },
+    {
+      "code": "419041",
+      "name": "Telemarketers"
+    },
+    {
+      "code": "419091",
+      "name": "Door-to-Door Sales Workers, News and Street Vendors, and Related Workers"
+    },
+    {
+      "code": "419099",
+      "name": "Sales and Related Workers, All Other"
+    },
+    {
+      "code": "431011",
+      "name": "First-Line Supervisors of Office and Administrative Support Workers"
+    },
+    {
+      "code": "432011",
+      "name": "Switchboard Operators, Including Answering Service"
+    },
+    {
+      "code": "432021",
+      "name": "Telephone Operators"
+    },
+    {
+      "code": "432099",
+      "name": "Communications Equipment Operators, All Other"
+    },
+    {
+      "code": "433011",
+      "name": "Bill and Account Collectors"
+    },
+    {
+      "code": "433021",
+      "name": "Billing and Posting Clerks"
+    },
+    {
+      "code": "433031",
+      "name": "Bookkeeping, Accounting, and Auditing Clerks"
+    },
+    {
+      "code": "433041",
+      "name": "Gambling Cage Workers"
+    },
+    {
+      "code": "433051",
+      "name": "Payroll and Timekeeping Clerks"
+    },
+    {
+      "code": "433061",
+      "name": "Procurement Clerks"
+    },
+    {
+      "code": "433071",
+      "name": "Tellers"
+    },
+    {
+      "code": "433099",
+      "name": "Financial Clerks, All Other"
+    },
+    {
+      "code": "434011",
+      "name": "Brokerage Clerks"
+    },
+    {
+      "code": "434021",
+      "name": "Correspondence Clerks"
+    },
+    {
+      "code": "434031",
+      "name": "Court, Municipal, and License Clerks"
+    },
+    {
+      "code": "434041",
+      "name": "Credit Authorizers, Checkers, and Clerks"
+    },
+    {
+      "code": "434051",
+      "name": "Customer Service Representatives"
+    },
+    {
+      "code": "434061",
+      "name": "Eligibility Interviewers, Government Programs"
+    },
+    {
+      "code": "434071",
+      "name": "File Clerks"
+    },
+    {
+      "code": "434081",
+      "name": "Hotel, Motel, and Resort Desk Clerks"
+    },
+    {
+      "code": "434111",
+      "name": "Interviewers, Except Eligibility and Loan"
+    },
+    {
+      "code": "434121",
+      "name": "Library Assistants, Clerical"
+    },
+    {
+      "code": "434131",
+      "name": "Loan Interviewers and Clerks"
+    },
+    {
+      "code": "434141",
+      "name": "New Accounts Clerks"
+    },
+    {
+      "code": "434151",
+      "name": "Order Clerks"
+    },
+    {
+      "code": "434161",
+      "name": "Human Resources Assistants, Except Payroll and Timekeeping"
+    },
+    {
+      "code": "434171",
+      "name": "Receptionists and Information Clerks"
+    },
+    {
+      "code": "434181",
+      "name": "Reservation and Transportation Ticket Agents and Travel Clerks"
+    },
+    {
+      "code": "434199",
+      "name": "Information and Record Clerks, All Other"
+    },
+    {
+      "code": "435011",
+      "name": "Cargo and Freight Agents"
+    },
+    {
+      "code": "435021",
+      "name": "Couriers and Messengers"
+    },
+    {
+      "code": "435031",
+      "name": "Public Safety Telecommunicators"
+    },
+    {
+      "code": "435032",
+      "name": "Dispatchers, Except Police, Fire, and Ambulance"
+    },
+    {
+      "code": "435041",
+      "name": "Meter Readers, Utilities"
+    },
+    {
+      "code": "435051",
+      "name": "Postal Service Clerks"
+    },
+    {
+      "code": "435052",
+      "name": "Postal Service Mail Carriers"
+    },
+    {
+      "code": "435053",
+      "name": "Postal Service Mail Sorters, Processors, and Processing Machine Operators"
+    },
+    {
+      "code": "435061",
+      "name": "Production, Planning, and Expediting Clerks"
+    },
+    {
+      "code": "435071",
+      "name": "Shipping, Receiving, and Inventory Clerks"
+    },
+    {
+      "code": "435111",
+      "name": "Weighers, Measurers, Checkers, and Samplers, Recordkeeping"
+    },
+    {
+      "code": "436011",
+      "name": "Executive Secretaries and Executive Administrative Assistants"
+    },
+    {
+      "code": "436012",
+      "name": "Legal Secretaries and Administrative Assistants"
+    },
+    {
+      "code": "436013",
+      "name": "Medical Secretaries and Administrative Assistants"
+    },
+    {
+      "code": "436014",
+      "name": "Secretaries and Administrative Assistants, Except Legal, Medical, and Executive"
+    },
+    {
+      "code": "439021",
+      "name": "Data Entry Keyers"
+    },
+    {
+      "code": "439022",
+      "name": "Word Processors and Typists"
+    },
+    {
+      "code": "439031",
+      "name": "Desktop Publishers"
+    },
+    {
+      "code": "439041",
+      "name": "Insurance Claims and Policy Processing Clerks"
+    },
+    {
+      "code": "439051",
+      "name": "Mail Clerks and Mail Machine Operators, Except Postal Service"
+    },
+    {
+      "code": "439061",
+      "name": "Office Clerks, General"
+    },
+    {
+      "code": "439071",
+      "name": "Office Machine Operators, Except Computer"
+    },
+    {
+      "code": "439081",
+      "name": "Proofreaders and Copy Markers"
+    },
+    {
+      "code": "439111",
+      "name": "Statistical Assistants"
+    },
+    {
+      "code": "439199",
+      "name": "Office and Administrative Support Workers, All Other"
+    },
+    {
+      "code": "451011",
+      "name": "First-Line Supervisors of Farming, Fishing, and Forestry Workers"
+    },
+    {
+      "code": "452011",
+      "name": "Agricultural Inspectors"
+    },
+    {
+      "code": "452021",
+      "name": "Animal Breeders"
+    },
+    {
+      "code": "452041",
+      "name": "Graders and Sorters, Agricultural Products"
+    },
+    {
+      "code": "452091",
+      "name": "Agricultural Equipment Operators"
+    },
+    {
+      "code": "452092",
+      "name": "Farmworkers and Laborers, Crop, Nursery, and Greenhouse"
+    },
+    {
+      "code": "452093",
+      "name": "Farmworkers, Farm, Ranch, and Aquacultural Animals"
+    },
+    {
+      "code": "452099",
+      "name": "Agricultural Workers, All Other"
+    },
+    {
+      "code": "454011",
+      "name": "Forest and Conservation Workers"
+    },
+    {
+      "code": "454021",
+      "name": "Fallers"
+    },
+    {
+      "code": "454022",
+      "name": "Logging Equipment Operators"
+    },
+    {
+      "code": "454023",
+      "name": "Log Graders and Scalers"
+    },
+    {
+      "code": "454029",
+      "name": "Logging Workers, All Other"
+    },
+    {
+      "code": "471011",
+      "name": "First-Line Supervisors of Construction Trades and Extraction Workers"
+    },
+    {
+      "code": "472011",
+      "name": "Boilermakers"
+    },
+    {
+      "code": "472021",
+      "name": "Brickmasons and Blockmasons"
+    },
+    {
+      "code": "472022",
+      "name": "Stonemasons"
+    },
+    {
+      "code": "472031",
+      "name": "Carpenters"
+    },
+    {
+      "code": "472041",
+      "name": "Carpet Installers"
+    },
+    {
+      "code": "472042",
+      "name": "Floor Layers, Except Carpet, Wood, and Hard Tiles"
+    },
+    {
+      "code": "472043",
+      "name": "Floor Sanders and Finishers"
+    },
+    {
+      "code": "472044",
+      "name": "Tile and Stone Setters"
+    },
+    {
+      "code": "472051",
+      "name": "Cement Masons and Concrete Finishers"
+    },
+    {
+      "code": "472053",
+      "name": "Terrazzo Workers and Finishers"
+    },
+    {
+      "code": "472061",
+      "name": "Construction Laborers"
+    },
+    {
+      "code": "472071",
+      "name": "Paving, Surfacing, and Tamping Equipment Operators"
+    },
+    {
+      "code": "472072",
+      "name": "Pile Driver Operators"
+    },
+    {
+      "code": "472073",
+      "name": "Operating Engineers and Other Construction Equipment Operators"
+    },
+    {
+      "code": "472081",
+      "name": "Drywall and Ceiling Tile Installers"
+    },
+    {
+      "code": "472082",
+      "name": "Tapers"
+    },
+    {
+      "code": "472111",
+      "name": "Electricians"
+    },
+    {
+      "code": "472121",
+      "name": "Glaziers"
+    },
+    {
+      "code": "472131",
+      "name": "Insulation Workers, Floor, Ceiling, and Wall"
+    },
+    {
+      "code": "472132",
+      "name": "Insulation Workers, Mechanical"
+    },
+    {
+      "code": "472141",
+      "name": "Painters, Construction and Maintenance"
+    },
+    {
+      "code": "472142",
+      "name": "Paperhangers"
+    },
+    {
+      "code": "472151",
+      "name": "Pipelayers"
+    },
+    {
+      "code": "472152",
+      "name": "Plumbers, Pipefitters, and Steamfitters"
+    },
+    {
+      "code": "472161",
+      "name": "Plasterers and Stucco Masons"
+    },
+    {
+      "code": "472171",
+      "name": "Reinforcing Iron and Rebar Workers"
+    },
+    {
+      "code": "472181",
+      "name": "Roofers"
+    },
+    {
+      "code": "472211",
+      "name": "Sheet Metal Workers"
+    },
+    {
+      "code": "472221",
+      "name": "Structural Iron and Steel Workers"
+    },
+    {
+      "code": "472231",
+      "name": "Solar Photovoltaic Installers"
+    },
+    {
+      "code": "473011",
+      "name": "Helpers--Brickmasons, Blockmasons, Stonemasons, and Tile and Marble Setters"
+    },
+    {
+      "code": "473012",
+      "name": "Helpers--Carpenters"
+    },
+    {
+      "code": "473013",
+      "name": "Helpers--Electricians"
+    },
+    {
+      "code": "473014",
+      "name": "Helpers--Painters, Paperhangers, Plasterers, and Stucco Masons"
+    },
+    {
+      "code": "473015",
+      "name": "Helpers--Pipelayers, Plumbers, Pipefitters, and Steamfitters"
+    },
+    {
+      "code": "473016",
+      "name": "Helpers--Roofers"
+    },
+    {
+      "code": "473019",
+      "name": "Helpers, Construction Trades, All Other"
+    },
+    {
+      "code": "474011",
+      "name": "Construction and Building Inspectors"
+    },
+    {
+      "code": "474021",
+      "name": "Elevator and Escalator Installers and Repairers"
+    },
+    {
+      "code": "474031",
+      "name": "Fence Erectors"
+    },
+    {
+      "code": "474041",
+      "name": "Hazardous Materials Removal Workers"
+    },
+    {
+      "code": "474051",
+      "name": "Highway Maintenance Workers"
+    },
+    {
+      "code": "474061",
+      "name": "Rail-Track Laying and Maintenance Equipment Operators"
+    },
+    {
+      "code": "474071",
+      "name": "Septic Tank Servicers and Sewer Pipe Cleaners"
+    },
+    {
+      "code": "474090",
+      "name": "Miscellaneous Construction and Related Workers"
+    },
+    {
+      "code": "475011",
+      "name": "Derrick Operators, Oil and Gas"
+    },
+    {
+      "code": "475012",
+      "name": "Rotary Drill Operators, Oil and Gas"
+    },
+    {
+      "code": "475013",
+      "name": "Service Unit Operators, Oil and Gas"
+    },
+    {
+      "code": "475022",
+      "name": "Excavating and Loading Machine and Dragline Operators, Surface Mining"
+    },
+    {
+      "code": "475023",
+      "name": "Earth Drillers, Except Oil and Gas"
+    },
+    {
+      "code": "475032",
+      "name": "Explosives Workers, Ordnance Handling Experts, and Blasters"
+    },
+    {
+      "code": "475041",
+      "name": "Continuous Mining Machine Operators"
+    },
+    {
+      "code": "475043",
+      "name": "Roof Bolters, Mining"
+    },
+    {
+      "code": "475044",
+      "name": "Loading and Moving Machine Operators, Underground Mining"
+    },
+    {
+      "code": "475049",
+      "name": "Underground Mining Machine Operators, All Other"
+    },
+    {
+      "code": "475051",
+      "name": "Rock Splitters, Quarry"
+    },
+    {
+      "code": "475071",
+      "name": "Roustabouts, Oil and Gas"
+    },
+    {
+      "code": "475081",
+      "name": "Helpers--Extraction Workers"
+    },
+    {
+      "code": "475099",
+      "name": "Extraction Workers, All Other"
+    },
+    {
+      "code": "491011",
+      "name": "First-Line Supervisors of Mechanics, Installers, and Repairers"
+    },
+    {
+      "code": "492011",
+      "name": "Computer, Automated Teller, and Office Machine Repairers"
+    },
+    {
+      "code": "492021",
+      "name": "Radio, Cellular, and Tower Equipment Installers and Repairers"
+    },
+    {
+      "code": "492022",
+      "name": "Telecommunications Equipment Installers and Repairers, Except Line Installers"
+    },
+    {
+      "code": "492091",
+      "name": "Avionics Technicians"
+    },
+    {
+      "code": "492092",
+      "name": "Electric Motor, Power Tool, and Related Repairers"
+    },
+    {
+      "code": "492093",
+      "name": "Electrical and Electronics Installers and Repairers, Transportation Equipment"
+    },
+    {
+      "code": "492094",
+      "name": "Electrical and Electronics Repairers, Commercial and Industrial Equipment"
+    },
+    {
+      "code": "492095",
+      "name": "Electrical and Electronics Repairers, Powerhouse, Substation, and Relay"
+    },
+    {
+      "code": "492096",
+      "name": "Electronic Equipment Installers and Repairers, Motor Vehicles"
+    },
+    {
+      "code": "492097",
+      "name": "Audiovisual Equipment Installers and Repairers"
+    },
+    {
+      "code": "492098",
+      "name": "Security and Fire Alarm Systems Installers"
+    },
+    {
+      "code": "493011",
+      "name": "Aircraft Mechanics and Service Technicians"
+    },
+    {
+      "code": "493021",
+      "name": "Automotive Body and Related Repairers"
+    },
+    {
+      "code": "493022",
+      "name": "Automotive Glass Installers and Repairers"
+    },
+    {
+      "code": "493023",
+      "name": "Automotive Service Technicians and Mechanics"
+    },
+    {
+      "code": "493031",
+      "name": "Bus and Truck Mechanics and Diesel Engine Specialists"
+    },
+    {
+      "code": "493041",
+      "name": "Farm Equipment Mechanics and Service Technicians"
+    },
+    {
+      "code": "493042",
+      "name": "Mobile Heavy Equipment Mechanics, Except Engines"
+    },
+    {
+      "code": "493043",
+      "name": "Rail Car Repairers"
+    },
+    {
+      "code": "493051",
+      "name": "Motorboat Mechanics and Service Technicians"
+    },
+    {
+      "code": "493052",
+      "name": "Motorcycle Mechanics"
+    },
+    {
+      "code": "493053",
+      "name": "Outdoor Power Equipment and Other Small Engine Mechanics"
+    },
+    {
+      "code": "493091",
+      "name": "Bicycle Repairers"
+    },
+    {
+      "code": "493092",
+      "name": "Recreational Vehicle Service Technicians"
+    },
+    {
+      "code": "493093",
+      "name": "Tire Repairers and Changers"
+    },
+    {
+      "code": "499011",
+      "name": "Mechanical Door Repairers"
+    },
+    {
+      "code": "499012",
+      "name": "Control and Valve Installers and Repairers, Except Mechanical Door"
+    },
+    {
+      "code": "499021",
+      "name": "Heating, Air Conditioning, and Refrigeration Mechanics and Installers"
+    },
+    {
+      "code": "499031",
+      "name": "Home Appliance Repairers"
+    },
+    {
+      "code": "499041",
+      "name": "Industrial Machinery Mechanics"
+    },
+    {
+      "code": "499043",
+      "name": "Maintenance Workers, Machinery"
+    },
+    {
+      "code": "499044",
+      "name": "Millwrights"
+    },
+    {
+      "code": "499045",
+      "name": "Refractory Materials Repairers, Except Brickmasons"
+    },
+    {
+      "code": "499051",
+      "name": "Electrical Power-Line Installers and Repairers"
+    },
+    {
+      "code": "499052",
+      "name": "Telecommunications Line Installers and Repairers"
+    },
+    {
+      "code": "499061",
+      "name": "Camera and Photographic Equipment Repairers"
+    },
+    {
+      "code": "499062",
+      "name": "Medical Equipment Repairers"
+    },
+    {
+      "code": "499063",
+      "name": "Musical Instrument Repairers and Tuners"
+    },
+    {
+      "code": "499064",
+      "name": "Watch and Clock Repairers"
+    },
+    {
+      "code": "499069",
+      "name": "Precision Instrument and Equipment Repairers, All Other"
+    },
+    {
+      "code": "499071",
+      "name": "Maintenance and Repair Workers, General"
+    },
+    {
+      "code": "499081",
+      "name": "Wind Turbine Service Technicians"
+    },
+    {
+      "code": "499091",
+      "name": "Coin, Vending, and Amusement Machine Servicers and Repairers"
+    },
+    {
+      "code": "499092",
+      "name": "Commercial Divers"
+    },
+    {
+      "code": "499094",
+      "name": "Locksmiths and Safe Repairers"
+    },
+    {
+      "code": "499095",
+      "name": "Manufactured Building and Mobile Home Installers"
+    },
+    {
+      "code": "499096",
+      "name": "Riggers"
+    },
+    {
+      "code": "499097",
+      "name": "Signal and Track Switch Repairers"
+    },
+    {
+      "code": "499098",
+      "name": "Helpers--Installation, Maintenance, and Repair Workers"
+    },
+    {
+      "code": "499099",
+      "name": "Installation, Maintenance, and Repair Workers, All Other"
+    },
+    {
+      "code": "511011",
+      "name": "First-Line Supervisors of Production and Operating Workers"
+    },
+    {
+      "code": "512011",
+      "name": "Aircraft Structure, Surfaces, Rigging, and Systems Assemblers"
+    },
+    {
+      "code": "512021",
+      "name": "Coil Winders, Tapers, and Finishers"
+    },
+    {
+      "code": "512028",
+      "name": "Electrical, Electronic, and Electromechanical Assemblers, Except Coil Winders, Tapers, and Finishers"
+    },
+    {
+      "code": "512031",
+      "name": "Engine and Other Machine Assemblers"
+    },
+    {
+      "code": "512041",
+      "name": "Structural Metal Fabricators and Fitters"
+    },
+    {
+      "code": "512051",
+      "name": "Fiberglass Laminators and Fabricators"
+    },
+    {
+      "code": "512061",
+      "name": "Timing Device Assemblers and Adjusters"
+    },
+    {
+      "code": "512090",
+      "name": "Miscellaneous Assemblers and Fabricators"
+    },
+    {
+      "code": "513011",
+      "name": "Bakers"
+    },
+    {
+      "code": "513021",
+      "name": "Butchers and Meat Cutters"
+    },
+    {
+      "code": "513022",
+      "name": "Meat, Poultry, and Fish Cutters and Trimmers"
+    },
+    {
+      "code": "513023",
+      "name": "Slaughterers and Meat Packers"
+    },
+    {
+      "code": "513091",
+      "name": "Food and Tobacco Roasting, Baking, and Drying Machine Operators and Tenders"
+    },
+    {
+      "code": "513092",
+      "name": "Food Batchmakers"
+    },
+    {
+      "code": "513093",
+      "name": "Food Cooking Machine Operators and Tenders"
+    },
+    {
+      "code": "513099",
+      "name": "Food Processing Workers, All Other"
+    },
+    {
+      "code": "514021",
+      "name": "Extruding and Drawing Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514022",
+      "name": "Forging Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514023",
+      "name": "Rolling Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514031",
+      "name": "Cutting, Punching, and Press Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514032",
+      "name": "Drilling and Boring Machine Tool Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514033",
+      "name": "Grinding, Lapping, Polishing, & Buffing Machine Tool Setters, Operators, & Tenders, Metal & Plastic"
+    },
+    {
+      "code": "514034",
+      "name": "Lathe and Turning Machine Tool Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514035",
+      "name": "Milling and Planing Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514041",
+      "name": "Machinists"
+    },
+    {
+      "code": "514051",
+      "name": "Metal-Refining Furnace Operators and Tenders"
+    },
+    {
+      "code": "514052",
+      "name": "Pourers and Casters, Metal"
+    },
+    {
+      "code": "514061",
+      "name": "Model Makers, Metal and Plastic"
+    },
+    {
+      "code": "514062",
+      "name": "Patternmakers, Metal and Plastic"
+    },
+    {
+      "code": "514071",
+      "name": "Foundry Mold and Coremakers"
+    },
+    {
+      "code": "514072",
+      "name": "Molding, Coremaking, and Casting Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514081",
+      "name": "Multiple Machine Tool Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514111",
+      "name": "Tool and Die Makers"
+    },
+    {
+      "code": "514121",
+      "name": "Welders, Cutters, Solderers, and Brazers"
+    },
+    {
+      "code": "514122",
+      "name": "Welding, Soldering, and Brazing Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "514191",
+      "name": "Heat Treating Equipment Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514192",
+      "name": "Layout Workers, Metal and Plastic"
+    },
+    {
+      "code": "514193",
+      "name": "Plating Machine Setters, Operators, and Tenders, Metal and Plastic"
+    },
+    {
+      "code": "514194",
+      "name": "Tool Grinders, Filers, and Sharpeners"
+    },
+    {
+      "code": "514199",
+      "name": "Metal Workers and Plastic Workers, All Other"
+    },
+    {
+      "code": "515111",
+      "name": "Prepress Technicians and Workers"
+    },
+    {
+      "code": "515112",
+      "name": "Printing Press Operators"
+    },
+    {
+      "code": "515113",
+      "name": "Print Binding and Finishing Workers"
+    },
+    {
+      "code": "516011",
+      "name": "Laundry and Dry-Cleaning Workers"
+    },
+    {
+      "code": "516021",
+      "name": "Pressers, Textile, Garment, and Related Materials"
+    },
+    {
+      "code": "516031",
+      "name": "Sewing Machine Operators"
+    },
+    {
+      "code": "516041",
+      "name": "Shoe and Leather Workers and Repairers"
+    },
+    {
+      "code": "516042",
+      "name": "Shoe Machine Operators and Tenders"
+    },
+    {
+      "code": "516051",
+      "name": "Sewers, Hand"
+    },
+    {
+      "code": "516052",
+      "name": "Tailors, Dressmakers, and Custom Sewers"
+    },
+    {
+      "code": "516061",
+      "name": "Textile Bleaching and Dyeing Machine Operators and Tenders"
+    },
+    {
+      "code": "516062",
+      "name": "Textile Cutting Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "516063",
+      "name": "Textile Knitting and Weaving Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "516064",
+      "name": "Textile Winding, Twisting, and Drawing Out Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "516091",
+      "name": "Extruding and Forming Machine Setters, Operators, and Tenders, Synthetic and Glass Fibers"
+    },
+    {
+      "code": "516092",
+      "name": "Fabric and Apparel Patternmakers"
+    },
+    {
+      "code": "516093",
+      "name": "Upholsterers"
+    },
+    {
+      "code": "516099",
+      "name": "Textile, Apparel, and Furnishings Workers, All Other"
+    },
+    {
+      "code": "517011",
+      "name": "Cabinetmakers and Bench Carpenters"
+    },
+    {
+      "code": "517021",
+      "name": "Furniture Finishers"
+    },
+    {
+      "code": "517031",
+      "name": "Model Makers, Wood"
+    },
+    {
+      "code": "517032",
+      "name": "Patternmakers, Wood"
+    },
+    {
+      "code": "517041",
+      "name": "Sawing Machine Setters, Operators, and Tenders, Wood"
+    },
+    {
+      "code": "517042",
+      "name": "Woodworking Machine Setters, Operators, and Tenders, Except Sawing"
+    },
+    {
+      "code": "517099",
+      "name": "Woodworkers, All Other"
+    },
+    {
+      "code": "518011",
+      "name": "Nuclear Power Reactor Operators"
+    },
+    {
+      "code": "518012",
+      "name": "Power Distributors and Dispatchers"
+    },
+    {
+      "code": "518013",
+      "name": "Power Plant Operators"
+    },
+    {
+      "code": "518021",
+      "name": "Stationary Engineers and Boiler Operators"
+    },
+    {
+      "code": "518031",
+      "name": "Water and Wastewater Treatment Plant and System Operators"
+    },
+    {
+      "code": "518091",
+      "name": "Chemical Plant and System Operators"
+    },
+    {
+      "code": "518092",
+      "name": "Gas Plant Operators"
+    },
+    {
+      "code": "518093",
+      "name": "Petroleum Pump System Operators, Refinery Operators, and Gaugers"
+    },
+    {
+      "code": "518099",
+      "name": "Plant and System Operators, All Other"
+    },
+    {
+      "code": "519011",
+      "name": "Chemical Equipment Operators and Tenders"
+    },
+    {
+      "code": "519012",
+      "name": "Separating, Filtering, Clarifying, Precipitating, and Still Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519021",
+      "name": "Crushing, Grinding, and Polishing Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519022",
+      "name": "Grinding and Polishing Workers, Hand"
+    },
+    {
+      "code": "519023",
+      "name": "Mixing and Blending Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519031",
+      "name": "Cutters and Trimmers, Hand"
+    },
+    {
+      "code": "519032",
+      "name": "Cutting and Slicing Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519041",
+      "name": "Extruding, Forming, Pressing, and Compacting Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519051",
+      "name": "Furnace, Kiln, Oven, Drier, and Kettle Operators and Tenders"
+    },
+    {
+      "code": "519061",
+      "name": "Inspectors, Testers, Sorters, Samplers, and Weighers"
+    },
+    {
+      "code": "519071",
+      "name": "Jewelers and Precious Stone and Metal Workers"
+    },
+    {
+      "code": "519081",
+      "name": "Dental Laboratory Technicians"
+    },
+    {
+      "code": "519082",
+      "name": "Medical Appliance Technicians"
+    },
+    {
+      "code": "519083",
+      "name": "Ophthalmic Laboratory Technicians"
+    },
+    {
+      "code": "519111",
+      "name": "Packaging and Filling Machine Operators and Tenders"
+    },
+    {
+      "code": "519123",
+      "name": "Painting, Coating, and Decorating Workers"
+    },
+    {
+      "code": "519124",
+      "name": "Coating, Painting, and Spraying Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519141",
+      "name": "Semiconductor Processing Technicians"
+    },
+    {
+      "code": "519151",
+      "name": "Photographic Process Workers and Processing Machine Operators"
+    },
+    {
+      "code": "519161",
+      "name": "Computer Numerically Controlled Tool Operators"
+    },
+    {
+      "code": "519162",
+      "name": "Computer Numerically Controlled Tool Programmers"
+    },
+    {
+      "code": "519191",
+      "name": "Adhesive Bonding Machine Operators and Tenders"
+    },
+    {
+      "code": "519192",
+      "name": "Cleaning, Washing, and Metal Pickling Equipment Operators and Tenders"
+    },
+    {
+      "code": "519193",
+      "name": "Cooling and Freezing Equipment Operators and Tenders"
+    },
+    {
+      "code": "519194",
+      "name": "Etchers and Engravers"
+    },
+    {
+      "code": "519195",
+      "name": "Molders, Shapers, and Casters, Except Metal and Plastic"
+    },
+    {
+      "code": "519196",
+      "name": "Paper Goods Machine Setters, Operators, and Tenders"
+    },
+    {
+      "code": "519197",
+      "name": "Tire Builders"
+    },
+    {
+      "code": "519198",
+      "name": "Helpers--Production Workers"
+    },
+    {
+      "code": "519199",
+      "name": "Production Workers, All Other"
+    },
+    {
+      "code": "531041",
+      "name": "Aircraft Cargo Handling Supervisors"
+    },
+    {
+      "code": "531047",
+      "name": "First-Line Supervisors of Transportation and Material Moving Workers, Except Aircraft Cargo Handling"
+    },
+    {
+      "code": "532011",
+      "name": "Airline Pilots, Copilots, and Flight Engineers"
+    },
+    {
+      "code": "532012",
+      "name": "Commercial Pilots"
+    },
+    {
+      "code": "532021",
+      "name": "Air Traffic Controllers"
+    },
+    {
+      "code": "532022",
+      "name": "Airfield Operations Specialists"
+    },
+    {
+      "code": "532031",
+      "name": "Flight Attendants"
+    },
+    {
+      "code": "533011",
+      "name": "Ambulance Drivers and Attendants, Except Emergency Medical Technicians"
+    },
+    {
+      "code": "533031",
+      "name": "Driver/Sales Workers"
+    },
+    {
+      "code": "533032",
+      "name": "Heavy and Tractor-Trailer Truck Drivers"
+    },
+    {
+      "code": "533033",
+      "name": "Light Truck Drivers"
+    },
+    {
+      "code": "533051",
+      "name": "Bus Drivers, School"
+    },
+    {
+      "code": "533052",
+      "name": "Bus Drivers, Transit and Intercity"
+    },
+    {
+      "code": "533053",
+      "name": "Shuttle Drivers and Chauffeurs"
+    },
+    {
+      "code": "533054",
+      "name": "Taxi Drivers"
+    },
+    {
+      "code": "533099",
+      "name": "Motor Vehicle Operators, All Other"
+    },
+    {
+      "code": "534011",
+      "name": "Locomotive Engineers"
+    },
+    {
+      "code": "534013",
+      "name": "Rail Yard Engineers, Dinkey Operators, and Hostlers"
+    },
+    {
+      "code": "534022",
+      "name": "Railroad Brake, Signal, and Switch Operators and Locomotive Firers"
+    },
+    {
+      "code": "534031",
+      "name": "Railroad Conductors and Yardmasters"
+    },
+    {
+      "code": "534041",
+      "name": "Subway and Streetcar Operators"
+    },
+    {
+      "code": "534099",
+      "name": "Rail Transportation Workers, All Other"
+    },
+    {
+      "code": "535011",
+      "name": "Sailors and Marine Oilers"
+    },
+    {
+      "code": "535021",
+      "name": "Captains, Mates, and Pilots of Water Vessels"
+    },
+    {
+      "code": "535022",
+      "name": "Motorboat Operators"
+    },
+    {
+      "code": "535031",
+      "name": "Ship Engineers"
+    },
+    {
+      "code": "536011",
+      "name": "Bridge and Lock Tenders"
+    },
+    {
+      "code": "536021",
+      "name": "Parking Attendants"
+    },
+    {
+      "code": "536031",
+      "name": "Automotive and Watercraft Service Attendants"
+    },
+    {
+      "code": "536032",
+      "name": "Aircraft Service Attendants"
+    },
+    {
+      "code": "536041",
+      "name": "Traffic Technicians"
+    },
+    {
+      "code": "536051",
+      "name": "Transportation Inspectors"
+    },
+    {
+      "code": "536061",
+      "name": "Passenger Attendants"
+    },
+    {
+      "code": "536099",
+      "name": "Transportation Workers, All Other"
+    },
+    {
+      "code": "537011",
+      "name": "Conveyor Operators and Tenders"
+    },
+    {
+      "code": "537021",
+      "name": "Crane and Tower Operators"
+    },
+    {
+      "code": "537031",
+      "name": "Dredge Operators"
+    },
+    {
+      "code": "537041",
+      "name": "Hoist and Winch Operators"
+    },
+    {
+      "code": "537051",
+      "name": "Industrial Truck and Tractor Operators"
+    },
+    {
+      "code": "537061",
+      "name": "Cleaners of Vehicles and Equipment"
+    },
+    {
+      "code": "537062",
+      "name": "Laborers and Freight, Stock, and Material Movers, Hand"
+    },
+    {
+      "code": "537063",
+      "name": "Machine Feeders and Offbearers"
+    },
+    {
+      "code": "537064",
+      "name": "Packers and Packagers, Hand"
+    },
+    {
+      "code": "537065",
+      "name": "Stockers and Order Fillers"
+    },
+    {
+      "code": "537071",
+      "name": "Gas Compressor and Gas Pumping Station Operators"
+    },
+    {
+      "code": "537072",
+      "name": "Pump Operators, Except Wellhead Pumpers"
+    },
+    {
+      "code": "537073",
+      "name": "Wellhead Pumpers"
+    },
+    {
+      "code": "537081",
+      "name": "Refuse and Recyclable Material Collectors"
+    },
+    {
+      "code": "537121",
+      "name": "Tank Car, Truck, and Ship Loaders"
+    },
+    {
+      "code": "537199",
+      "name": "Material Moving Workers, All Other"
+    }
+  ]
+}

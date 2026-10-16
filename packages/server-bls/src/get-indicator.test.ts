@@ -1,12 +1,12 @@
 import { rmSync } from "node:fs";
 import { dirname } from "node:path";
+import type { IndicatorDefinition } from "@federal-mcps/core";
 import { GeographyCatalog, type HttpClient, type HttpResult } from "@federal-mcps/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { blsIndicatorTools } from "./get-indicator.js";
-import { blsIndicatorDefinitions } from "./indicators.js";
-import type { IndicatorDefinition } from "@federal-mcps/core";
 import { buildFixtureCatalog } from "./__fixtures__/build-fixture.js";
 import { scriptedBlsClient } from "./__fixtures__/scripted-client.js";
+import { blsIndicatorTools } from "./get-indicator.js";
+import { blsIndicatorDefinitions } from "./indicators.js";
 
 let path: string;
 let catalog: GeographyCatalog;
@@ -200,6 +200,7 @@ describe("bls_list_indicators", () => {
       "payroll_employment",
       "cpi_all_items",
       "occupational_wage",
+      "occupational_employment",
       "job_openings",
       "hires",
       "quits",
@@ -560,7 +561,7 @@ describe("OEWS occupation picker + metro coverage (#152)", () => {
     expect(res.place?.geoid).toBe("19740");
     const data = res.data as { measure: string; dimensions: unknown };
     expect(data.measure).toBe("occupational_wage");
-    expect(data.dimensions).toEqual({ occupation: "000000" });
+    expect(data.dimensions).toEqual({ occupation: "000000", statistic: "04" });
   });
 
   it("passes an explicit occupation code to the Colorado statewide OE series", async () => {
@@ -572,13 +573,55 @@ describe("OEWS occupation picker + metro coverage (#152)", () => {
     expect(res.source.ids).toEqual(["OEUS080000000000047000004"]);
     expect(res.source.program).toBe("OEWS");
     const data = res.data as { dimensions: unknown };
-    expect(data.dimensions).toEqual({ occupation: "470000" });
+    expect(data.dimensions).toEqual({ occupation: "470000", statistic: "04" });
   });
 
-  it("rejects an occupation code outside the vocabulary, listing the accepted codes", async () => {
+  it("passes a detailed 6-digit occupation code and a non-default statistic (#359)", async () => {
+    const res = await run({
+      place: "Colorado",
+      indicator: "occupational_wage",
+      occupation: "472031",
+      statistic: "13",
+    });
+    expect(res.source.ids).toEqual(["OEUS080000000000047203113"]);
+    const data = res.data as { dimensions: unknown };
+    expect(data.dimensions).toEqual({ occupation: "472031", statistic: "13" });
+  });
+
+  it("rejects a 6-digit occupation code BLS does not publish, naming its nearest major group (#359)", async () => {
     await expect(
       run({ place: "Colorado", indicator: "occupational_wage", occupation: "999999" }),
-    ).rejects.toThrow(/occupation.*"999999".*000000.*470000/s);
+    ).rejects.toThrow(/does not publish occupation "999999"/);
+  });
+
+  it("rejects an unrecognized statistic code, listing the accepted codes (#359)", async () => {
+    await expect(
+      run({ place: "Colorado", indicator: "occupational_wage", statistic: "01" }),
+    ).rejects.toThrow(/statistic "01".*occupational_wage's vocabulary/s);
+  });
+
+  it("dispatches occupational_employment to the statewide OE series, head count by default (#359)", async () => {
+    const res = await run({ place: "Colorado", indicator: "occupational_employment" });
+    expect(res.source.ids).toEqual(["OEUS080000000000000000001"]);
+    expect(res.source.program).toBe("OEWS");
+    const data = res.data as { measure: string; dimensions: unknown };
+    expect(data.measure).toBe("occupational_employment");
+    expect(data.dimensions).toEqual({ occupation: "000000", statistic: "01" });
+  });
+
+  it("bls_compare_places compares a detailed occupation's median wage across two states (#359)", async () => {
+    const res = await call(compareTool(), {
+      indicator: "occupational_wage",
+      places: ["Colorado", "Washington"],
+      occupation: "472031",
+      statistic: "13",
+    });
+    expect(res.source.ids.sort()).toEqual(
+      ["OEUS080000000000047203113", "OEUS530000000000047203113"].sort(),
+    );
+    const data = res.data as { dimensions: unknown; rows: { status: string }[] };
+    expect(data.dimensions).toEqual({ occupation: "472031", statistic: "13" });
+    expect(data.rows.every((r) => r.status === "ok")).toBe(true);
   });
 });
 
