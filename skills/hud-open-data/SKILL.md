@@ -33,20 +33,23 @@ sessions without the HUD User server.
   `arcgis__get_dataset`, `arcgis__get_schema`, `arcgis__query_data {dataset_id, where,
   out_fields, limit, offset, order_by, layer, format}`, `arcgis__aggregate_data`).
   The family's deployment at **`https://hud.responsive.city/mcp`** runs the OpenContext build
-  pinned in `opencontext.lock.json` (#295, 2026-09-30): `query_data` returns every matching
+  pinned in `opencontext.lock.json` (fork main `11ec56b`, 2026-10-17): `query_data` returns every matching
   row up to `limit` (paged with `offset`, ordered with `order_by`, as `json`/`csv` as well as
   text, no fixed 10-row display cap), `layer` selects among a service's layers/tables (fixes
   Small Area FMR table 1, CHAS county layer 4, below), `aggregate_data` runs server-side
   statistics/group-by, and `get_schema`/`get_dataset` return full descriptions, edit dates and
-  field domains when a layer declares them (none of the LIHTC/Public Housing/Multifamily
-  layers do — see the code-table links below). Field names below still save a call.
+  field domains when a layer declares them. `get_schema` also shows a `Definition:` (and
+  `Units:`) line per field when the item's formal metadata defines it: LIHTC defines 118 of
+  its fields there, so call `get_schema` before reading a LIHTC code. Layers whose metadata is
+  silent (Public Housing, Multifamily) still need the code-table links below, and a
+  `where`/`having` with a subquery or `UNION` is refused. Field names below still save a call.
 
 ## Datasets (Hub item id · what the key is)
 
 | Dataset | Item id | Key | Key fields | Vintage |
 |---|---|---|---|---|
 | Fair Market Rents | `12d2516901f947b5bb4da4e780e35f07` | `FMR_CODE` (see below); no FIPS column | `FMR_AREANAME`, `FMR_0BDR`…`FMR_4BDR` | FY2026 (effective 2025-10-01) |
-| Small Area FMRs (ZIP) | `6458c67bad2a4cc7aa97514ef7ba8a0e` | values are in **table layer 1** keyed `ID` = ZIP, `HUD_CODE`; layer 0 is ZCTA geometry only, and the connector resolves the first *layer*, so SAFMR values are still not reachable here — use `hud_get_raw` on the HUD User server | `SAFMR_2BR`, `*_90_Payment_Standard`, `*_110_Payment_Standard` | FY2026 |
+| Small Area FMRs (ZIP) | `6458c67bad2a4cc7aa97514ef7ba8a0e` | values are in **table layer 1** (pass `layer: 1`) keyed `ID` = ZIP, `HUD_CODE`; layer 0 is ZCTA geometry only | `SAFMR_2BR`, `*_90_Payment_Standard`, `*_110_Payment_Standard` | FY2026 |
 | Housing Choice Vouchers by Tract | `8d45c34f7f64433586ef6a448d00ca12` | `GEOID` (11-digit tract) | `HCV_PUBLIC` voucher households (null = tract has ≤10 voucher households, per HUD's description; a county sum over non-null tracts is a **floor**, verified 2026-09-30: Denver County 9,298 across 143 of 178 tracts, 35 suppressed); `HCV_PUBLIC_PCT` = % of renter-occupied units (2020 Census DHC H4) | current PIH extract |
 | ACS 5YR CHAS Estimate Data (state, county, place, tract) | county `dbcc9ba4a4144a6d823b4d429d2b97c6` (layer **4**; verified 2026-09-30: Denver `GEOID='08031'` → `T2_EST1` 287,755 households), tract `db5099395be44cbd8c6896136dbd5e7e`, place `35665594f7364a76b1ba7e63eb59d2a5`, state `35f3c8985bc7407ba0fe8f7b2291f5c0` | `GEOID` (plus separate `STATE`/`COUNTY` fields on the county layer) | about 408 columns (`T2_EST1`…`T8_EST69`…) meaningless without [HUD's CHAS data dictionary](https://www.huduser.gov/portal/datasets/cp/CHAS/data_doc_chas.html) (2026-09-30) | **2016–2020 ACS** special tabulation (per the layer description) |
 | Low-Mod Income Population by Block Group | `09eceb08d95d429dae9f88fe39826bf1` | `GEOID` (12-digit) | `Lowmod`, `Lowmoduniv` (strings with commas), `Lowmod_pct` (0–1), `MOE_LOWMOD_PCT` (+/-x%), `Source` | "ACS 2020-2016" (2016–2020 ACS) |
@@ -60,7 +63,8 @@ sessions without the HUD User server.
 | Continuum of Care Grantee Areas | `c930d736b1764c259371fc7111e02740` | `COCNUM` (`CO-503`), `COCNAME` | PIT counts `SH_PERS_HWAC`, `UNSH_PERS_HWAC`, `SH_VETS`, `UNSH_VETS`, `SH_CH`, `UNSH_CH` | **`YEAR` is null** in the layer — say the count year is not stated; HUD Exchange has dated PIT reports |
 
 **Not on the Hub** (say so; do not substitute): the Picture of Subsidized Households, Income
-Limits, MTSP limits, FMR history by fiscal year, and Small Area FMR ZIP tables. These are all
+Limits, MTSP limits, and FMR and Small Area FMR history by fiscal year (the Hub carries the
+current year only). These are all
 HUD User sources — answer from the family's HUD User server (`packages/server-hud`,
 `https://hud-user.responsive.city/mcp`): `hud_resolve_place` → `hud_get_indicator` /
 `hud_compare_places` for FMR, Income Limits/MTSP, CHAS and Picture; `hud_get_raw {endpoint:
@@ -108,9 +112,9 @@ program. PIT counts by year: HUD Exchange (not the Hub or HUD User).
 - Never report `-4` on Public Housing resident-mix fields (`PCT_*`, `HH_INCOME`) as a value:
   it means the underlying count was ≤10 and HUD suppressed it.
 - Never report LIHTC `YR_PIS`/`YR_ALLOC` `8888`/`9999` as a year, or a `CREDIT`/`TYPE`/
-  `NON_PROF`/`TRGT_*`/`QCT`/`DDA` code as self-evident — look it up in HUD's LIHTC data
-  dictionary (link above).
-- Never answer Picture of Subsidized Households, Income Limits, FMR history or SAFMR tables
+  `NON_PROF`/`TRGT_*`/`QCT`/`DDA` code as self-evident — read its `Definition:` line in
+  `get_schema`, or HUD's LIHTC data dictionary (link above).
+- Never answer Picture of Subsidized Households, Income Limits, or FMR or SAFMR history
   from the Hub: they are not there. Say so and point to the HUD User server.
 
 ## Worked examples
@@ -137,5 +141,10 @@ Verified 2026-09-30:
   (`GEOID LIKE '08031%'`); the other 35 tracts are null (≤10 voucher households each).
 - **Denver public housing suppression:** "Walsh Manor Annex" (`STATE2KX='08' AND
   CNTY2KX='031'`) carries `PCT_BLACK=-4, HH_INCOME=-4` — suppressed, not a value.
-- **Picture of Subsidized Households, Income Limits, FMR history, SAFMR tables:** not on the
+- **Picture of Subsidized Households, Income Limits, FMR and SAFMR history:** not on the
   Hub — answer from the HUD User server.
+
+Verified 2026-10-17:
+
+- **South Bend, IN ZIP 46601 Small Area FMR:** `SAFMR_2BR` 1,060 (`ID='46601'`, `layer: 1`),
+  `HUD_CODE` `METRO43780M43780`.
