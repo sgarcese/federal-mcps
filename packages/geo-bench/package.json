@@ -1,6 +1,6 @@
 {
   "name": "@federal-mcps/geo-bench",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "UGEO-Bench in-repo: runs a model with and without the geography MCP tools and scores the lift (M2 exit gate, ADR-008 §4).",
   "license": "Apache-2.0",
   "private": true,
@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
-    "@federal-mcps/core": "1.0.0",
-    "@federal-mcps/geography-build": "1.0.0",
-    "@federal-mcps/server-geo": "1.0.0",
+    "@federal-mcps/core": "1.1.0",
+    "@federal-mcps/geography-build": "1.1.0",
+    "@federal-mcps/server-geo": "1.1.0",
     "@modelcontextprotocol/sdk": "1.32.1",
     "better-sqlite3": "13.0.3"
   },

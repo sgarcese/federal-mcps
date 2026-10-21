@@ -5,6 +5,49 @@ commitment), standard semver applies: a breaking change to the verbs or the enve
 version, new capability a minor one, a fix a patch. Before it, each feature milestone was a minor
 `0.x` bump.
 
+## 1.1.0 — M18 OEWS detail and QCEW history within the time limit (2026-10-20)
+
+New indicators and pickers, with no change to the verbs or the envelope, so a minor version.
+
+**Release verification:**
+- Live eval after deploy: 91/91, run through the operator bypass (the 88 earlier cases plus 3
+  new OEWS cases).
+- Live checks: registered nurses (`291141`) in the Boston metro return an annual median of
+  $106,180, and in Massachusetts an `occupational_employment` of 88,200 (May 2025).
+
+Added
+- **OEWS percentiles, medians and employment** (#359):
+  - `occupational_wage` takes a `statistic` picker: annual 10th, 25th, median, 75th and 90th
+    percentiles, hourly mean and median. The annual mean stays the default.
+  - A new **`occupational_employment`** indicator: employment (the default), employment per 1,000
+    jobs, and location quotient. Wages and counts are separate indicators, so a wage question
+    never returns a head count.
+  - **Any detailed 6-digit SOC code OEWS publishes** (830), checked against a list generated from
+    BLS's `oe.occupation` file. An unpublished code is rejected naming its nearest major group.
+  - Where an area has no estimate, the answer says so and suggests the state or the nation. A
+    `*` value from BLS reads as no value, never a number.
+  - Core: `statistic` joins the dimension arguments that `get_indicator` and `compare_places`
+    accept.
+
+Fixed
+- **QCEW history answers within the time limit** (#351): a call has a 20-second deadline and
+  fetches at most 6 quarterly slices at a time. If the deadline hits, the answer keeps the
+  quarters it got and names the missing ones (asking again serves them from cache); if no slice
+  arrives, the error names the time limit. Core's HTTP client gains `RequestOptions.signal` and
+  `DeadlineExceededError`.
+- **certifi PYSEC-2026-4320** in the CDC portal's Python lock: certifi 2026.7.22 → 2026.10.19,
+  with the lock re-run at the same OpenContext commit (#372).
+
+Changed
+- **The OpenContext pin** moves to fork main `11ec56b`: ArcGIS `where` and `having` refuse
+  subqueries and set operators, and ArcGIS `get_schema` adds field definitions and units from the
+  item's metadata. Neither reaches the CDC portal, which is Socrata. The HUD source guide is
+  refreshed (#365).
+- **Dependencies:** the MCP SDK, the DynamoDB client and the Anthropic SDK (#356); the
+  Terraform AWS provider 6.68.0 (#358); GitHub Actions (#357).
+- **Docs:** the smoke test's artificial test limit and `SMOKE_TEST_LIMIT` (#353). The
+  occupation and task layer spike (#360) is recorded and deferred.
+
 ## 1.0.0 — M17 Public-use protection; the API is committed stable (2026-10-06)
 
 **Stability commitment** (ADR-012 §4, ADR-020 §12; owner ruling recorded on #327):
