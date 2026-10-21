@@ -35,6 +35,8 @@ Fixed
   quarters it got and names the missing ones (asking again serves them from cache); if no slice
   arrives, the error names the time limit. Core's HTTP client gains `RequestOptions.signal` and
   `DeadlineExceededError`.
+- **certifi PYSEC-2026-4320** in the CDC portal's Python lock: certifi 2026.7.22 → 2026.10.19,
+  with the lock re-run at the same OpenContext commit (#372).
 
 Changed
 - **The OpenContext pin** moves to fork main `11ec56b`: ArcGIS `where` and `having` refuse
