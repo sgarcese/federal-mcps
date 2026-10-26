@@ -30,7 +30,7 @@
     "smoke:limits": "node scripts/live-limits-smoke.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
+    "@biomejs/biome": "2.6.2",
     "@types/node": "22.20.5",
     "rimraf": "6.1.3",
     "tsx": "4.23.15",
