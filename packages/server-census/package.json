@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@federal-mcps/core": "1.1.0",
-    "@modelcontextprotocol/sdk": "1.32.1"
+    "@modelcontextprotocol/sdk": "1.32.2"
   },
   "devDependencies": {
     "@federal-mcps/geography-build": "1.1.0",
