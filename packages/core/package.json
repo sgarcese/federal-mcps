@@ -28,8 +28,8 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.1152.0",
-    "@modelcontextprotocol/sdk": "1.32.1",
+    "@aws-sdk/client-dynamodb": "3.1160.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "better-sqlite3": "13.0.3",
     "zod": "4.6.7"
   },
