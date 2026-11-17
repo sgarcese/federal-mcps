@@ -24,6 +24,10 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      # Packages resolve each other through dist/, which only `tsc -b` creates; the ci job gets it
+      # from its typecheck step, this job has none (#390).
+      - name: Build
+        run: npm run build
       - name: Build the catalog from live sources
         # The build fetches ACS population (Census key, #172) and BEA's combination areas (BEA
         # key, #257); both are repository secrets, used at build time only.

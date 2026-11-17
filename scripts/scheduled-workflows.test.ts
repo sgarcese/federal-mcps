@@ -31,3 +31,13 @@ describe("scheduled workflows build before use (#390)", () => {
     expect(build).toBeLessThan(work);
   });
 });
+
+describe("live smoke selects only the live tests (#390)", () => {
+  // Live tests are `describe.runIf(process.env.LIVE_TESTS === "1")("… LIVE", …)`. A filter placed
+  // after `--` is ignored by vitest, which then runs the whole unit suite with fixtures off.
+  it("passes --testNamePattern LIVE to vitest directly", () => {
+    const text = read(".github/workflows/live-smoke.yml");
+    expect(text).toMatch(/run: npx vitest run --project unit --testNamePattern "LIVE"\n/);
+    expect(text).not.toMatch(/ -- --testNamePattern/);
+  });
+});
