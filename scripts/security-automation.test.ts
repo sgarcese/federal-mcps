@@ -68,3 +68,14 @@ describe("the ci job's npm audit gate (#279)", () => {
     );
   });
 });
+
+describe("the ci job's tflint step (#393)", () => {
+  // `tflint --init` downloads the aws ruleset from the GitHub API; anonymously it shares a 60/hour
+  // budget per runner IP and fails under load. The job token authenticates it.
+  it("authenticates tflint --init with the job's GitHub token", () => {
+    const text = read(".github/workflows/ci.yml");
+    expect(text).toMatch(
+      /- name: tflint\n\s+env:\n\s+GITHUB_TOKEN: \$\{\{ github\.token \}\}\n\s+run: \|\n\s+tflint --init\n/,
+    );
+  });
+});

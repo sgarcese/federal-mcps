@@ -112,7 +112,11 @@ jobs:
         with:
           tflint_version: latest
 
+      # --init fetches the aws ruleset from the GitHub API; anonymous calls share a 60/hour budget
+      # per runner IP and fail under load, so authenticate with the job token (#393).
       - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           tflint --init
           tflint --recursive --chdir=terraform
