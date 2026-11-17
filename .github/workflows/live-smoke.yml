@@ -2,8 +2,8 @@ name: Live smoke
 
 # Runs the tests that call real agency APIs. Never a merge gate (CLAUDE.md,
 # project rules): scheduled weekly so a change in an agency's response shape is
-# noticed, and on demand. Until M3 adds live tests this job is a no-op that
-# proves the wiring.
+# noticed, and on demand. Live tests are describe.runIf(LIVE_TESTS === "1")
+# blocks named "… LIVE"; the filter selects only those (#390).
 on:
   schedule:
     - cron: "17 11 * * 1" # Mondays 11:17 UTC
@@ -32,5 +32,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Packages resolve each other through dist/, which only `tsc -b` creates; the ci job gets it
+      # from its typecheck step, this job has none (#390).
+      - name: Build
+        run: npm run build
+
       - name: Live tests
-        run: npx vitest run --passWithNoTests --project unit -- --testNamePattern "live:"
+        run: npx vitest run --project unit --testNamePattern "LIVE"
